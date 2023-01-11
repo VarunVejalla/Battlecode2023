@@ -2,6 +2,8 @@
 
 /matches
 /client
+version.txt
+.idea/
 
 ###### GRADLE ######
 
