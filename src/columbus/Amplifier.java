@@ -1,4 +1,4 @@
-package lewisAndClark;
+package columbus;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;

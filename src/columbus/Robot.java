@@ -1,4 +1,4 @@
-package lewisAndClark;
+package columbus;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

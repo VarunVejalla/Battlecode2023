@@ -1,11 +1,11 @@
-package lewisAndClark;
+package columbus;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class Booster extends Robot {
+public class Destabilizer extends Robot {
 
-    public Booster(RobotController rc) throws GameActionException{
+    public Destabilizer(RobotController rc) throws GameActionException {
         super(rc);
     }
 
