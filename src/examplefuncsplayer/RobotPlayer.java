@@ -3,9 +3,7 @@ package examplefuncsplayer;
 import battlecode.common.*;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -134,6 +132,7 @@ public strictfp class RobotPlayer {
         }
     }
 
+
     /**
      * Run a single turn for a Carrier.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
@@ -202,6 +201,7 @@ public strictfp class RobotPlayer {
             rc.move(dir);
         }
     }
+
 
     /**
      * Run a single turn for a Launcher.
