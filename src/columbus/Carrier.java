@@ -8,73 +8,57 @@ import java.util.Set;
 
 public class Carrier extends Robot {
 
+    private MapLocation targetLoc;
+
     public Carrier(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     public void run() throws GameActionException {
         super.run();
-        if (rc.getAnchor() != null) {
-            // If I have an anchor singularly focus on getting it to the first island I see
-            int[] islands = rc.senseNearbyIslands();
-            Set<MapLocation> islandLocs = new HashSet<>();
-            for (int id : islands) {
-                MapLocation[] thisIslandLocs = rc.senseNearbyIslandLocations(id);
-                islandLocs.addAll(Arrays.asList(thisIslandLocs));
-            }
-            if (islandLocs.size() > 0) {
-                MapLocation islandLocation = islandLocs.iterator().next();
-                rc.setIndicatorString("Moving my anchor towards " + islandLocation);
-                while (!rc.getLocation().equals(islandLocation)) {
-                    Direction dir = rc.getLocation().directionTo(islandLocation);
-                    if (rc.canMove(dir)) {
-                        rc.move(dir);
-                    }
-                }
-                if (rc.canPlaceAnchor()) {
-                    rc.setIndicatorString("Huzzah, placed anchor!");
-                    rc.placeAnchor();
-                }
-            }
-        }
-        // Try to gather from squares around us.
-        MapLocation me = rc.getLocation();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                MapLocation wellLocation = new MapLocation(me.x + dx, me.y + dy);
-                if (rc.canCollectResource(wellLocation, -1)) {
-                    if (rng.nextBoolean()) {
-                        rc.collectResource(wellLocation, -1);
-                        rc.setIndicatorString("Collecting, now have, AD:" +
-                                rc.getResourceAmount(ResourceType.ADAMANTIUM) +
-                                " MN: " + rc.getResourceAmount(ResourceType.MANA) +
-                                " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
-                    }
-                }
-            }
-        }
-        // Occasionally try out the carriers attack
-        if (rng.nextInt(20) == 1) {
-            RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-            if (enemyRobots.length > 0) {
-                if (rc.canAttack(enemyRobots[0].location)) {
-                    rc.attack(enemyRobots[0].location);
-                }
-            }
-        }
+        moveTowardsNearbyWell();
+        tryMining();
+    }
 
-        // If we can see a well, move towards it
+    public MapLocation getNearbyWell(){
         WellInfo[] wells = rc.senseNearbyWells();
-        if (wells.length > 1 && rng.nextInt(3) == 1) {
-            WellInfo well_one = wells[1];
-            Direction dir = me.directionTo(well_one.getMapLocation());
-            if (rc.canMove(dir))
-                rc.move(dir);
+        int closestDist = Integer.MAX_VALUE;
+        MapLocation closestWell = null;
+        for(WellInfo well : wells){
+            int dist = myLoc.distanceSquaredTo(well.getMapLocation());
+            if(dist < closestDist){
+                closestDist = dist;
+                closestWell = well.getMapLocation();
+            }
         }
-        // Also try to move randomly.
-        Direction dir = directions[rng.nextInt(directions.length)];
-        if (rc.canMove(dir)) {
-            rc.move(dir);
+        return closestWell;
+    }
+
+    public MapLocation getRandomScoutingLocation() {
+        int x = rng.nextInt(rc.getMapWidth());
+        int y = rng.nextInt(rc.getMapHeight());
+        return new MapLocation(x, y);
+    }
+
+    public void setNewTargetLoc(){
+        MapLocation closestWell = getNearbyWell();
+        if(closestWell != null){
+            targetLoc = closestWell;
+            return;
         }
+        targetLoc = getRandomScoutingLocation();
+    }
+
+    public void moveTowardsNearbyWell() throws GameActionException {
+        if(targetLoc == null){
+            setNewTargetLoc();
+        }
+        nav.goToFuzzy(targetLoc);
+    }
+
+    public void tryMining() throws GameActionException {
+        Util.tryMine(ResourceType.ELIXIR, -1);
+        Util.tryMine(ResourceType.MANA, -1);
+        Util.tryMine(ResourceType.ADAMANTIUM, -1);
     }
 }

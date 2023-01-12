@@ -30,15 +30,18 @@ public class Robot {
 
     public Robot(RobotController rc) throws GameActionException{
         this.rc = rc;
+        myLoc = rc.getLocation();
         myTeam = rc.getTeam();
         opponent = myTeam.opponent();
         nav = new Navigation(rc, this);
-
+        Util.rc = rc;
+        Util.robot = this;
     }
 
     public void run() throws GameActionException{
         // fill in with code common to all robots
         myLoc = rc.getLocation();
+        System.out.println("MY LOC: " + myLoc.toString());
     }
 }
 

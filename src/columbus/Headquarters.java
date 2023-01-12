@@ -2,38 +2,53 @@ package columbus;
 
 import battlecode.common.*;
 
+import java.util.ArrayList;
+
 public class Headquarters extends Robot {
 
+    ArrayList<MapLocation> wells;
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
+        wells = new ArrayList<MapLocation>();
+        checkForNearbyWells();
     }
 
     public void run() throws GameActionException{
         super.run();
-//        System.out.println("running");
-        Direction dir = directions[rng.nextInt(directions.length)];
-        MapLocation newLoc = rc.getLocation().add(dir);
-        if (rc.canBuildAnchor(Anchor.STANDARD)) {
-//            System.out.println("building an anchor");
-            // If we can build an anchor do it!
-            rc.buildAnchor(Anchor.STANDARD);
-            rc.setIndicatorString("Building anchor! " + rc.getAnchor());
+        readComms();
+        if(wells.size() > 0){
+            buildCarriers();
         }
-        if (rng.nextBoolean()) {
-//            System.out.println("Trying to build a carrier");
+    }
 
-            // Let's try to build a carrier.
-            rc.setIndicatorString("Trying to build a carrier");
-            if (rc.canBuildRobot(RobotType.CARRIER, newLoc)) {
-                rc.buildRobot(RobotType.CARRIER, newLoc);
-            }
-        } else {
-            // Let's try to build a launcher.
-//            System.out.println("Trying to build a lanuch");
-            rc.setIndicatorString("Trying to build a launcher");
-            if (rc.canBuildRobot(RobotType.LAUNCHER, newLoc)) {
-                rc.buildRobot(RobotType.LAUNCHER, newLoc);
+    public void checkForNearbyWells() {
+        WellInfo[] nearbyWells = rc.senseNearbyWells();
+        for(WellInfo well : nearbyWells){
+            this.wells.add(well.getMapLocation());
+        }
+    }
+
+    public void readComms () {
+        // TODO
+    }
+
+    public MapLocation getNearestWell(){
+        int closestDist = Integer.MAX_VALUE;
+        MapLocation closestWell = null;
+        for(MapLocation well : wells){
+            if(myLoc.distanceSquaredTo(well) < closestDist){
+                closestWell = well;
             }
         }
+        return closestWell;
+    }
+
+    public void buildCarriers() throws GameActionException {
+        MapLocation closestWell = getNearestWell();
+        Direction spawnDir = directions[rng.nextInt(directions.length)];
+        if (closestWell != null) {
+            spawnDir = myLoc.directionTo(closestWell);
+        }
+        Util.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir);
     }
 }
