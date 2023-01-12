@@ -102,4 +102,116 @@ public class Comms {
         }
     }
 
+
+    public int readMana(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(4) & 127) * 100;
+            case 1:
+                return (rc.readSharedArray(6) & 127) * 100;
+            case 2:
+                return (rc.readSharedArray(8) & 127) * 100;
+            case 3:
+                return (rc.readSharedArray(10) & 127) * 100;
+            default:
+                return -1;
+        }
+    }
+
+
+    public int readAdamantium(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return ((rc.readSharedArray(4) & 16383) >> 7) * 100;
+            case 1:
+                return ((rc.readSharedArray(6) & 16383) >> 7) * 100;
+            case 2:
+                return ((rc.readSharedArray(8) & 16383) >> 7) * 100;
+            case 3:
+                return ((rc.readSharedArray(10) & 16383) >> 7) * 100;
+            default:
+                return -1;
+        }
+    }
+
+    public int readElixir(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(5) & 127) * 100;
+            case 1:
+                return (rc.readSharedArray(7) & 127) * 100;
+            case 2:
+                return (rc.readSharedArray(9) & 127) * 100;
+            case 3:
+                return (rc.readSharedArray(11) & 127) * 100;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeMana(int idx, int value) throws GameActionException {
+        value /= 100;
+        if(value > 127) value = 127;
+
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65472) | (value));
+                break;
+            case 1:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65472) | (value));
+                break;
+            case 2:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65472) | (value));
+                break;
+            case 3:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65472) | (value));
+                break;
+        }
+    }
+
+    public void writeAdamantium(int idx, int value) throws GameActionException {
+        value /= 100;
+        if(value > 127) value = 127;
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 49279) | (value) << 7);
+                break;
+            case 1:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 49279) | (value) << 7);
+                break;
+            case 2:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 49279) | (value) << 7);
+                break;
+            case 3:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 49279) | (value) << 7);
+                break;
+        }
+    }
+
+    public void writeElixir(int idx, int value) throws GameActionException {
+        value /= 100;
+        if(value > 127) value = 127;
+
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(5, (rc.readSharedArray(4) & 65472) | (value));
+                break;
+            case 1:
+                rc.writeSharedArray(7, (rc.readSharedArray(6) & 65472) | (value));
+                break;
+            case 2:
+                rc.writeSharedArray(9, (rc.readSharedArray(8) & 65472) | (value));
+                break;
+            case 3:
+                rc.writeSharedArray(11, (rc.readSharedArray(10) & 65472) | (value));
+                break;
+        }
+    }
+
+
+
+
+
+
+
 }

@@ -34,8 +34,15 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException{
         super.run();
         readComms();
-//        System.out.println("index " + myIndex);
-//        System.out.println("loc from shared array: " + comms.readOurHQLocation(myIndex));
+        System.out.println("index " + myIndex);
+        System.out.println("loc from shared array: " + comms.readOurHQLocation(myIndex));
+
+        comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
+        comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
+        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
+        System.out.println("adamantium amount read from comms: " + comms.readAdamantium(myIndex));
+        System.out.println("mana amount read from comms: " + comms.readMana(myIndex));
+        System.out.println("elixir amount read from comms: " + comms.readElixir(myIndex));
 
         if(wells.size() > 0){
             buildCarriers();
