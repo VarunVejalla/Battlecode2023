@@ -1,9 +1,6 @@
 package columbus;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.Team;
+import battlecode.common.*;
 
 import java.util.Random;
 
@@ -13,6 +10,8 @@ public class Robot {
     RobotController rc;
     Team myTeam;
     Team opponent;
+    Navigation nav;
+    MapLocation myLoc;
 
     static final Random rng = new Random(6147);
 
@@ -33,10 +32,13 @@ public class Robot {
         this.rc = rc;
         myTeam = rc.getTeam();
         opponent = myTeam.opponent();
+        nav = new Navigation(rc, this);
+
     }
 
     public void run() throws GameActionException{
         // fill in with code common to all robots
+        myLoc = rc.getLocation();
     }
 }
 
