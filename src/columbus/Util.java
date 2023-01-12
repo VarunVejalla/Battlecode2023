@@ -1,7 +1,9 @@
 package columbus;
 
-import battlecode.common.RobotController;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class Util {
     static RobotController rc;
@@ -11,6 +13,15 @@ public class Util {
         int dx = a.x - b.x;
         int dy = a.y - b.y;
         return Math.max(Math.abs(dx), Math.abs(dy));
+    }
+
+
+    public static boolean tryMove(Direction dir) throws GameActionException{
+        if(rc.canMove(dir)) {
+            rc.move(dir);
+            return true;
+        }
+        return false;
     }
 
 

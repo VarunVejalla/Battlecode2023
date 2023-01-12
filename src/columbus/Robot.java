@@ -12,6 +12,7 @@ public class Robot {
     Team opponent;
     Navigation nav;
     MapLocation myLoc;
+    MapInfo myLocInfo;
 
     static final Random rng = new Random(6147);
 
@@ -33,12 +34,14 @@ public class Robot {
         myTeam = rc.getTeam();
         opponent = myTeam.opponent();
         nav = new Navigation(rc, this);
-
+        Util.rc = rc;
+        Util.robot = this;
     }
 
     public void run() throws GameActionException{
         // fill in with code common to all robots
         myLoc = rc.getLocation();
+        myLocInfo = rc.senseMapInfo(myLoc);
     }
 }
 
