@@ -27,31 +27,55 @@ public class Util {
         return false;
     }
 
-    public static boolean tryMine(ResourceType type, int numResources) throws GameActionException{
+    public static boolean tryMine(ResourceType type, int numResources) throws GameActionException {
+        Util.log("Trying to mine " + numResources + " of type " + type.toString());
         MapLocation me = rc.getLocation();
-        for(Direction dir : robot.directions){
+        for (Direction dir : robot.allDirections) {
             MapLocation wellLocation = me.add(dir);
-            if(rc.canSenseLocation(wellLocation)){
+            if (rc.canSenseLocation(wellLocation)) {
                 WellInfo info = rc.senseWell(wellLocation);
-                if(info == null){
+                if (info == null) {
                     continue;
                 }
-                if(info.getResourceType() != type){
+                if (info.getResourceType() != type) {
                     continue;
+                }
+                int rate = numResources;
+                if(rate > info.getRate()){
+                    rate = info.getRate();
                 }
                 // See if you can collect the requested amount.
-                if(rc.canCollectResource(wellLocation, numResources)){
-                    rc.collectResource(wellLocation, numResources);
-                    return true;
-                }
-                // Otherwise just try collecting as much as you can.
-                else if(rc.canCollectResource(wellLocation, -1)){
-                    rc.collectResource(wellLocation, -1);
+                Util.log("Collecting at a rate of: " + rate);
+                if (rc.canCollectResource(wellLocation, rate)) {
+                    rc.collectResource(wellLocation, rate);
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    public static boolean tryMove(Direction dir) throws GameActionException{
+        if(rc.canMove(dir)) {
+            rc.move(dir);
+            robot.myLoc = rc.getLocation();
+            robot.myLocInfo = rc.senseMapInfo(robot.myLoc);
+            return true;
+        }
+        return false;
+    }
+
+    public static void log(String str){
+        if(robot.myTeam != Team.A){
+            return;
+        }
+        if(rc.getType() != RobotType.CARRIER){
+            return;
+        }
+        if(rc.getID() != 13815){
+            return;
+        }
+        System.out.println(str);
     }
 }

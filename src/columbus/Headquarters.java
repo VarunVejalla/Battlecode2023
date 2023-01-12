@@ -6,11 +6,8 @@ import java.util.ArrayList;
 
 public class Headquarters extends Robot {
 
-    ArrayList<MapLocation> wells;
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
-        wells = new ArrayList<MapLocation>();
-        checkForNearbyWells();
     }
 
     public void run() throws GameActionException{
@@ -18,13 +15,6 @@ public class Headquarters extends Robot {
         readComms();
         if(wells.size() > 0){
             buildCarriers();
-        }
-    }
-
-    public void checkForNearbyWells() {
-        WellInfo[] nearbyWells = rc.senseNearbyWells();
-        for(WellInfo well : nearbyWells){
-            this.wells.add(well.getMapLocation());
         }
     }
 
@@ -45,7 +35,7 @@ public class Headquarters extends Robot {
 
     public void buildCarriers() throws GameActionException {
         MapLocation closestWell = getNearestWell();
-        Direction spawnDir = directions[rng.nextInt(directions.length)];
+        Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
         if (closestWell != null) {
             spawnDir = myLoc.directionTo(closestWell);
         }

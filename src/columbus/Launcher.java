@@ -26,9 +26,12 @@ public class Launcher extends Robot {
         }
 
         // Also try to move randomly.
-        Direction dir = directions[rng.nextInt(directions.length)];
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-        }
+        int height = rc.getMapHeight();
+        int width = rc.getMapWidth();
+
+        MapLocation center = new MapLocation(width/2, height/2);
+        nav.goToFuzzy(center, 0);
+
+
     }
 }
