@@ -2,21 +2,47 @@ package columbus;
 
 import battlecode.common.*;
 
-import java.util.ArrayList;
-
 public class Headquarters extends Robot {
+
+    MapLocation myLoc;
+    int myIndex;
+
 
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
+        myLoc = rc.getLocation();
+        computeIndex();
+        comms.writeOurHQLocation(myIndex, myLoc);
+    }
+
+
+    public void computeIndex() throws GameActionException {
+        if(rc.readSharedArray(0) == 0){
+            myIndex = 0;
+        }
+        else if(rc.readSharedArray(1) == 0){
+            myIndex = 1;
+        }
+        else if(rc.readSharedArray(2) == 0){
+            myIndex = 2;
+        }
+        else{
+            myIndex = 3;
+        }
     }
 
     public void run() throws GameActionException{
         super.run();
         readComms();
+//        System.out.println("index " + myIndex);
+//        System.out.println("loc from shared array: " + comms.readOurHQLocation(myIndex));
+
         if(wells.size() > 0){
             buildCarriers();
         }
     }
+
+
 
     public void readComms () {
         // TODO
