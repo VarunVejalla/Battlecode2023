@@ -7,7 +7,6 @@ public class Headquarters extends Robot {
     MapLocation myLoc;
     int myIndex;
 
-
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
         myLoc = rc.getLocation();
@@ -31,27 +30,23 @@ public class Headquarters extends Robot {
         }
     }
 
-    public void run() throws GameActionException{
+    public void run() throws GameActionException {
         super.run();
         readComms();
-        System.out.println("index " + myIndex);
-        System.out.println("loc from shared array: " + comms.readOurHQLocation(myIndex));
+        Util.log("index " + myIndex);
+        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
 
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
         comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
-        System.out.println("adamantium amount read from comms: " + comms.readAdamantium(myIndex));
-        System.out.println("mana amount read from comms: " + comms.readMana(myIndex));
-        System.out.println("elixir amount read from comms: " + comms.readElixir(myIndex));
+        Util.log("adamantium amount read from comms: " + comms.readAdamantium(myIndex));
+        Util.log("mana amount read from comms: " + comms.readMana(myIndex));
+        Util.log("elixir amount read from comms: " + comms.readElixir(myIndex));
 
-        if(wells.size() > 0){
-            buildCarriers();
-        }
+        buildCarriers();
     }
 
-
-
-    public void readComms () {
+    public void readComms() {
         // TODO
     }
 

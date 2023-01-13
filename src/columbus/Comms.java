@@ -11,12 +11,10 @@ public class Comms {
     RobotController rc;
     Robot robot;
 
-
     public Comms(RobotController rc, Robot robot){
         this.rc = rc;
         this.robot = robot;
     }
-
 
     public void writeOurHQLocation(int idx, MapLocation loc) throws GameActionException{
         writeOurHQXCoord(idx, loc.x);
