@@ -87,7 +87,8 @@ public class Robot {
             }
         }
         numHQs = locs.size();
-        HQlocs = (MapLocation[])locs.toArray();
+        HQlocs = new MapLocation[0];
+        HQlocs = locs.toArray(HQlocs);
     }
 
     public void checkForNearbyWells() {

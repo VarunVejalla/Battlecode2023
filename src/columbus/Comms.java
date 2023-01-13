@@ -8,12 +8,48 @@ import battlecode.common.MapLocation;
 
 public class Comms {
 
+    final int HQ0_LOC_IDX = 0;
+    final int HQ1_LOC_IDX = 1;
+    final int HQ2_LOC_IDX = 2;
+    final int HQ3_LOC_IDX = 3;
+
+    final int HQ0_RESOURCES_IDX = 4;
+    final int HQ1_RESOURCES_IDX = 5;
+    final int HQ2_RESOURCES_IDX = 6;
+    final int HQ3_RESOURCES_IDX = 7;
+
+    final int FULL_MASK = 65535; // 11111111111111
+
+    final int HQ_X_MASK = 4032;
+    final int HQ_X_SHIFT = 6;
+    final int HQ_Y_MASK = 63;
+    final int HQ_Y_SHIFT = 0;
+
+    final int HQ_MANA_MASK = 127; // 0000000001111111 (digits 0-6)
+    final int HQ_MANA_SHIFT = 0;
+    final int HQ_ADAMANTIUM_MASK = 16256; // 0011111110000000 (digits 7-13)
+    final int HQ_ADAMANTIUM_SHIFT = 7;
+
     RobotController rc;
     Robot robot;
 
     public Comms(RobotController rc, Robot robot){
         this.rc = rc;
         this.robot = robot;
+    }
+
+    private int extractVal(int commsIdx, int mask, int shift) throws GameActionException {
+        return (rc.readSharedArray(commsIdx) & mask) >> shift;
+    }
+
+    private void insertVal(int commsIdx, int mask, int shift, int value) throws GameActionException {
+        // Clear out the existing value in that position
+        int clearMask = FULL_MASK - mask;
+        int newCommsVal = rc.readSharedArray(commsIdx) & clearMask;
+
+        // Insert the new value
+        newCommsVal = newCommsVal | (value << shift);
+        rc.writeSharedArray(commsIdx, newCommsVal);
     }
 
     public void writeOurHQLocation(int idx, MapLocation loc) throws GameActionException{
@@ -28,13 +64,13 @@ public class Comms {
     public int readOurHQXCoord(int idx) throws GameActionException {
         switch (idx) {
             case 0:
-                return (rc.readSharedArray(0) & 4032) >>> 6;
+                return extractVal(HQ0_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT);
             case 1:
-                return (rc.readSharedArray(1) & 4032) >>> 6;
+                return extractVal(HQ1_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT);
             case 2:
-                return (rc.readSharedArray(2) & 4032) >>> 6;
+                return extractVal(HQ2_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT);
             case 3:
-                return (rc.readSharedArray(3) & 4032) >>> 6;
+                return extractVal(HQ3_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT);
             default:
                 return -1;
         }
@@ -43,17 +79,17 @@ public class Comms {
     public int readOurHQYCoord(int idx) throws GameActionException {
         // note that we subtract 1 from the y coordinate after reading the y location
         // this is done so that all zeros in an index in the shared array means it hasn't been claimed yet
-        // ask saahith if this doesn't make sense (sry for bad explanation)
+        // ask saahith if this doesn't make sense
 
         switch (idx) {
             case 0:
-                return (rc.readSharedArray(0) & 63) - 1;
+                return extractVal(HQ0_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT) - 1;
             case 1:
-                return (rc.readSharedArray(1) & 63) - 1;
+                return extractVal(HQ1_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT) - 1;
             case 2:
-                return (rc.readSharedArray(2) & 63) - 1;
+                return extractVal(HQ2_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT) - 1;
             case 3:
-                return (rc.readSharedArray(3) & 63) - 1;
+                return extractVal(HQ3_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT) - 1;
             default:
                 return -1;
         }
@@ -63,16 +99,16 @@ public class Comms {
     public void writeOurHQXCoord(int idx, int value) throws GameActionException {
         switch (idx) {
             case 0:
-                rc.writeSharedArray(0, (rc.readSharedArray(0) & 61503) | (value << 6));
+                insertVal(HQ0_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT, value);
                 break;
             case 1:
-                rc.writeSharedArray(1, (rc.readSharedArray(1) & 61503) | (value << 6));
+                insertVal(HQ1_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT, value);
                 break;
             case 2:
-                rc.writeSharedArray(2, (rc.readSharedArray(2) & 61503) | (value << 6));
+                insertVal(HQ2_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT, value);
                 break;
             case 3:
-                rc.writeSharedArray(3, (rc.readSharedArray(3) & 61503) | (value << 6));
+                insertVal(HQ3_LOC_IDX, HQ_X_MASK, HQ_X_SHIFT, value);
                 break;
         }
     }
@@ -81,35 +117,34 @@ public class Comms {
     public void writeOurHQYCoord(int idx, int value) throws GameActionException {
         // note that we add 1 to the y coordinate before writing to the shared array
         // this is done so that all zeros in an index in the shared array means it hasn't been claimed yet
-        // ask saahith if this doesn't make sense (sry for bad explanation)
+        // ask saahith if this doesn't make sense
         value += 1;
         switch (idx) {
             case 0:
-                rc.writeSharedArray(0, (rc.readSharedArray(0) & 65472) | (value));
+                insertVal(HQ0_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT, value);
                 break;
             case 1:
-                rc.writeSharedArray(1, (rc.readSharedArray(1) & 65472) | (value));
+                insertVal(HQ1_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT, value);
                 break;
             case 2:
-                rc.writeSharedArray(2, (rc.readSharedArray(2) & 65472) | (value));
+                insertVal(HQ2_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT, value);
                 break;
             case 3:
-                rc.writeSharedArray(3, (rc.readSharedArray(3) & 65472) | (value));
+                insertVal(HQ3_LOC_IDX, HQ_Y_MASK, HQ_Y_SHIFT, value);
                 break;
         }
     }
 
-
     public int readMana(int idx) throws GameActionException {
         switch (idx) {
             case 0:
-                return (rc.readSharedArray(4) & 127) * 100;
+                return extractVal(HQ0_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT) * 100;
             case 1:
-                return (rc.readSharedArray(6) & 127) * 100;
+                return extractVal(HQ1_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT) * 100;
             case 2:
-                return (rc.readSharedArray(8) & 127) * 100;
+                return extractVal(HQ2_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT) * 100;
             case 3:
-                return (rc.readSharedArray(10) & 127) * 100;
+                return extractVal(HQ3_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT) * 100;
             default:
                 return -1;
         }
@@ -119,28 +154,13 @@ public class Comms {
     public int readAdamantium(int idx) throws GameActionException {
         switch (idx) {
             case 0:
-                return ((rc.readSharedArray(4) & 16383) >> 7) * 100;
+                return extractVal(HQ0_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT) * 100;
             case 1:
-                return ((rc.readSharedArray(6) & 16383) >> 7) * 100;
+                return extractVal(HQ1_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT) * 100;
             case 2:
-                return ((rc.readSharedArray(8) & 16383) >> 7) * 100;
+                return extractVal(HQ2_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT) * 100;
             case 3:
-                return ((rc.readSharedArray(10) & 16383) >> 7) * 100;
-            default:
-                return -1;
-        }
-    }
-
-    public int readElixir(int idx) throws GameActionException {
-        switch (idx) {
-            case 0:
-                return (rc.readSharedArray(5) & 127) * 100;
-            case 1:
-                return (rc.readSharedArray(7) & 127) * 100;
-            case 2:
-                return (rc.readSharedArray(9) & 127) * 100;
-            case 3:
-                return (rc.readSharedArray(11) & 127) * 100;
+                return extractVal(HQ3_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT) * 100;
             default:
                 return -1;
         }
@@ -152,16 +172,16 @@ public class Comms {
 
         switch (idx) {
             case 0:
-                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65472) | (value));
+                insertVal(HQ0_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT, value);
                 break;
             case 1:
-                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65472) | (value));
+                insertVal(HQ1_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT, value);
                 break;
             case 2:
-                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65472) | (value));
+                insertVal(HQ2_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT, value);
                 break;
             case 3:
-                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65472) | (value));
+                insertVal(HQ3_RESOURCES_IDX, HQ_MANA_MASK, HQ_MANA_SHIFT, value);
                 break;
         }
     }
@@ -169,46 +189,21 @@ public class Comms {
     public void writeAdamantium(int idx, int value) throws GameActionException {
         value /= 100;
         if(value > 127) value = 127;
-        switch (idx) {
-            case 0:
-                rc.writeSharedArray(4, (rc.readSharedArray(4) & 49279) | (value) << 7);
-                break;
-            case 1:
-                rc.writeSharedArray(6, (rc.readSharedArray(6) & 49279) | (value) << 7);
-                break;
-            case 2:
-                rc.writeSharedArray(8, (rc.readSharedArray(8) & 49279) | (value) << 7);
-                break;
-            case 3:
-                rc.writeSharedArray(10, (rc.readSharedArray(10) & 49279) | (value) << 7);
-                break;
-        }
-    }
-
-    public void writeElixir(int idx, int value) throws GameActionException {
-        value /= 100;
-        if(value > 127) value = 127;
 
         switch (idx) {
             case 0:
-                rc.writeSharedArray(5, (rc.readSharedArray(4) & 65472) | (value));
+                insertVal(HQ0_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT, value);
                 break;
             case 1:
-                rc.writeSharedArray(7, (rc.readSharedArray(6) & 65472) | (value));
+                insertVal(HQ1_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT, value);
                 break;
             case 2:
-                rc.writeSharedArray(9, (rc.readSharedArray(8) & 65472) | (value));
+                insertVal(HQ2_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT, value);
                 break;
             case 3:
-                rc.writeSharedArray(11, (rc.readSharedArray(10) & 65472) | (value));
+                insertVal(HQ3_RESOURCES_IDX, HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT, value);
                 break;
         }
     }
-
-
-
-
-
-
 
 }

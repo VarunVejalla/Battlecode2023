@@ -38,10 +38,10 @@ public class Headquarters extends Robot {
 
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
-        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
+//        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
         Util.log("adamantium amount read from comms: " + comms.readAdamantium(myIndex));
         Util.log("mana amount read from comms: " + comms.readMana(myIndex));
-        Util.log("elixir amount read from comms: " + comms.readElixir(myIndex));
+//        Util.log("elixir amount read from comms: " + comms.readElixir(myIndex));
 
         buildCarriers();
     }
