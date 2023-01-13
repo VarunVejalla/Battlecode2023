@@ -21,8 +21,6 @@ public class Carrier extends Robot {
     public void run() throws GameActionException {
         super.run();
         int weight = totalResourceWeight();
-        Util.log("My total resource weight: " + weight);
-        Util.log("Carrier capacity: " + GameConstants.CARRIER_CAPACITY);
         if(weight == GameConstants.CARRIER_CAPACITY){
             mining = false;
             targetLoc = null;
@@ -82,15 +80,24 @@ public class Carrier extends Robot {
                 targetLoc = getRandomScoutingLocation();
             }
         }
-        nav.goToFuzzy(targetLoc, 0);
+        if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+        }
+        else{
+            nav.goToFuzzy(targetLoc, 0);
+        }
     }
 
     public void moveTowardsHQ() throws GameActionException {
         if(targetLoc == null){
-            Util.log("Setting target loc to HQ loc: " + HQLoc.toString());
             targetLoc = HQLoc;
         }
-        nav.goToFuzzy(targetLoc, 0);
+        if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+        }
+        else{
+            nav.goToFuzzy(targetLoc, 0);
+        }
     }
 
     public void tryTransferring() throws GameActionException {

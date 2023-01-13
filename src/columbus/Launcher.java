@@ -32,6 +32,5 @@ public class Launcher extends Robot {
         MapLocation center = new MapLocation(width/2, height/2);
         nav.goToFuzzy(center, 0);
 
-
     }
 }

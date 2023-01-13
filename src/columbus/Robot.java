@@ -61,6 +61,7 @@ public class Robot {
     public void run() throws GameActionException{
         // fill in with code common to all robots
         myLoc = rc.getLocation();
+        Util.log("Currently at: " + myLoc.toString());
         myLocInfo = rc.senseMapInfo(myLoc);
         if(myType != RobotType.HEADQUARTERS){
             checkForNearbyWells();

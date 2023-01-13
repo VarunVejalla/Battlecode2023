@@ -13,9 +13,7 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException{
         super.run();
         readComms();
-        if(wells.size() > 0){
-            buildCarriers();
-        }
+        buildCarriers();
     }
 
     public void readComms () {

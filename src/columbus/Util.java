@@ -61,21 +61,16 @@ public class Util {
             rc.move(dir);
             robot.myLoc = rc.getLocation();
             robot.myLocInfo = rc.senseMapInfo(robot.myLoc);
+            robot.nav.lastDirectionMoved = dir;
             return true;
         }
         return false;
     }
 
     public static void log(String str){
-        if(robot.myTeam != Team.A){
-            return;
-        }
-        if(rc.getType() != RobotType.CARRIER){
-            return;
-        }
-        if(rc.getID() != 13815){
-            return;
-        }
+//        if(rc.getID() != 10192){
+//            return;
+//        }
         System.out.println(str);
     }
 }
