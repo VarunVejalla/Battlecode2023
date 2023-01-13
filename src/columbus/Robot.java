@@ -2,7 +2,6 @@ package columbus;
 
 import battlecode.common.*;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -17,6 +16,8 @@ public class Robot {
     MapLocation myLoc;
     MapInfo myLocInfo;
     HashSet<MapLocation> wells;
+    Comms comms;
+
 
     static final Random rng = new Random(6147);
 
@@ -56,6 +57,7 @@ public class Robot {
         Util.robot = this;
         wells = new HashSet<MapLocation>();
         checkForNearbyWells();
+        comms = new Comms(rc, this);
     }
 
     public void run() throws GameActionException{
