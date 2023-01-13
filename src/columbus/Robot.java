@@ -2,7 +2,9 @@ package columbus;
 
 import battlecode.common.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 
 
@@ -17,7 +19,8 @@ public class Robot {
     MapInfo myLocInfo;
     HashSet<MapLocation> wells;
     Comms comms;
-
+    int numHQs;
+    MapLocation[] HQlocs;
 
     static final Random rng = new Random(6147);
 
@@ -45,7 +48,6 @@ public class Robot {
             Direction.CENTER,
     };
 
-
     public Robot(RobotController rc) throws GameActionException{
         this.rc = rc;
         myLoc = rc.getLocation();
@@ -58,6 +60,7 @@ public class Robot {
         wells = new HashSet<MapLocation>();
         checkForNearbyWells();
         comms = new Comms(rc, this);
+        numHQs = 0;
     }
 
     public void run() throws GameActionException{
@@ -65,9 +68,26 @@ public class Robot {
         myLoc = rc.getLocation();
         Util.log("Currently at: " + myLoc.toString());
         myLocInfo = rc.senseMapInfo(myLoc);
+        if(numHQs == 0 && rc.getRoundNum() >= 2){
+            readHQLocs();
+        }
         if(myType != RobotType.HEADQUARTERS){
             checkForNearbyWells();
         }
+    }
+
+    public void readHQLocs() throws GameActionException {
+        ArrayList<MapLocation> locs = new ArrayList<>();
+        for(int i = 0; i < 4; i++){
+            if(rc.readSharedArray(i) == 0){
+                break;
+            }
+            else{
+                locs.add(comms.readOurHQLocation(i));
+            }
+        }
+        numHQs = locs.size();
+        HQlocs = (MapLocation[])locs.toArray();
     }
 
     public void checkForNearbyWells() {

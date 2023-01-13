@@ -25,7 +25,6 @@ public class Comms {
         return new MapLocation(readOurHQXCoord(idx), readOurHQYCoord(idx));
     }
 
-
     public int readOurHQXCoord(int idx) throws GameActionException {
         switch (idx) {
             case 0:
