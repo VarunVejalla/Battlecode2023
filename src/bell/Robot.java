@@ -90,6 +90,7 @@ public class Robot {
         numHQs = 0;
         scanNearbySquares();
         updateComms();
+
     }
 
     public void run() throws GameActionException{
@@ -110,10 +111,11 @@ public class Robot {
     }
 
     public void readComms() throws GameActionException {
-        readHQLocs();
+        readHQLocs();       // we probably don't need to do this every single time, since HQ locations don't change
         readIslandLocs();
         readWellLocations();
     }
+
 
     public void readWellLocations() throws GameActionException {
         for(int regionNum = 0; regionNum < comms.NUM_REGIONS_TOTAL; regionNum++){
@@ -147,6 +149,56 @@ public class Robot {
         numHQs = locs.size();
         HQlocs = new MapLocation[0];
         HQlocs = locs.toArray(HQlocs);
+    }
+
+    // tried to unroll this to save bytecode
+    public MapLocation getClosestFriendlyHQ() throws GameActionException {
+        int distanceToHQ_0, distanceToHQ_1, distanceToHQ_2,distanceToHQ_3;
+        if(HQlocs == null) readHQLocs();
+
+        if(HQlocs.length == 1){
+            return HQlocs[0];
+        }
+
+        else if(HQlocs.length == 2){
+            distanceToHQ_0 = HQlocs[0].distanceSquaredTo(myLoc);
+            distanceToHQ_1 = HQlocs[1].distanceSquaredTo(myLoc);
+
+            if(distanceToHQ_0 <= distanceToHQ_1) return HQlocs[0];
+            return HQlocs[1];
+        }
+
+        else if(HQlocs.length == 3){
+            distanceToHQ_0 = HQlocs[0].distanceSquaredTo(myLoc);
+            distanceToHQ_1 = HQlocs[1].distanceSquaredTo(myLoc);
+            distanceToHQ_2 = HQlocs[2].distanceSquaredTo(myLoc);
+
+            if(distanceToHQ_0 <= distanceToHQ_1 && distanceToHQ_0 <= distanceToHQ_2) return HQlocs[0];
+            else if(distanceToHQ_1 <= distanceToHQ_0 && distanceToHQ_1 <= distanceToHQ_2) return HQlocs[1];
+            return HQlocs[2];
+        }
+
+        else{
+            distanceToHQ_0 = HQlocs[0].distanceSquaredTo(myLoc);
+            distanceToHQ_1 = HQlocs[1].distanceSquaredTo(myLoc);
+            distanceToHQ_2 = HQlocs[2].distanceSquaredTo(myLoc);
+            distanceToHQ_3 = HQlocs[3].distanceSquaredTo(myLoc);
+
+
+            if(distanceToHQ_0 <= distanceToHQ_1
+                    && distanceToHQ_0 <= distanceToHQ_2
+                    && distanceToHQ_0 <= distanceToHQ_3) return HQlocs[0];
+
+            else if(distanceToHQ_1 <= distanceToHQ_0
+                    && distanceToHQ_1 <= distanceToHQ_2
+                    && distanceToHQ_1 <= distanceToHQ_3) return HQlocs[1];
+
+            else if(distanceToHQ_2 <= distanceToHQ_0
+                    && distanceToHQ_2 <= distanceToHQ_1
+                    && distanceToHQ_2 <= distanceToHQ_3) return HQlocs[2];
+
+            return HQlocs[3];
+        }
     }
 
     public void updateWells(WellSquareInfo info) {
@@ -281,6 +333,14 @@ public class Robot {
     public MapLocation getNearestOpposingIsland(){
         return getNearestIsland(opponent);
     }
+
+
+    public MapLocation getNearestFriendlyHQ(){
+        MapLocation
+    }
+
+
+
 
 
     public MapLocation getRandomScoutingLocation() {
