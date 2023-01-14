@@ -1,10 +1,8 @@
 package columbus;
 
 import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
 import battlecode.common.MapLocation;
-
-import javax.swing.plaf.synth.Region;
+import battlecode.common.RobotController;
 
 // some parts inspired by: https://github.com/mvpatel2000/Battlecode2022/blob/main/src/athena/CommsHandler.java
 
@@ -113,7 +111,6 @@ public class Comms {
     public void writeOurHQYCoord(int idx, int value) throws GameActionException {
         // note that we add 1 to the y coordinate before writing to the shared array
         // this is done so that all zeros in an index in the shared array means it hasn't been claimed yet
-
         value += 1;
         insertVal(HQ_LOC_IDX_MAP[idx], HQ_Y_MASK, HQ_Y_SHIFT, value);
     }

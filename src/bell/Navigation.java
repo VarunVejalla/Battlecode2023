@@ -97,7 +97,7 @@ public class Navigation {
                 continue;
             }
 
-            // TODO: need to integrate whether or not a square is passable here, but when i tried the method returned every method as unpassable
+            if(!rc.sensePassability(newLoc)) continue;  // don't consider if the new location is not passable
 
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
