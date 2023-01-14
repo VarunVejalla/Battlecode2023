@@ -71,9 +71,9 @@ public class Util {
 //        if(rc.getType() != RobotType.HEADQUARTERS){
 //            return;
 //        }
-//        if(rc.getID() != 10192){
-//            return;
-//        }
+        if(rc.getID() != 12586){
+            return;
+        }
         System.out.println(str);
     }
 }

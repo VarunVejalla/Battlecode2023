@@ -24,11 +24,24 @@ public class Carrier extends Robot {
             mining = true;
             targetLoc = null;
         }
-        if(mining){
+
+        tryTakingAnchor();
+        Util.log("Anchor: " + rc.getAnchor());
+        // If you're holding an anchor, make your top priority to deposit it.
+        if(rc.getAnchor() != null){
+            Util.log("Moving towards nearest uncontrolled island");
+            moveTowardsNearestUncontrolledIsland();
+            tryPlacing();
+        }
+        // Otherwise, go mine
+        else if(mining){
+            Util.log("Mining");
             moveTowardsNearbyWell();
             tryMining();
         }
+        // If you're at full capacity, go deposit
         else{
+            Util.log("Moving towards HQ");
             moveTowardsHQ();
             tryTransferring();
         }
@@ -44,6 +57,38 @@ public class Carrier extends Robot {
 
     public int totalResourceWeight() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
+    }
+
+    public void tryTakingAnchor() throws GameActionException {
+        if(rc.getAnchor() != null){
+            return;
+        }
+        for(Direction dir : movementDirections){
+            MapLocation adjLoc = myLoc.add(dir);
+            if(rc.canTakeAnchor(adjLoc, Anchor.STANDARD)){
+                rc.takeAnchor(adjLoc, Anchor.STANDARD);
+                targetLoc = null;
+                return;
+            }
+        }
+    }
+
+    public void moveTowardsNearestUncontrolledIsland() throws GameActionException {
+        if(targetLoc == null){
+            MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
+            if(closestUncontrolledIsland != null){
+                targetLoc = closestUncontrolledIsland;
+            }
+            else{
+                targetLoc = getRandomScoutingLocation();
+            }
+        }
+        if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+        }
+        else{
+            nav.goToFuzzy(targetLoc, 0);
+        }
     }
 
     public void moveTowardsNearbyWell() throws GameActionException {
@@ -77,6 +122,13 @@ public class Carrier extends Robot {
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
+        }
+    }
+
+    public void tryPlacing() throws GameActionException {
+        if(rc.canPlaceAnchor()){
+            rc.placeAnchor();
+            targetLoc = null;
         }
     }
 

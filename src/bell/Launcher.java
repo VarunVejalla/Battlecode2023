@@ -90,6 +90,11 @@ public class Launcher extends Robot {
             return;
         }
 
+        // TODO: Implement this
+//        if(spottedUncommedIsland()){
+//            returnToHQ();
+//        }
+
         if(isAttacking){
             runAttackMovement();
         }

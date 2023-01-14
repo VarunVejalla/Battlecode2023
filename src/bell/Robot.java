@@ -104,6 +104,9 @@ public class Robot {
             scanNearbySquares();
             updateComms();
         }
+        for(IslandInfo info : islands.values()){
+            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam);
+        }
     }
 
     public void readComms() throws GameActionException {
@@ -124,6 +127,7 @@ public class Robot {
             MapLocation islandLoc = comms.getIslandLocation(idx);
             if(islandLoc != null){
                 Team controllingTeam = comms.getIslandControl(idx);
+                // TODO: Only update this if it changed AFTER we last saw the island.
                 IslandInfo info = new IslandInfo(islandLoc, idx, controllingTeam, true);
                 updateIslands(info);
             }

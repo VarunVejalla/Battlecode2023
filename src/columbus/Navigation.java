@@ -112,7 +112,7 @@ public class Navigation {
                 newLocInfo = rc.senseMapInfo(newLoc);
             }
 
-            double cost = newLocInfo.getCooldownMuliplier(robot.myTeam) * 10;
+            double cost = newLocInfo.getCooldownMultiplier(robot.myTeam) * 10;
             cost += Util.minMovesToReach(newLoc, target) * 10;
 
             if(cost < bestCost){
