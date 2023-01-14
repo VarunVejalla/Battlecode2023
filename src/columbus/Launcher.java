@@ -4,10 +4,20 @@ import battlecode.common.*;
 
 public class Launcher extends Robot {
 
+    private MapLocation targetLoc;
+
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
     }
 
+    public void run() throws GameActionException{
+        super.run();
+        runAttack();
+        runMovement();
+        runAttack();
+    }
+
+    // TODO: Add attacking anchors to this
     public int value(RobotInfo enemy) {
         if(enemy.type == RobotType.LAUNCHER) {
             return 0;
@@ -19,6 +29,7 @@ public class Launcher extends Robot {
             return 3;
         }
     }
+
     public int compare(RobotInfo enemy1, RobotInfo enemy2) {
         // attack launchers, then carriers, then amplifiers, then other things
         int value1 = value(enemy1);
@@ -32,44 +43,52 @@ public class Launcher extends Robot {
         }
     }
 
-    public void run() throws GameActionException{
-        super.run();
-
+    public void runAttack() throws GameActionException {
+        if(!rc.isActionReady()){
+            return;
+        }
         // Try to attack someone
-        int radius = rc.getType().actionRadiusSquared;
-        Team opponent = rc.getTeam().opponent();
+        int radius = myType.actionRadiusSquared;
+        Team opponent = myTeam.opponent();
         RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
 
+        // want to attack the one that's closest to dying
+        // maybe want to attack
+        // MapLocation toAttack = enemies[0].location;
 
-
-        if (enemies.length >= 0) {
-            // want to attack the one that's closest to dying
-            // maybe want to attack
-            // MapLocation toAttack = enemies[0].location;
-
-            int toAttackIndex = 0;
-            for(int i = 1; i < enemies.length; i++) {
-                // if it'd be better to attack enemies[i], change attackIndex to i
-                if(rc.canAttack(enemies[i].location) && compare(enemies[i], enemies[toAttackIndex]) < 0) {
+        int toAttackIndex = -1;
+        for(int i = 0; i < enemies.length; i++) {
+            // if it'd be better to attack enemies[i], change attackIndex to i
+            if(rc.canAttack(enemies[i].location)) {
+                if(toAttackIndex == -1 || compare(enemies[i], enemies[toAttackIndex]) < 0) {
                     toAttackIndex = i;
                 }
             }
+        }
 
-
+        if(toAttackIndex != -1){
             MapLocation toAttack = enemies[toAttackIndex].location;
+            rc.setIndicatorString("Attacking");
+            rc.attack(toAttack);
+        }
+    }
 
-            if (rc.canAttack(toAttack)) {
-                rc.setIndicatorString("Attacking");
-                rc.attack(toAttack);
+    public void runMovement() throws GameActionException {
+        if(!rc.isMovementReady()){
+            return;
+        }
+
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
+            targetLoc = null;
+        }
+        if(targetLoc == null){
+            targetLoc = getNearestUncontrolledIsland();
+            if(targetLoc == null){
+                targetLoc = getRandomScoutingLocation();
             }
         }
 
-        // Also try to move randomly.
-        int height = rc.getMapHeight();
-        int width = rc.getMapWidth();
-
-        MapLocation center = new MapLocation(width/2, height/2);
-        nav.goToFuzzy(center, 0);
+        nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
 
     }
 }
