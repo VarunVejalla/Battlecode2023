@@ -18,12 +18,14 @@ public class Headquarters extends Robot {
     double EMASmoothing = 3;   // parameter used in EMA --> higher value means we give more priority to recent changes
 
 
-
+    Spawner spawner;
 
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
         myLoc = rc.getLocation();
         computeIndex();
+        spawner = new Spawner(rc, this);
+
         comms.writeOurHQLocation(myIndex, myLoc);
         Util.log("index " + myIndex);
         Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
@@ -110,16 +112,22 @@ public class Headquarters extends Robot {
         if (closestWell != null) {
             spawnDir = myLoc.directionTo(closestWell);
         }
-        if(Util.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)){
+
+//        if(Util.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)){
+        if(spawner.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)) {
             numCarriersSpawned++;
         }
     }
 
     public void buildLaunchers() throws GameActionException {
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
-        if(Util.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)){
+//        if(Util.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)){
+//            numLaunchersSpawned++;
+//        }
+        if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
         }
+
     }
 
     public void build() throws GameActionException {

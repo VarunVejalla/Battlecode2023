@@ -12,20 +12,6 @@ public class Util {
         return Math.max(Math.abs(dx), Math.abs(dy));
     }
 
-    // TODO: Fix this to take into consideration that HQ can spawn up to 9 (radius squared) distance away from it, not necessarily just adjacent.
-    public static boolean trySpawnGeneralDirection(RobotType type, Direction spawnDir) throws GameActionException  {
-        Direction[] spawnDirs = {
-                spawnDir, spawnDir.rotateLeft(), spawnDir.rotateRight(), spawnDir.rotateLeft().rotateLeft(), spawnDir.rotateRight().rotateRight(), spawnDir.rotateLeft().rotateLeft().rotateLeft(), spawnDir.rotateRight().rotateRight().rotateRight(), spawnDir.opposite()
-        };
-        for(Direction dir : spawnDirs){
-            MapLocation newLoc = robot.myLoc.add(dir);
-            if(rc.canBuildRobot(type, newLoc)){
-                rc.buildRobot(type, newLoc);
-                return true;
-            }
-        }
-        return false;
-    }
 
     public static boolean tryMine(ResourceType type, int numResources) throws GameActionException {
         Util.log("Trying to mine " + numResources + " of type " + type.toString());
