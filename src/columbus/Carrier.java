@@ -51,28 +51,9 @@ public class Carrier extends Robot {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
     }
 
-    public MapLocation getNearbyWell(){
-        int closestDist = Integer.MAX_VALUE;
-        MapLocation closestWell = null;
-        for(MapLocation well : wells){
-            int dist = myLoc.distanceSquaredTo(well);
-            if(dist < closestDist){
-                closestDist = dist;
-                closestWell = well;
-            }
-        }
-        return closestWell;
-    }
-
-    public MapLocation getRandomScoutingLocation() {
-        int x = rng.nextInt(rc.getMapWidth());
-        int y = rng.nextInt(rc.getMapHeight());
-        return new MapLocation(x, y);
-    }
-
     public void moveTowardsNearbyWell() throws GameActionException {
         if(targetLoc == null){
-            MapLocation closestWell = getNearbyWell();
+            MapLocation closestWell = getNearestWell();
             if(closestWell != null){
                 targetLoc = closestWell;
             }
@@ -88,9 +69,13 @@ public class Carrier extends Robot {
         }
     }
 
+    public MapLocation getHQToReturnTo() {
+        return HQLoc;
+    }
+
     public void moveTowardsHQ() throws GameActionException {
         if(targetLoc == null){
-            targetLoc = HQLoc;
+            targetLoc = getHQToReturnTo();
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);

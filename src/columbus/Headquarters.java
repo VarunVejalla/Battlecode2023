@@ -12,8 +12,9 @@ public class Headquarters extends Robot {
         myLoc = rc.getLocation();
         computeIndex();
         comms.writeOurHQLocation(myIndex, myLoc);
+        Util.log("index " + myIndex);
+        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
     }
-
 
     public void computeIndex() throws GameActionException {
         if(rc.readSharedArray(0) == 0){
@@ -33,32 +34,15 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException {
         super.run();
         readComms();
-        Util.log("index " + myIndex);
-        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
-
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
 //        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
-        Util.log("adamantium amount read from comms: " + comms.readAdamantium(myIndex));
-        Util.log("mana amount read from comms: " + comms.readMana(myIndex));
-//        Util.log("elixir amount read from comms: " + comms.readElixir(myIndex));
 
-        buildCarriers();
+        build();
     }
 
     public void readComms() {
         // TODO
-    }
-
-    public MapLocation getNearestWell(){
-        int closestDist = Integer.MAX_VALUE;
-        MapLocation closestWell = null;
-        for(MapLocation well : wells){
-            if(myLoc.distanceSquaredTo(well) < closestDist){
-                closestWell = well;
-            }
-        }
-        return closestWell;
     }
 
     public void buildCarriers() throws GameActionException {
@@ -68,5 +52,15 @@ public class Headquarters extends Robot {
             spawnDir = myLoc.directionTo(closestWell);
         }
         Util.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir);
+    }
+
+    public void buildLaunchers() throws GameActionException {
+        Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
+        Util.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir);
+    }
+
+    public void build() throws GameActionException {
+        buildLaunchers();
+        buildCarriers();
     }
 }
