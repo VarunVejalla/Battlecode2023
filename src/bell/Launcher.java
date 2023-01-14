@@ -8,6 +8,7 @@ public class Launcher extends Robot {
 
     // TODO: Replace this with an actually good strategy
     boolean isAttacking;
+    int DEFENDING_THRESHOLD = 15;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -141,14 +142,25 @@ public class Launcher extends Robot {
         }
 
         // TODO: Maybe circle the well to defend it better instead of just standing in one spot?
-//        nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
-//        nav.circle(targetLoc, circleRadius);
+        //        nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
+        //        nav.circle(targetLoc, circleRadius);
 
-        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            nav.moveRandom();
+        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){   // we have arrived
+            // rc.senseNearby
+            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD) { // don't want to crowd any mining areas
+                targetLoc = getRandomScoutingLocation();        // move on to a different location to scout
+                nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            }
+
+            else {
+                nav.circle(targetLoc, 2, (int) (myType.actionRadiusSquared * 1.5), true);  // the constants here are kinda arbitrary
+                rc.setIndicatorString("circling " + targetLoc);
+            }
         }
+
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            rc.setIndicatorString("going to " + targetLoc);
         }
 
 

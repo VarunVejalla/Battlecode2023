@@ -203,4 +203,57 @@ public class Navigation {
             }
         }
     }
+
+
+    // from: https://github.com/srikarg89/Battlecode2022/blob/main/src/cracked4BuildOrder/Navigation.java
+    public void circle(MapLocation center, int minDist, int maxDist, boolean ccw) throws GameActionException {
+        MapLocation myLoc = robot.myLoc;
+        if(myLoc.distanceSquaredTo(center) > maxDist){
+            goTo(center, minDist);
+        }
+        else if(myLoc.distanceSquaredTo(center) < minDist){
+            Direction centerDir = myLoc.directionTo(center);
+            MapLocation target = myLoc.subtract(centerDir).subtract(centerDir).subtract(centerDir).subtract(centerDir).subtract(centerDir);
+            boolean moved = goTo(target, minDist);
+            if(!moved){
+                moved=goToFuzzy(target, minDist);
+                if(!moved){
+                    circle(center, minDist, maxDist, !ccw);
+                }
+            }
+            return;
+        }
+
+        int dx = myLoc.x - center.x;
+        int dy = myLoc.y - center.y;
+        double cs = Math.cos(ccw ? 0.5 : -0.5);
+        double sn = Math.sin(ccw ? 0.5 : -0.5);
+        int x = (int) (dx * cs - dy * sn);
+        int y = (int) (dx * sn + dy * cs);
+        MapLocation target = center.translate(x, y);
+        Direction targetDir = myLoc.directionTo(target);
+        Direction[] options = {targetDir, targetDir.rotateRight(), targetDir.rotateLeft(), targetDir.rotateRight().rotateRight(), targetDir.rotateLeft().rotateLeft()};
+        Direction bestDirection = null;
+        double lowestCooldown = Double.MAX_VALUE;
+        for(int i = 0; i < options.length; i++){
+            if(!rc.canMove(options[i])){
+                continue;
+            }
+            MapLocation newLoc = myLoc.add(options[i]);
+            if(center.distanceSquaredTo(newLoc) < minDist){
+                continue;
+            }
+            if(center.distanceSquaredTo(newLoc) > maxDist){
+                continue;
+            }
+            double cooldown = rc.senseCooldownMultiplier(newLoc);
+            if(cooldown < lowestCooldown){
+                lowestCooldown = cooldown;
+                bestDirection = options[i];
+            }
+        }
+        if(bestDirection != null){
+            rc.move(bestDirection);
+        }
+    }
 }
