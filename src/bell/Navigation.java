@@ -46,7 +46,7 @@ public class Navigation {
 
     public boolean goTo(MapLocation target, int minDistToSatisfy) throws GameActionException{
         rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
-        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
+//        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
 
         // thy journey hath been completed
         if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
@@ -103,7 +103,7 @@ public class Navigation {
 
             // If there's a current, add that to the end of the new location
             if(newLocInfo.getCurrentDirection() != Direction.CENTER){
-                newLoc.add(newLocInfo.getCurrentDirection());
+                newLoc = newLoc.add(newLocInfo.getCurrentDirection());
                 if(!rc.canSenseLocation(newLoc) || !rc.canMove(dir)){
                     continue;
                 }
@@ -204,24 +204,36 @@ public class Navigation {
         }
     }
 
+    public boolean circle(MapLocation center, int minDist, int maxDist) throws GameActionException {
+        if(circle(center, minDist, maxDist, true)){
+            return true;
+        }
+        return circle(center, minDist, maxDist, false);
+    }
 
     // from: https://github.com/srikarg89/Battlecode2022/blob/main/src/cracked4BuildOrder/Navigation.java
-    public void circle(MapLocation center, int minDist, int maxDist, boolean ccw) throws GameActionException {
+    public boolean circle(MapLocation center, int minDist, int maxDist, boolean ccw) throws GameActionException {
+        if(!rc.isMovementReady()){
+            return false;
+        }
         MapLocation myLoc = robot.myLoc;
         if(myLoc.distanceSquaredTo(center) > maxDist){
-            goTo(center, minDist);
+            Util.log("Moving closer!");
+            return goTo(center, minDist);
         }
-        else if(myLoc.distanceSquaredTo(center) < minDist){
+        if(myLoc.distanceSquaredTo(center) < minDist){
+            Util.log("Moving away!");
             Direction centerDir = myLoc.directionTo(center);
             MapLocation target = myLoc.subtract(centerDir).subtract(centerDir).subtract(centerDir).subtract(centerDir).subtract(centerDir);
-            boolean moved = goTo(target, minDist);
-            if(!moved){
-                moved=goToFuzzy(target, minDist);
-                if(!moved){
-                    circle(center, minDist, maxDist, !ccw);
-                }
+            boolean moved = goToBug(target, minDist);
+            if(moved){
+                return true;
             }
-            return;
+            moved = goToFuzzy(target, minDist);
+            if(moved) {
+                return true;
+            }
+            return false;
         }
 
         int dx = myLoc.x - center.x;
@@ -254,6 +266,8 @@ public class Navigation {
         }
         if(bestDirection != null){
             rc.move(bestDirection);
+            return true;
         }
+        return false;
     }
 }

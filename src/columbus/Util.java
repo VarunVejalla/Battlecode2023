@@ -68,9 +68,12 @@ public class Util {
     }
 
     public static void log(String str){
-        if(rc.getType() != RobotType.HEADQUARTERS){
+        if(true){
             return;
         }
+//        if(rc.getType() != RobotType.HEADQUARTERS){
+//            return;
+//        }
 //        if(rc.getID() != 10192){
 //            return;
 //        }

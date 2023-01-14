@@ -9,14 +9,13 @@ public class Headquarters extends Robot {
     int numCarriersSpawned = 0;
     int numLaunchersSpawned = 0;
 
-
     double prevAdamantium = 0; // amount of adamantium we held in the previous round
     double prevMana = 0; // amount of mana we held in the previous round
     double adamantiumDeltaEMA = 0;  // EMA = Exponential Moving average: https://www.investopedia.com/terms/e/ema.asp
     double manaDeltaEMA = 0;
     double EMAWindowSize = 50; // previous rounds that we consider
-    double EMASmoothing = 3;   // parameter used in EMA --> higher value means we give more priority to recent changes
-
+    double EMASmoothing = 5;   // parameter used in EMA --> higher value means we give more priority to recent changes
+    int lastAnchorBuiltTurn = 0;
 
     Spawner spawner;
 
@@ -47,33 +46,35 @@ public class Headquarters extends Robot {
     }
 
 
-    public double computeAdamantiumDeltaEMA(){
+    public void computeAdamantiumDeltaEMA(){
         int currAdamantium = rc.getResourceAmount(ResourceType.ADAMANTIUM);
-
         if(rc.getRoundNum() > 0){
+            // We only want to consider the rate at which we're gaining resources we don't wanna consider spending.
             double delta = currAdamantium - prevAdamantium;
-            Util.log("delta" + delta);
             adamantiumDeltaEMA = delta * (EMASmoothing / (1+EMAWindowSize)) + adamantiumDeltaEMA * (1 - EMASmoothing / (1+EMAWindowSize));
-
         }
         prevAdamantium = currAdamantium;
-        return adamantiumDeltaEMA;
     }
 
 
-    public double computeManaDeltaEMA(){
+    public void computeManaDeltaEMA(){
         int currMana = rc.getResourceAmount(ResourceType.MANA);
         if(rc.getRoundNum() > 0){
             double delta = currMana - prevMana;
-            manaDeltaEMA = delta * (EMASmoothing / (1+EMAWindowSize)) + manaDeltaEMA * (1 - EMASmoothing / (1+EMAWindowSize));
+            manaDeltaEMA = delta * (EMASmoothing / (1.0 + EMAWindowSize)) + manaDeltaEMA * (1.0 - EMASmoothing / (1.0 + EMAWindowSize));
         }
-        prevMana = currMana;
-        return manaDeltaEMA;
     }
 
 
     public void run() throws GameActionException {
         super.run();
+        if(rc.getRoundNum() > 2){
+            computeAdamantiumDeltaEMA();
+            computeManaDeltaEMA();
+        }
+
+        rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
+
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
 //        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
@@ -88,22 +89,33 @@ public class Headquarters extends Robot {
         // I implemented exponential moving average, which i think could solve this effeciently. see the computeEMA method above
         // might need to mess around with smoothing (EMASmoothing) and windowSize (EMAWindowSize) to get values on the proper scale
 
-
-        if(numCarriersSpawned > 8 && numLaunchersSpawned > 4 && rc.getNumAnchors(Anchor.STANDARD) == 0){
+        // Criteria for saving up
+        boolean savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
+        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > 40;
+        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
+        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+        if(savingUp){
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
                 rc.buildAnchor(Anchor.STANDARD);
+                lastAnchorBuiltTurn = turnCount;
+            }
+            if(rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
+                buildCarriers();
+            }
+            if(rc.getResourceAmount(ResourceType.MANA) > Anchor.STANDARD.getBuildCost(ResourceType.MANA) + RobotType.LAUNCHER.buildCostMana){
+                buildLaunchers();
             }
         }
-        else{
-            build();
+        else {
+            buildCarriers();
+            buildLaunchers();
         }
 
-        rc.setIndicatorString(Double.toString(computeAdamantiumDeltaEMA()) + " " + Double.toString(computeManaDeltaEMA()));
-
-
-
-
+        // We only want to consider the rate at which we're gaining resources we don't wanna consider spending, so we wanna set
+        // the prevMana and prevAdamantium variables AFTER we do all our spending.
+        prevAdamantium = rc.getResourceAmount(ResourceType.ADAMANTIUM);
+        prevMana = rc.getResourceAmount(ResourceType.MANA);
     }
 
     public void buildCarriers() throws GameActionException {
@@ -127,11 +139,5 @@ public class Headquarters extends Robot {
         if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
         }
-
-    }
-
-    public void build() throws GameActionException {
-        buildLaunchers();
-        buildCarriers();
     }
 }

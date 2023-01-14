@@ -12,6 +12,8 @@ public class Launcher extends Robot {
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
+        // TODO: Do something smart to figure this out instead of just random.
+        // TODO: For some reason this is always set to false. Figure out why.
         isAttacking = rng.nextBoolean();
     }
 
@@ -91,18 +93,38 @@ public class Launcher extends Robot {
             return;
         }
 
-        // TODO: Implement this
-//        if(spottedUncommedIsland()){
-//            returnToHQ();
-//        }
-
-        if(isAttacking){
+        if(haveUncommedIsland()){
+            returnToClosestHQ();
+        }
+        else if(isAttacking){
             runAttackMovement();
         }
         else{
             runDefensiveMovement();
         }
     }
+
+    public boolean haveUncommedIsland() {
+        for(IslandInfo info : islands.values()){
+            if(!info.commed){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void returnToClosestHQ() throws GameActionException {
+        targetLoc = getNearestFriendlyHQ();
+        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
+            nav.goToFuzzy(targetLoc, 0);
+            rc.setIndicatorString("have uncommed info, fuzzying to HQ: " + targetLoc);
+        }
+        else{
+            nav.goToBug(targetLoc, 0);
+            rc.setIndicatorString("have uncommed info, bugging to HQ: " + targetLoc);
+        }
+    }
+
 
     // Go attack an island
     public void runAttackMovement() throws GameActionException {
@@ -113,6 +135,10 @@ public class Launcher extends Robot {
             targetLoc = getNearestUncontrolledIsland();
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
+                Util.log("Going towards random scouting location: " + targetLoc);
+            }
+            else{
+                Util.log("Going towards nearest uncontrolled island: " + targetLoc);
             }
         }
 
@@ -122,9 +148,11 @@ public class Launcher extends Robot {
 
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.moveRandom();
+            rc.setIndicatorString("attackingly moving random" + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
+            rc.setIndicatorString("attackingly going to " + targetLoc);
         }
 
     }
@@ -153,14 +181,14 @@ public class Launcher extends Robot {
             }
 
             else {
-                nav.circle(targetLoc, 2, (int) (myType.actionRadiusSquared * 1.5), true);  // the constants here are kinda arbitrary
-                rc.setIndicatorString("circling " + targetLoc);
+                nav.circle(targetLoc, 2, (int) (myType.actionRadiusSquared * 1.5));  // the constants here are kinda arbitrary
+                rc.setIndicatorString("defensively circling " + targetLoc);
             }
         }
 
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("going to " + targetLoc);
+            rc.setIndicatorString("defensively going to " + targetLoc);
         }
 
 

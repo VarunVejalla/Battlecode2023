@@ -5,53 +5,43 @@ import battlecode.common.*;
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
-    private MapLocation HQLoc;
     boolean mining = true;
 
     public Carrier(RobotController rc) throws GameActionException {
         super(rc);
-        saveHQLoc();
     }
 
     public void run() throws GameActionException {
         super.run();
         int weight = totalResourceWeight();
-        if(weight == GameConstants.CARRIER_CAPACITY){
+        if(weight == GameConstants.CARRIER_CAPACITY && mining){
             mining = false;
             targetLoc = null;
         }
-        else if(weight == 0){
+        else if(weight == 0 && !mining){
             mining = true;
             targetLoc = null;
         }
 
         tryTakingAnchor();
-        Util.log("Anchor: " + rc.getAnchor());
+//        Util.log("Anchor: " + rc.getAnchor());
         // If you're holding an anchor, make your top priority to deposit it.
         if(rc.getAnchor() != null){
-            Util.log("Moving towards nearest uncontrolled island");
+//            Util.log("Moving towards nearest uncontrolled island");
             moveTowardsNearestUncontrolledIsland();
             tryPlacing();
         }
         // Otherwise, go mine
         else if(mining){
-            Util.log("Mining");
+//            Util.log("Mining");
             moveTowardsNearbyWell();
             tryMining();
         }
         // If you're at full capacity, go deposit
         else{
-            Util.log("Moving towards HQ");
+//            Util.log("Moving towards HQ");
             moveTowardsHQ();
             tryTransferring();
-        }
-    }
-
-    public void saveHQLoc(){
-        for(RobotInfo info : rc.senseNearbyRobots()){
-            if(info.getType() == RobotType.HEADQUARTERS && info.getTeam() == myTeam){
-                HQLoc = info.getLocation();
-            }
         }
     }
 
@@ -74,6 +64,10 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearestUncontrolledIsland() throws GameActionException {
+        // If you're scouting and reach a dead end, reset.
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
+            targetLoc = null;
+        }
         if(targetLoc == null){
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){
@@ -92,6 +86,10 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearbyWell() throws GameActionException {
+        // If you're scouting and reach a dead end, reset.
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
+            targetLoc = null;
+        }
         if(targetLoc == null){
             MapLocation closestWell = getNearestWell();
             if(closestWell != null){
@@ -109,8 +107,9 @@ public class Carrier extends Robot {
         }
     }
 
+    // TODO: For now this is random, but we should have HQs set a flag or smth on comms for when they need a resource?
     public MapLocation getHQToReturnTo() {
-        return HQLoc;
+        return HQlocs[rng.nextInt(numHQs)];
     }
 
     public void moveTowardsHQ() throws GameActionException {
@@ -133,14 +132,17 @@ public class Carrier extends Robot {
     }
 
     public void tryTransferring() throws GameActionException {
-        if(rc.canTransferResource(HQLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM))){
-            rc.transferResource(HQLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM));
-        }
-        if(rc.canTransferResource(HQLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA))){
-            rc.transferResource(HQLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA));
-        }
-        if(rc.canTransferResource(HQLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR))){
-            rc.transferResource(HQLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR));
+        for(int i = 0; i < numHQs; i++){
+            MapLocation HQLoc = HQlocs[i];
+            if(rc.canTransferResource(HQLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM))){
+                rc.transferResource(HQLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM));
+            }
+            if(rc.canTransferResource(HQLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA))){
+                rc.transferResource(HQLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA));
+            }
+            if(rc.canTransferResource(HQLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR))){
+                rc.transferResource(HQLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR));
+            }
         }
     }
 
