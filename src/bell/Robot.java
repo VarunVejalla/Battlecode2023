@@ -152,7 +152,7 @@ public class Robot {
     }
 
     // tried to unroll this to save bytecode
-    public MapLocation getClosestFriendlyHQ() throws GameActionException {
+    public MapLocation getNearestFriendlyHQ() throws GameActionException {
         int distanceToHQ_0, distanceToHQ_1, distanceToHQ_2,distanceToHQ_3;
         if(HQlocs == null) readHQLocs();
 
@@ -333,14 +333,6 @@ public class Robot {
     public MapLocation getNearestOpposingIsland(){
         return getNearestIsland(opponent);
     }
-
-
-    public MapLocation getNearestFriendlyHQ(){
-        MapLocation
-    }
-
-
-
 
 
     public MapLocation getRandomScoutingLocation() {
