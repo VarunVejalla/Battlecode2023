@@ -89,13 +89,19 @@ public class Carrier extends Robot {
         // Find the nearest HQ
         int HQAdamantium = comms.readAdamantium(HQImHelpingIdx);
         int HQMana = comms.readMana(HQImHelpingIdx);
-        // TODO: Instead of this, check what resource the HQ is requesting (like if it's tryna build more launchers then it'll set the mana flag to 1)
-        if(HQAdamantium < HQMana){
-            System.out.println("THERE'S LESS ADA, IM GONNA GET THAT");
-            return ResourceType.ADAMANTIUM;
-        }
-        System.out.println("THERE'S LESS MANA, IM GONNA GET THAT");
-        return ResourceType.MANA;
+
+        int[] ratio = comms.readRatio(HQImHelpingIdx);
+        int num = rng.nextInt(16);
+        if(num <= ratio[0]) return ResourceType.ADAMANTIUM;
+        else if(num <= ratio[1]) return ResourceType.MANA;
+        else return ResourceType.ELIXIR;
+
+//        if(HQAdamantium < HQMana){
+//            System.out.println("THERE'S LESS ADA, IM GONNA GET THAT");
+//            return ResourceType.ADAMANTIUM;
+//        }
+//        System.out.println("THERE'S LESS MANA, IM GONNA GET THAT");
+//        return ResourceType.MANA;
     }
 
     public void moveTowardsNearbyWell() throws GameActionException {
