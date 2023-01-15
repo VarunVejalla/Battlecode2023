@@ -2,6 +2,9 @@ package bell;
 
 import battlecode.common.*;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
 public class Headquarters extends Robot {
 
     MapLocation myLoc;
@@ -17,7 +20,14 @@ public class Headquarters extends Robot {
     double EMASmoothing = 5;   // parameter used in EMA --> higher value means we give more priority to recent changes
     int lastAnchorBuiltTurn = 0;
 
+
+
+    int timeToForgetCarrier = 50; // forget we've seen a carrier after this many rounds
+
     Spawner spawner;
+
+    HashMap<Integer, Integer> seenCarriers = new HashMap<Integer, Integer>();         // keys are the ids of carriers we've seen, values are the last round we say them
+
 
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
@@ -26,9 +36,8 @@ public class Headquarters extends Robot {
         spawner = new Spawner(rc, this);
 
         comms.writeOurHQLocation(myIndex, myLoc);
-        Util.log("index " + myIndex);
-        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
-
+//        Util.log("index " + myIndex);
+//        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
 
 //        if(rc.getID()%3 ==0) comms.writeOurHQAdamantiumRequest(myIndex, true);
 //        if(rc.getID()%3 ==1) comms.writeOurHQManaRequest(myIndex, true);
@@ -72,6 +81,52 @@ public class Headquarters extends Robot {
     }
 
 
+
+    // criteria on whether hq should start saving up for an anchor
+    public boolean shouldISaveUp(){
+        boolean savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
+        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
+        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
+        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+        return savingUp;
+    }
+
+
+    // count the number of miners that we've seen in the past 50 rounds
+    public void updateSeenCarriers(){
+        Integer roundNum = rc.getRoundNum();
+        Integer forgetCarriersBeforeThisRound = roundNum - timeToForgetCarrier;
+
+        // forget carriers that we haven't seen in the past "timeToForgetCarrier" rounds
+        for(Iterator<HashMap.Entry<Integer, Integer>> it = seenCarriers.entrySet().iterator(); it.hasNext();){
+            HashMap.Entry<Integer, Integer> entry = it.next();
+            if(entry.getValue() < forgetCarriersBeforeThisRound){
+                it.remove();
+            }
+        }
+
+        // check the robots in your vision radius and add them to seen Carriers
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        for(RobotInfo info: nearbyRobots){
+            if(info.type == RobotType.CARRIER){
+                Integer id = info.getID();
+                seenCarriers.put(id, roundNum);
+            }
+        }
+    }
+
+
+    // set flags to request for resources
+    public void setResourceFlags(){
+        // initially, just request admantium until we have a certain number of carriers (ratio should be higher favoring admantium miners)
+
+        // afterwards, count the
+
+        // then flag both ad and mn to start if those quantities are below some threshold
+        //
+    }
+
+
     public void run() throws GameActionException {
         super.run();
         if(rc.getRoundNum() > 2){
@@ -95,19 +150,23 @@ public class Headquarters extends Robot {
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
 //        comms.writeElixir(myIndex, rc.getResourceAmount(ResourceType.ELIXIR));
 
-        Util.log("Num carriers spawned: " + numCarriersSpawned);
-        Util.log("Num launchers spawned: " + numLaunchersSpawned);
+//        Util.log("Num carriers spawned: " + numCarriersSpawned);
+//        Util.log("Num launchers spawned: " + numLaunchersSpawned);
 
         // If you're past some threshold, then make sure you always have an anchor available (or save up for one) for a carrier to grab.
         // I implemented exponential moving average, which i think could solve this effeciently. see the computeEMA method above
         // might need to mess around with smoothing (EMASmoothing) and windowSize (EMAWindowSize) to get values on the proper scale
 
         // Criteria for saving up
-        boolean savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
-        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
-        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
-        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+//        boolean savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
+//        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
+//        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
+//        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
 //        System.out.println("Saving up? " + savingUp);
+
+        updateSeenCarriers();
+        Util.log("Seen carriers: " + seenCarriers.size());
+        boolean savingUp = shouldISaveUp();
         if(savingUp){
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
@@ -121,6 +180,7 @@ public class Headquarters extends Robot {
                 buildLaunchers();
             }
         }
+
         else {
             buildCarriers();
             buildLaunchers();
