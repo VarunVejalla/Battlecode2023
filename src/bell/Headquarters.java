@@ -28,6 +28,12 @@ public class Headquarters extends Robot {
         comms.writeOurHQLocation(myIndex, myLoc);
         Util.log("index " + myIndex);
         Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
+
+
+//        if(rc.getID()%3 ==0) comms.writeOurHQAdamantiumRequest(myIndex, true);
+//        if(rc.getID()%3 ==1) comms.writeOurHQManaRequest(myIndex, true);
+//        if(rc.getID()%3 ==2) comms.writeOurHQElixirRequest(myIndex, true);
+
     }
 
     public void computeIndex() throws GameActionException {
@@ -72,6 +78,16 @@ public class Headquarters extends Robot {
             computeAdamantiumDeltaEMA();
             computeManaDeltaEMA();
         }
+
+//        if(rc.getRoundNum() > 150) {
+//            if (rc.getID() % 3 == 0) comms.writeOurHQAdamantiumRequest(myIndex, false);
+//            if (rc.getID() % 3 == 1) comms.writeOurHQManaRequest(myIndex, false);
+//            if (rc.getID() % 3 == 2) comms.writeOurHQElixirRequest(myIndex, false);
+//        }
+//        System.out.println(comms.readOurHQAdamantiumRequest(myIndex));
+//        System.out.println(comms.readOurHQManaRequest(myIndex));
+//        System.out.println(comms.readOurHQElixirRequest(myIndex));
+
 
         rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
 

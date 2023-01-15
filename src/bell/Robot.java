@@ -149,8 +149,10 @@ public class Robot {
         readWellLocations();
     }
 
+
     // NOTE: This takes a SHIT TON of bytecode and causes robots to go over their bytecode limit
     public void readWellLocations() throws GameActionException {
+
 //        for(int regionNum = 0; regionNum < comms.NUM_REGIONS_TOTAL; regionNum++){
 //            RegionData data = comms.getRegionData(regionNum);
 //            // TODO: Process this and somehow add it to the Wells list

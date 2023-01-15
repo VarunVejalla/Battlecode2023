@@ -57,6 +57,44 @@ public class Comms {
         return new MapLocation(readOurHQXCoord(idx), readOurHQYCoord(idx));
     }
 
+
+
+    public boolean readOurHQAdamantiumRequest(int idx) throws GameActionException{
+        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT)==0) return false;
+        return true;
+    }
+
+    public boolean readOurHQManaRequest(int idx) throws GameActionException{
+        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT)==0) return false;
+        return true;
+    }
+
+    public boolean readOurHQElixirRequest(int idx) throws GameActionException{
+        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT)==0) return false;
+        return true;    }
+
+
+
+
+    public void writeOurHQAdamantiumRequest(int idx, boolean requesting) throws GameActionException{
+        int val = requesting? 1 : 0;
+        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT, val);
+    }
+
+    public void writeOurHQManaRequest(int idx, boolean requesting) throws GameActionException{
+        int val = requesting? 1 : 0;
+        insertVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT, val);
+    }
+
+    public void writeOurHQElixirRequest(int idx, boolean requesting) throws GameActionException{
+        int val = requesting? 1 : 0;
+        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT, val);
+    }
+
+
+
+
+
     public int readOurHQXCoord(int idx) throws GameActionException {
         return extractVal(HQ_LOC_IDX_MAP[idx], HQ_X_MASK, HQ_X_SHIFT);
     }

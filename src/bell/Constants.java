@@ -24,6 +24,18 @@ public final class Constants {
     public static final int HQ_Y_MASK = 63;
     public static final int HQ_Y_SHIFT = 0;
 
+
+    // requests are stored digits 2-4 of indices 0 - 3 in shared array
+    public static final int HQ_ADAMANTIUM_REQUEST_MASK = 4096;// 0001 000000 000000
+    public static final int HQ_MANA_REQUEST_MASK = 8192;// // 0010 000000 000000
+    public static final int HQ_ELIXIR_REQUEST_MASK = 16384;// 0100 0000000 0000000
+
+    public static final int HQ_ADAMANTIUM_REQUEST_SHIFT = 12;// 0001 000000 000000
+    public static final int HQ_MANA_REQUEST_SHIFT = 13;// // 0010 000000 000000
+    public static final int HQ_ELIXIR_REQUEST_SHIFT = 14;// 0100 0000000 0000000
+
+
+
     public static final int HQ0_RESOURCES_IDX = 4;
     public static final int HQ1_RESOURCES_IDX = 5;
     public static final int HQ2_RESOURCES_IDX = 6;
@@ -34,6 +46,7 @@ public final class Constants {
     public static final int HQ_MANA_SHIFT = 0;
     public static final int HQ_ADAMANTIUM_MASK = 16256; // 0011111110000000 (digits 7-13)
     public static final int HQ_ADAMANTIUM_SHIFT = 7;
+
 
 
 

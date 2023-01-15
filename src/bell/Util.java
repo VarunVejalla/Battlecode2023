@@ -57,9 +57,13 @@ public class Util {
         if(rc.getType() != RobotType.CARRIER){
             return;
         }
+
 //        if(rc.getID() != 12586){
 //            return;
 //        }
+//        if(rc.getType() == RobotType.HEADQUARTERS)  System.out.println(str);
+
+
         System.out.println(str);
     }
 }
