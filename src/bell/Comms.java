@@ -57,13 +57,12 @@ public class Comms {
 
 
     public void writeRatio(int idx, int adamantium, int mana, int elixir) throws GameActionException {
-        // scale all numbers down to <= 15 so we can write to the shared array
-        if(adamantium >= 16 || mana >= 16 || elixir >= 16){
-            double totalSum = adamantium + mana + elixir;
-            adamantium = (int)(adamantium / totalSum * 15.0);
-            mana = (int)(mana / totalSum * 15.0);
-            elixir = (int)(elixir / totalSum * 15.0);
-        }
+        // scale all numbers to <= 15 so we can write to the shared array
+
+        double totalSum = adamantium + mana + elixir;
+        adamantium = (int)(adamantium / totalSum * 15.0);
+        mana = (int)(mana / totalSum * 15.0);
+        elixir = (int)(elixir / totalSum * 15.0);
 
         int adamantiumWellIndex = getClosestWellCommsIndex(idx, ResourceType.ADAMANTIUM);
         int manaWellIndex = getClosestWellCommsIndex(idx, ResourceType.MANA);
@@ -72,7 +71,6 @@ public class Comms {
         insertVal(adamantiumWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, adamantium);
         insertVal(manaWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, mana);
         insertVal(elixirWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, elixir);
-
     }
 
 
