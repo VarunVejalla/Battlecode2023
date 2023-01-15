@@ -161,6 +161,7 @@ public class Comms {
         insertVal(ISLAND_START_IDX + islandIdx - 1, ISLAND_CONTROL_MASK, ISLAND_CONTROL_SHIFT, controlValue);
     }
 
+
     public Team getIslandControl(int islandIdx) throws GameActionException {
         int controlVal = extractVal(ISLAND_START_IDX + islandIdx - 1, ISLAND_CONTROL_MASK, ISLAND_CONTROL_SHIFT);
         if(controlVal == 1){
@@ -196,38 +197,27 @@ public class Comms {
     public int getRegionX(MapLocation loc){
         int regionWidth = rc.getMapWidth() / NUM_REGIONS_HORIZONTAL;
         int numUppers = rc.getMapWidth() % NUM_REGIONS_HORIZONTAL;
-        int maxX = 0;
-        for(int i = 0; i < NUM_REGIONS_HORIZONTAL; i++){
-            if(i < numUppers){
-                maxX += regionWidth + 1;
-            }
-            else{
-                maxX += regionWidth;
-            }
-            if(loc.x <= maxX){
-                return i;
-            }
+
+        // the first numUppers should have regionWidth+1 squares
+        // the rest should have regionWith squares
+        if(loc.x+1 <= numUppers * (regionWidth+1)) {
+            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1);
         }
-        return NUM_REGIONS_HORIZONTAL - 1;
+        else {
+            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1);
+        }
     }
 
     public int getRegionY(MapLocation loc){
         int regionHeight = rc.getMapHeight() / NUM_REGIONS_VERTICAL;
         int numUppers = rc.getMapHeight() % NUM_REGIONS_VERTICAL;
-        int maxY = 0;
-        for(int i = 0; i < NUM_REGIONS_VERTICAL; i++){
-            maxY += regionHeight;
-            if(i < numUppers){
-                maxY += 1;
-            }
-            if(loc.y <= maxY){
-                return i;
-            }
+        if(loc.y+1 <= numUppers * (regionHeight+1)) {
+            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
         }
-        return NUM_REGIONS_VERTICAL - 1;
+        else {
+            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
+        }
     }
-
-    // TODO: Make this not take 1 bajillion bytecode
     public int getRegionNum(MapLocation loc){
         return getRegionY(loc) * NUM_REGIONS_HORIZONTAL + getRegionX(loc);
     }
@@ -246,22 +236,22 @@ public class Comms {
 
         int regionWidth = rc.getMapWidth() / NUM_REGIONS_HORIZONTAL;
         int numUppers = rc.getMapWidth() % NUM_REGIONS_HORIZONTAL;
-        int xCenter = regionWidth * xIdx - regionWidth / 2;
-        if(xIdx < numUppers){
-            xCenter += xIdx;
+        int xCenter;
+        if(xIdx < numUppers) {
+            xCenter = (xIdx)*(regionWidth+1) + (regionWidth+1)/2;
         }
-        else{
-            xCenter += numUppers;
+        else {
+            xCenter = numUppers + (regionWidth * (2*xIdx+1))/2;
         }
 
         int regionHeight = rc.getMapHeight() / NUM_REGIONS_VERTICAL;
         numUppers = rc.getMapHeight() % NUM_REGIONS_VERTICAL;
-        int yCenter = regionHeight * yIdx - regionHeight / 2;
-        if(yIdx < numUppers){
-            yCenter += yIdx;
+        int yCenter;
+        if(yIdx < numUppers) {
+            yCenter = (yIdx)*(regionWidth+1) + (regionWidth+1)/2;
         }
-        else{
-            yCenter += numUppers;
+        else {
+            yCenter = numUppers + (regionHeight * (2*yIdx+1))/2;
         }
 
         return new MapLocation(xCenter, yCenter);
@@ -270,7 +260,7 @@ public class Comms {
     public RegionData getRegionData(int regionNum) throws GameActionException {
         int commsIdx = regionNum / REGIONS_PER_COMM + REGION_START_IDX;
         int regionIdxWithinComm = regionNum % REGIONS_PER_COMM;
-        int mask = (int)Math.pow(2, REGION_MASK_SIZE) - 1;
+        int mask = (1<<REGION_MASK_SIZE) - 1;
         int shift = regionIdxWithinComm * REGION_MASK_SIZE;
         mask = mask << shift;
         int regionDataInt = extractVal(commsIdx, mask, shift);
@@ -281,7 +271,7 @@ public class Comms {
         int regionDataInt = regionDataToInt(data);
         int commsIdx = regionNum / REGIONS_PER_COMM + REGION_START_IDX;
         int regionIdxWithinComm = regionNum % REGIONS_PER_COMM;
-        int mask = (int)Math.pow(2, REGION_MASK_SIZE) - 1;
+        int mask = (1<<REGION_MASK_SIZE) - 1;
         int shift = regionIdxWithinComm * REGION_MASK_SIZE;
         mask = mask << shift;
         insertVal(commsIdx, mask, shift, regionDataInt);
