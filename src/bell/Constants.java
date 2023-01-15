@@ -22,13 +22,14 @@ public final class Constants {
 
 
     // requests are stored digits 2-4 of indices 0 - 3 in shared array
-    public static final int HQ_ADAMANTIUM_REQUEST_MASK = 4096;// 0001 000000 000000
-    public static final int HQ_MANA_REQUEST_MASK = 8192;// // 0010 000000 000000
-    public static final int HQ_ELIXIR_REQUEST_MASK = 16384;// 0100 0000000 0000000
-
-    public static final int HQ_ADAMANTIUM_REQUEST_SHIFT = 12;// 0001 000000 000000
-    public static final int HQ_MANA_REQUEST_SHIFT = 13;// // 0010 000000 000000
-    public static final int HQ_ELIXIR_REQUEST_SHIFT = 14;// 0100 0000000 0000000
+    // no longer used
+//    public static final int HQ_ADAMANTIUM_REQUEST_MASK = 4096;// 0001 000000 000000
+//    public static final int HQ_MANA_REQUEST_MASK = 8192;// // 0010 000000 000000
+//    public static final int HQ_ELIXIR_REQUEST_MASK = 16384;// 0100 0000000 0000000
+//
+//    public static final int HQ_ADAMANTIUM_REQUEST_SHIFT = 12;// 0001 000000 000000
+//    public static final int HQ_MANA_REQUEST_SHIFT = 13;// // 0010 000000 000000
+//    public static final int HQ_ELIXIR_REQUEST_SHIFT = 14;// 0100 0000000 0000000
 
     public static final int HQ0_RESOURCES_IDX = 4;
     public static final int HQ1_RESOURCES_IDX = 5;
@@ -63,6 +64,10 @@ public final class Constants {
     public static final int WELLS_Y_MASK = 63;
     public static final int WELLS_Y_SHIFT = 0;
 
+    // resource ratios (same indices as wells)
+    public static final int RESOURCE_RATIO_MASK = 61440;
+    public static final int RESOURCE_RATIO_SHIFT = 12;
+
     // Island consts
     public static final int ISLAND_START_IDX = 8;
     public static  final int ISLAND_X_MASK = 4032;
@@ -71,5 +76,8 @@ public final class Constants {
     public static final int ISLAND_Y_SHIFT = 0;
     public static final int ISLAND_CONTROL_MASK = 12288;
     public static final int ISLAND_CONTROL_SHIFT = 12;
+
+
+
 
 }

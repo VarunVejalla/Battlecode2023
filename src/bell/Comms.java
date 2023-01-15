@@ -56,38 +56,72 @@ public class Comms {
     }
 
 
+    public void writeRatio(int idx, int adamantium, int mana, int elixir) throws GameActionException {
+        // scale all numbers down to <= 15 so we can write to the shared array
+        if(adamantium >= 16 || mana >= 16 || elixir >= 16){
+            double totalSum = adamantium + mana + elixir;
+            adamantium = (int)(adamantium / totalSum * 15.0);
+            mana = (int)(mana / totalSum * 15.0);
+            elixir = (int)(elixir / totalSum * 15.0);
+        }
 
-    public boolean readOurHQAdamantiumRequest(int idx) throws GameActionException{
-        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT)==0) return false;
-        return true;
+        int adamantiumWellIndex = getClosestWellCommsIndex(idx, ResourceType.ADAMANTIUM);
+        int manaWellIndex = getClosestWellCommsIndex(idx, ResourceType.MANA);
+        int elixirWellIndex = getClosestWellCommsIndex(idx, ResourceType.ELIXIR);
+
+        insertVal(adamantiumWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, adamantium);
+        insertVal(manaWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, mana);
+        insertVal(elixirWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT, elixir);
+
     }
 
-    public boolean readOurHQManaRequest(int idx) throws GameActionException{
-        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT)==0) return false;
-        return true;
+
+    public int[] readRatio(int idx) throws GameActionException {
+        int adamantiumWellIndex = getClosestWellCommsIndex(idx, ResourceType.ADAMANTIUM);
+        int manaWellIndex = getClosestWellCommsIndex(idx, ResourceType.MANA);
+        int elixirWellIndex = getClosestWellCommsIndex(idx, ResourceType.ELIXIR);
+
+        int adamantium = extractVal(adamantiumWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT);
+        int mana = extractVal(manaWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT);
+        int elixir = extractVal(elixirWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT);
+
+        return new int[]{adamantium, mana, elixir};
     }
 
-    public boolean readOurHQElixirRequest(int idx) throws GameActionException{
-        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT)==0) return false;
-        return true;    }
+
+
+// we do not use these methods
+//    public boolean readOurHQAdamantiumRequest(int idx) throws GameActionException{
+//        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT)==0) return false;
+//        return true;
+//    }
+//
+//    public boolean readOurHQManaRequest(int idx) throws GameActionException{
+//        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT)==0) return false;
+//        return true;
+//    }
+//
+//    public boolean readOurHQElixirRequest(int idx) throws GameActionException{
+//        if (extractVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT)==0) return false;
+//        return true;    }
 
 
 
-
-    public void writeOurHQAdamantiumRequest(int idx, boolean requesting) throws GameActionException{
-        int val = requesting? 1 : 0;
-        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT, val);
-    }
-
-    public void writeOurHQManaRequest(int idx, boolean requesting) throws GameActionException{
-        int val = requesting? 1 : 0;
-        insertVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT, val);
-    }
-
-    public void writeOurHQElixirRequest(int idx, boolean requesting) throws GameActionException{
-        int val = requesting? 1 : 0;
-        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT, val);
-    }
+// we do not use these methods
+//    public void writeOurHQAdamantiumRequest(int idx, boolean requesting) throws GameActionException{
+//        int val = requesting? 1 : 0;
+//        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ADAMANTIUM_REQUEST_MASK, HQ_ADAMANTIUM_REQUEST_SHIFT, val);
+//    }
+//
+//    public void writeOurHQManaRequest(int idx, boolean requesting) throws GameActionException{
+//        int val = requesting? 1 : 0;
+//        insertVal(HQ_LOC_IDX_MAP[idx], HQ_MANA_REQUEST_MASK, HQ_MANA_REQUEST_SHIFT, val);
+//    }
+//
+//    public void writeOurHQElixirRequest(int idx, boolean requesting) throws GameActionException{
+//        int val = requesting? 1 : 0;
+//        insertVal(HQ_LOC_IDX_MAP[idx], HQ_ELIXIR_REQUEST_MASK, HQ_ELIXIR_REQUEST_SHIFT, val);
+//    }
 
 
 
@@ -136,6 +170,9 @@ public class Comms {
 
         insertVal(HQ_RESOURCES_IDX_MAP[idx], HQ_ADAMANTIUM_MASK, HQ_ADAMANTIUM_SHIFT, value);
     }
+
+
+
 
     /// Island stuff
 
@@ -218,7 +255,7 @@ public class Comms {
 
 
     /// Region stuff
-
+    // not using these methods at the moment, switched to just saving individual wells
 //    public int getRegionX(MapLocation loc){
 //        int regionWidth = rc.getMapWidth() / NUM_REGIONS_HORIZONTAL;
 //        int numUppers = rc.getMapWidth() % NUM_REGIONS_HORIZONTAL;

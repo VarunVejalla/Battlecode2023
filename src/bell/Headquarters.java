@@ -20,10 +20,7 @@ public class Headquarters extends Robot {
     double EMASmoothing = 5;   // parameter used in EMA --> higher value means we give more priority to recent changes
     int lastAnchorBuiltTurn = 0;
 
-
-
     int timeToForgetCarrier = 50; // forget we've seen a carrier after this many rounds
-
     Spawner spawner;
 
     HashMap<Integer, Integer> seenCarriers = new HashMap<Integer, Integer>();         // keys are the ids of carriers we've seen, values are the last round we say them
@@ -34,14 +31,14 @@ public class Headquarters extends Robot {
         myLoc = rc.getLocation();
         computeIndex();
         spawner = new Spawner(rc, this);
-
         comms.writeOurHQLocation(myIndex, myLoc);
+
 //        Util.log("index " + myIndex);
 //        Util.log("loc from shared array: " + comms.readOurHQLocation(myIndex));
 
-//        if(rc.getID()%3 ==0) comms.writeOurHQAdamantiumRequest(myIndex, true);
-//        if(rc.getID()%3 ==1) comms.writeOurHQManaRequest(myIndex, true);
-//        if(rc.getID()%3 ==2) comms.writeOurHQElixirRequest(myIndex, true);
+//        if(rc.getID()%3 ==0) comms.writeRatio(myIndex, 2, 4, 8);
+//        if(rc.getID()%3 ==1) comms.writeRatio(myIndex, 4, 8, 4);
+//        if(rc.getID()%3 ==2) comms.writeRatio(myIndex, 20, 20,  30);
 
     }
 
@@ -105,7 +102,7 @@ public class Headquarters extends Robot {
             }
         }
 
-        // check the robots in your vision radius and add them to seen Carriers
+        // check the robots in your vision radius and add them to seenCarriers
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         for(RobotInfo info: nearbyRobots){
             if(info.type == RobotType.CARRIER){
@@ -134,14 +131,15 @@ public class Headquarters extends Robot {
             computeManaDeltaEMA();
         }
 
+
+        // testing read and write to resources
 //        if(rc.getRoundNum() > 150) {
 //            if (rc.getID() % 3 == 0) comms.writeOurHQAdamantiumRequest(myIndex, false);
 //            if (rc.getID() % 3 == 1) comms.writeOurHQManaRequest(myIndex, false);
 //            if (rc.getID() % 3 == 2) comms.writeOurHQElixirRequest(myIndex, false);
 //        }
-//        System.out.println(comms.readOurHQAdamantiumRequest(myIndex));
-//        System.out.println(comms.readOurHQManaRequest(myIndex));
-//        System.out.println(comms.readOurHQElixirRequest(myIndex));
+//        int[] ratios = comms.readRatio(myIndex);
+//        System.out.println(ratios[0] + " " + ratios[1] + " " + ratios[2]);
 
 
         rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
