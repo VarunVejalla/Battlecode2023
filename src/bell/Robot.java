@@ -32,6 +32,10 @@ class IslandInfo {
         this.controllingTeam = controllingTeam;
         this.commed = commed;
     }
+
+    public String toString() {
+        return "Island idx: " + idx + ", Island loc: " + loc + ", Island control: " + controllingTeam + ", Commed: " + commed;
+    }
 }
 
 public class Robot {
@@ -48,8 +52,11 @@ public class Robot {
     Comms comms;
     int numHQs;
     MapLocation[] HQlocs;
+    int turnCount = 0;
+    int[] prevCommsArray = new int[64];
+    int numIslands;
 
-    static final Random rng = new Random(6147);
+    static Random rng;
 
     /** Array containing all the possible movement directions. */
     static final Direction[] movementDirections = {
@@ -76,6 +83,7 @@ public class Robot {
     };
 
     public Robot(RobotController rc) throws GameActionException{
+        rng = new Random(rc.getID());
         this.rc = rc;
         myLoc = rc.getLocation();
         myTeam = rc.getTeam();
@@ -88,51 +96,65 @@ public class Robot {
         islands = new HashMap();
         comms = new Comms(rc, this);
         numHQs = 0;
+        numIslands = rc.getIslandCount();
         scanNearbySquares();
+        readComms();
         updateComms();
-
     }
 
     public void run() throws GameActionException{
         // fill in with code common to all robots
+        turnCount++;
         myLoc = rc.getLocation();
         Util.log("Currently at: " + myLoc.toString());
         myLocInfo = rc.senseMapInfo(myLoc);
-        if(numHQs == 0 && rc.getRoundNum() >= 2){
+        if(rc.getRoundNum() >= 2){
             readComms();
         }
         if(myType != RobotType.HEADQUARTERS){
             scanNearbySquares();
             updateComms();
         }
-        for(IslandInfo info : islands.values()){
-            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam);
+        updatedPrevCommsArray();
+//        for(IslandInfo info : islands.values()){
+//            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
+//        }
+    }
+
+    public void updatedPrevCommsArray() throws GameActionException {
+        for(int i = 0; i < prevCommsArray.length; i++){
+            prevCommsArray[i] = rc.readSharedArray(i);
         }
     }
 
     public void readComms() throws GameActionException {
-        readHQLocs();       // we probably don't need to do this every single time, since HQ locations don't change
+        readHQLocs(); // TODO: We only need to call this once
         readIslandLocs();
         readWellLocations();
     }
 
-
+    // NOTE: This takes a SHIT TON of bytecode and causes robots to go over their bytecode limit
     public void readWellLocations() throws GameActionException {
-        for(int regionNum = 0; regionNum < comms.NUM_REGIONS_TOTAL; regionNum++){
-            RegionData data = comms.getRegionData(regionNum);
-            // TODO: Process this and somehow add it to the Wells list
-        }
+//        for(int regionNum = 0; regionNum < comms.NUM_REGIONS_TOTAL; regionNum++){
+//            RegionData data = comms.getRegionData(regionNum);
+//            // TODO: Process this and somehow add it to the Wells list
+//        }
     }
 
     public void readIslandLocs() throws GameActionException {
-        for(int idx = 1; idx <= 35; idx++){
-            MapLocation islandLoc = comms.getIslandLocation(idx);
-            if(islandLoc != null){
-                Team controllingTeam = comms.getIslandControl(idx);
-                // TODO: Only update this if it changed AFTER we last saw the island.
-                IslandInfo info = new IslandInfo(islandLoc, idx, controllingTeam, true);
-                updateIslands(info);
+        for(int idx = 1; idx <= numIslands; idx++){
+            int commsIdx = comms.ISLAND_START_IDX + idx - 1;
+            if(rc.readSharedArray(commsIdx) == prevCommsArray[commsIdx]){
+                continue;
             }
+            MapLocation islandLoc = comms.getIslandLocation(idx);
+            if(islandLoc == null){
+                // Message is empty
+                continue;
+            }
+            Team controllingTeam = comms.getIslandControl(idx);
+            IslandInfo info = new IslandInfo(islandLoc, idx, controllingTeam, true);
+            updateIslands(info);
         }
     }
 
@@ -215,6 +237,7 @@ public class Robot {
         if(islands.containsKey(info.idx)){
             IslandInfo existingInfo = islands.get(info.idx);
             if(existingInfo.controllingTeam == info.controllingTeam){
+                existingInfo.commed |= info.commed;
                 return;
             }
         }
@@ -273,6 +296,7 @@ public class Robot {
             if(info.commed){
                 continue;
             }
+            Util.log("Updating comms w/ new island info: " + info.toString());
             comms.writeIslandLocation(info.idx, info.loc);
             comms.writeIslandControl(info.idx, info.controllingTeam);
             info.commed = true;
@@ -322,18 +346,9 @@ public class Robot {
         return closestIsland;
     }
 
-    public MapLocation getNearestUncontrolledIsland(){
-        return getNearestIsland(Team.NEUTRAL);
-    }
-
-    public MapLocation getNearestFriendlyIsland(){
-        return getNearestIsland(myTeam);
-    }
-
-    public MapLocation getNearestOpposingIsland(){
-        return getNearestIsland(opponent);
-    }
-
+    public MapLocation getNearestUncontrolledIsland(){ return getNearestIsland(Team.NEUTRAL); }
+    public MapLocation getNearestFriendlyIsland(){ return getNearestIsland(myTeam); }
+    public MapLocation getNearestOpposingIsland(){ return getNearestIsland(opponent); }
 
     public MapLocation getRandomScoutingLocation() {
         int x = rng.nextInt(rc.getMapWidth());

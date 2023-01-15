@@ -54,12 +54,12 @@ public class Util {
     }
 
     public static void log(String str){
-//        if(rc.getType() != RobotType.HEADQUARTERS){
-//            return;
-//        }
-        if(rc.getID() != 12586){
+        if(rc.getType() != RobotType.CARRIER){
             return;
         }
+//        if(rc.getID() != 12586){
+//            return;
+//        }
         System.out.println(str);
     }
 }
