@@ -4,6 +4,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
+import static bell.Constants.*;
 
 // some parts inspired by: https://github.com/mvpatel2000/Battlecode2022/blob/main/src/athena/CommsHandler.java
 
@@ -21,50 +22,50 @@ class RegionData {
 
 public class Comms {
 
-    final int FULL_MASK = 65535; // 11111111111111
-
-    final int HQ0_LOC_IDX = 0;
-    final int HQ1_LOC_IDX = 1;
-    final int HQ2_LOC_IDX = 2;
-    final int HQ3_LOC_IDX = 3;
-    final int[] HQ_LOC_IDX_MAP = {HQ0_LOC_IDX, HQ1_LOC_IDX, HQ2_LOC_IDX, HQ3_LOC_IDX};
-
-    final int HQ_X_MASK = 4032;
-    final int HQ_X_SHIFT = 6;
-    final int HQ_Y_MASK = 63;
-    final int HQ_Y_SHIFT = 0;
-
-    final int HQ0_RESOURCES_IDX = 4;
-    final int HQ1_RESOURCES_IDX = 5;
-    final int HQ2_RESOURCES_IDX = 6;
-    final int HQ3_RESOURCES_IDX = 7;
-    final int[] HQ_RESOURCES_IDX_MAP = {HQ0_RESOURCES_IDX, HQ1_RESOURCES_IDX, HQ2_RESOURCES_IDX, HQ3_RESOURCES_IDX};
-
-    final int HQ_MANA_MASK = 127; // 0000000001111111 (digits 0-6)
-    final int HQ_MANA_SHIFT = 0;
-    final int HQ_ADAMANTIUM_MASK = 16256; // 0011111110000000 (digits 7-13)
-    final int HQ_ADAMANTIUM_SHIFT = 7;
-
-    // TODO: We should really make a constants file
-
-    // Region consts
-
-    final int NUM_REGIONS_HORIZONTAL = 7;
-    final int NUM_REGIONS_VERTICAL = 7;
-    final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
-
-    final int REGION_START_IDX = 43;
-    final int REGIONS_PER_COMM = 5;
-    final int REGION_MASK_SIZE = 3;
-
-    // Island consts
-    final int ISLAND_START_IDX = 8;
-    final int ISLAND_X_MASK = 4032;
-    final int ISLAND_X_SHIFT = 6;
-    final int ISLAND_Y_MASK = 63;
-    final int ISLAND_Y_SHIFT = 0;
-    final int ISLAND_CONTROL_MASK = 12288;
-    final int ISLAND_CONTROL_SHIFT = 12;
+//    final int FULL_MASK = 65535; // 11111111111111
+//
+//    final int HQ0_LOC_IDX = 0;
+//    final int HQ1_LOC_IDX = 1;
+//    final int HQ2_LOC_IDX = 2;
+//    final int HQ3_LOC_IDX = 3;
+//    final int[] HQ_LOC_IDX_MAP = {HQ0_LOC_IDX, HQ1_LOC_IDX, HQ2_LOC_IDX, HQ3_LOC_IDX};
+//
+//    final int HQ_X_MASK = 4032;
+//    final int HQ_X_SHIFT = 6;
+//    final int HQ_Y_MASK = 63;
+//    final int HQ_Y_SHIFT = 0;
+//
+//    final int HQ0_RESOURCES_IDX = 4;
+//    final int HQ1_RESOURCES_IDX = 5;
+//    final int HQ2_RESOURCES_IDX = 6;
+//    final int HQ3_RESOURCES_IDX = 7;
+//    final int[] HQ_RESOURCES_IDX_MAP = {HQ0_RESOURCES_IDX, HQ1_RESOURCES_IDX, HQ2_RESOURCES_IDX, HQ3_RESOURCES_IDX};
+//
+//    final int HQ_MANA_MASK = 127; // 0000000001111111 (digits 0-6)
+//    final int HQ_MANA_SHIFT = 0;
+//    final int HQ_ADAMANTIUM_MASK = 16256; // 0011111110000000 (digits 7-13)
+//    final int HQ_ADAMANTIUM_SHIFT = 7;
+//
+//    // TODO: We should really make a constants file
+//
+//    // Region consts
+//
+//    final int NUM_REGIONS_HORIZONTAL = 7;
+//    final int NUM_REGIONS_VERTICAL = 7;
+//    final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
+//
+//    final int REGION_START_IDX = 43;
+//    final int REGIONS_PER_COMM = 5;
+//    final int REGION_MASK_SIZE = 3;
+//
+//    // Island consts
+//    final int ISLAND_START_IDX = 8;
+//    final int ISLAND_X_MASK = 4032;
+//    final int ISLAND_X_SHIFT = 6;
+//    final int ISLAND_Y_MASK = 63;
+//    final int ISLAND_Y_SHIFT = 0;
+//    final int ISLAND_CONTROL_MASK = 12288;
+//    final int ISLAND_CONTROL_SHIFT = 12;
 
     RobotController rc;
     Robot robot;

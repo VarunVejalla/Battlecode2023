@@ -5,6 +5,7 @@ import battlecode.common.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import static bell.Constants.*;
 
 class WellSquareInfo {
     MapLocation loc;
@@ -143,7 +144,7 @@ public class Robot {
 
     public void readIslandLocs() throws GameActionException {
         for(int idx = 1; idx <= numIslands; idx++){
-            int commsIdx = comms.ISLAND_START_IDX + idx - 1;
+            int commsIdx = ISLAND_START_IDX + idx - 1;
             if(rc.readSharedArray(commsIdx) == prevCommsArray[commsIdx]){
                 continue;
             }
