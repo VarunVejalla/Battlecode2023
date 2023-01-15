@@ -32,7 +32,6 @@ public class Launcher extends Robot {
         runAttack();
     }
 
-    // TODO: Add attacking anchors to this
     public int value(RobotInfo enemy) {
         if(enemy.type == RobotType.LAUNCHER) {
             return 0;
@@ -169,23 +168,17 @@ public class Launcher extends Robot {
             }
         }
 
-        // TODO: Maybe circle the well to defend it better instead of just standing in one spot?
-        //        nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
-        //        nav.circle(targetLoc, circleRadius);
-
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){   // we have arrived
             // rc.senseNearby
             if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD) { // don't want to crowd any mining areas
                 targetLoc = getRandomScoutingLocation();        // move on to a different location to scout
                 nav.goToBug(targetLoc, myType.actionRadiusSquared);
             }
-
             else {
                 nav.circle(targetLoc, 2, (int) (myType.actionRadiusSquared * 1.5));  // the constants here are kinda arbitrary
                 rc.setIndicatorString("defensively circling " + targetLoc);
             }
         }
-
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
             rc.setIndicatorString("defensively going to " + targetLoc);

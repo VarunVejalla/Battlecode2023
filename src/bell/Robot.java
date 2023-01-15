@@ -178,11 +178,11 @@ public class Robot {
         int distanceToHQ_0, distanceToHQ_1, distanceToHQ_2,distanceToHQ_3;
         if(HQlocs == null) readHQLocs();
 
-        if(HQlocs.length == 1){
+        if(numHQs == 1){
             return HQlocs[0];
         }
 
-        else if(HQlocs.length == 2){
+        else if(numHQs == 2){
             distanceToHQ_0 = HQlocs[0].distanceSquaredTo(myLoc);
             distanceToHQ_1 = HQlocs[1].distanceSquaredTo(myLoc);
 
@@ -190,7 +190,7 @@ public class Robot {
             return HQlocs[1];
         }
 
-        else if(HQlocs.length == 3){
+        else if(numHQs == 3){
             distanceToHQ_0 = HQlocs[0].distanceSquaredTo(myLoc);
             distanceToHQ_1 = HQlocs[1].distanceSquaredTo(myLoc);
             distanceToHQ_2 = HQlocs[2].distanceSquaredTo(myLoc);
@@ -221,6 +221,15 @@ public class Robot {
 
             return HQlocs[3];
         }
+    }
+
+    public int getFriendlyHQIndex(MapLocation friendlyHQ) throws GameActionException {
+        for(int i = 0; i < numHQs; i++){
+            if(friendlyHQ.equals(HQlocs[i])){
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void updateWells(WellSquareInfo info) {

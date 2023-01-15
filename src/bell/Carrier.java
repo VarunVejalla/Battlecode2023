@@ -85,13 +85,29 @@ public class Carrier extends Robot {
         }
     }
 
+    public ResourceType determineWhichResourceToGet() throws GameActionException {
+        // Find the nearest HQ
+        MapLocation HQImHelping = getNearestFriendlyHQ();
+        int HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+        int HQAdamantium = comms.readAdamantium(HQImHelpingIdx);
+        int HQMana = comms.readMana(HQImHelpingIdx);
+        // TODO: Instead of this, check what resource the HQ is requesting (like if it's tryna build more launchers then it'll set the mana flag to 1)
+        if(HQAdamantium < HQMana){
+            return ResourceType.ADAMANTIUM;
+        }
+        return ResourceType.MANA;
+    }
+
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
             targetLoc = null;
         }
+
+        ResourceType targetType = determineWhichResourceToGet();
+
         if(targetLoc == null){
-            MapLocation closestWell = getNearestWell();
+            MapLocation closestWell = getNearestWell(targetType);
             if(closestWell != null){
                 targetLoc = closestWell;
             }

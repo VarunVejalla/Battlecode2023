@@ -83,17 +83,15 @@ public class Headquarters extends Robot {
         Util.log("Num launchers spawned: " + numLaunchersSpawned);
 
         // If you're past some threshold, then make sure you always have an anchor available (or save up for one) for a carrier to grab.
-
-        // TODO: Come up with better criteria. One possibility: Keep track of your "adamantium (or mana) increase / turn" over the
-        //       last 50 turns and if its above a certain rate, then you have enough carriers and you can save up for an anchor.
         // I implemented exponential moving average, which i think could solve this effeciently. see the computeEMA method above
         // might need to mess around with smoothing (EMASmoothing) and windowSize (EMAWindowSize) to get values on the proper scale
 
         // Criteria for saving up
         boolean savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
-        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > 40;
+        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
         savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
         savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+//        System.out.println("Saving up? " + savingUp);
         if(savingUp){
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
@@ -125,7 +123,6 @@ public class Headquarters extends Robot {
             spawnDir = myLoc.directionTo(closestWell);
         }
 
-//        if(Util.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)){
         if(spawner.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)) {
             numCarriersSpawned++;
         }
@@ -133,9 +130,7 @@ public class Headquarters extends Robot {
 
     public void buildLaunchers() throws GameActionException {
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
-//        if(Util.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)){
-//            numLaunchersSpawned++;
-//        }
+
         if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
         }
