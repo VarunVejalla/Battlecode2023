@@ -57,6 +57,9 @@ public class Robot {
     int[] prevCommsArray = new int[64];
     int numIslands;
 
+    MapLocation[] regionCenters = new MapLocation[NUM_REGIONS_TOTAL];
+
+
     static Random rng;
 
     /** Array containing all the possible movement directions. */
@@ -117,9 +120,21 @@ public class Robot {
             updateComms();
         }
         updatedPrevCommsArray();
+        computeRegionCenters();
 //        for(IslandInfo info : islands.values()){
 //            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
 //        }
+    }
+
+    // compute all the region centers
+    public void computeRegionCenters() throws GameActionException{
+        for(int i=0; i< NUM_REGIONS_TOTAL; i++){
+            regionCenters[i] = comms.getRegionCenter(i);
+        }
+    }
+
+    public MapLocation getRegionCenter(int regionIndex) throws GameActionException{
+        return regionCenters[regionIndex];
     }
 
     public void updatedPrevCommsArray() throws GameActionException {
