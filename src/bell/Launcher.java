@@ -142,9 +142,6 @@ public class Launcher extends Robot {
         }
 
         // TODO: Maybe circle the island to defend it better instead of just standing in one spot?
-//        nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
-//        nav.circle(targetLoc, circleRadius);
-
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.moveRandom();
             rc.setIndicatorString("attackingly moving random" + targetLoc);
@@ -168,9 +165,13 @@ public class Launcher extends Robot {
             }
         }
 
-        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){   // we have arrived
+        int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
+        if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
             // rc.senseNearby
-            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD) { // don't want to crowd any mining areas
+
+
+            //TODO: make this strategy better. Determine whether or not we should try to defened depending on how much pressure we're under
+            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any mining areas so leave if you're not super close
                 targetLoc = getRandomScoutingLocation();        // move on to a different location to scout
                 nav.goToBug(targetLoc, myType.actionRadiusSquared);
             }
