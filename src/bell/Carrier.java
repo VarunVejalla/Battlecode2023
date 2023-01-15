@@ -85,16 +85,16 @@ public class Carrier extends Robot {
         }
     }
 
-    public ResourceType determineWhichResourceToGet() throws GameActionException {
+    public ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
         // Find the nearest HQ
-        MapLocation HQImHelping = getNearestFriendlyHQ();
-        int HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
         int HQAdamantium = comms.readAdamantium(HQImHelpingIdx);
         int HQMana = comms.readMana(HQImHelpingIdx);
         // TODO: Instead of this, check what resource the HQ is requesting (like if it's tryna build more launchers then it'll set the mana flag to 1)
         if(HQAdamantium < HQMana){
+            System.out.println("THERE'S LESS ADA, IM GONNA GET THAT");
             return ResourceType.ADAMANTIUM;
         }
+        System.out.println("THERE'S LESS MANA, IM GONNA GET THAT");
         return ResourceType.MANA;
     }
 
@@ -104,14 +104,14 @@ public class Carrier extends Robot {
             targetLoc = null;
         }
 
-        ResourceType targetType = determineWhichResourceToGet();
-
         if(targetLoc == null){
-            MapLocation closestWell = getNearestWell(targetType);
-            if(closestWell != null){
-                targetLoc = closestWell;
-            }
-            else{
+            MapLocation HQImHelping = getNearestFriendlyHQ();
+            int HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+            ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
+//            MapLocation closestWell = getNearestWell(targetType);
+            MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
+            targetLoc = closestWell;
+            if(closestWell == null){
                 targetLoc = getRandomScoutingLocation();
             }
         }

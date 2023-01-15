@@ -6,11 +6,7 @@ public final class Constants {
         // restrict instantiation
     }
 
-
-
     public static final int FULL_MASK = 65535; // 11111111111111
-
-
 
     //HQ Stuff
     public static final int HQ0_LOC_IDX = 0;
@@ -34,8 +30,6 @@ public final class Constants {
     public static final int HQ_MANA_REQUEST_SHIFT = 13;// // 0010 000000 000000
     public static final int HQ_ELIXIR_REQUEST_SHIFT = 14;// 0100 0000000 0000000
 
-
-
     public static final int HQ0_RESOURCES_IDX = 4;
     public static final int HQ1_RESOURCES_IDX = 5;
     public static final int HQ2_RESOURCES_IDX = 6;
@@ -47,21 +41,27 @@ public final class Constants {
     public static final int HQ_ADAMANTIUM_MASK = 16256; // 0011111110000000 (digits 7-13)
     public static final int HQ_ADAMANTIUM_SHIFT = 7;
 
-
-
-
-
     // Region consts
 
-    public static final int NUM_REGIONS_HORIZONTAL = 7;
-    public static final int NUM_REGIONS_VERTICAL = 7;
-    public static final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
+//    public static final int NUM_REGIONS_HORIZONTAL = 7;
+//    public static final int NUM_REGIONS_VERTICAL = 7;
+//    public static final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
+//
+//    public static final int REGION_START_IDX = 43;
+//    public static final int REGIONS_PER_COMM = 5;
+//    public static final int REGION_MASK_SIZE = 3;
 
-    public static final int REGION_START_IDX = 43;
-    public static final int REGIONS_PER_COMM = 5;
-    public static final int REGION_MASK_SIZE = 3;
+    // Wells consts
 
-
+    public static final int WELLS_START_IDX = 43;
+    public static final int NUM_WELLS_PER_HQ = 3;
+    public static final int ADAMANTIUM_WELL_OFFSET = 0;
+    public static final int MANA_WELL_OFFSET = 1;
+    public static final int ELIXIR_WELL_OFFSET = 2;
+    public static  final int WELLS_X_MASK = 4032;
+    public static final int WELLS_X_SHIFT = 6;
+    public static final int WELLS_Y_MASK = 63;
+    public static final int WELLS_Y_SHIFT = 0;
 
     // Island consts
     public static final int ISLAND_START_IDX = 8;

@@ -10,13 +10,14 @@ import static bell.Constants.*;
 class WellSquareInfo {
     MapLocation loc;
     ResourceType type;
-    boolean locationKnown;
+//    boolean locationKnown;
     boolean commed;
 
-    public WellSquareInfo(MapLocation loc, ResourceType type, boolean locationKnown, boolean commed){
+//    public WellSquareInfo(MapLocation loc, ResourceType type, boolean locationKnown, boolean commed){
+    public WellSquareInfo(MapLocation loc, ResourceType type, boolean commed){
         this.loc = loc;
         this.type = type;
-        this.locationKnown = locationKnown;
+//        this.locationKnown = locationKnown;
         this.commed = commed;
     }
 }
@@ -57,7 +58,7 @@ public class Robot {
     int[] prevCommsArray = new int[64];
     int numIslands;
 
-    MapLocation[] regionCenters = new MapLocation[NUM_REGIONS_TOTAL];
+//    MapLocation[] regionCenters = new MapLocation[NUM_REGIONS_TOTAL];
 
 
     static Random rng;
@@ -120,22 +121,22 @@ public class Robot {
             updateComms();
         }
         updatedPrevCommsArray();
-        computeRegionCenters();
+//        computeRegionCenters();
 //        for(IslandInfo info : islands.values()){
 //            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
 //        }
     }
 
     // compute all the region centers
-    public void computeRegionCenters() throws GameActionException{
-        for(int i=0; i< NUM_REGIONS_TOTAL; i++){
-            regionCenters[i] = comms.getRegionCenter(i);
-        }
-    }
+//    public void computeRegionCenters() throws GameActionException{
+//        for(int i=0; i< NUM_REGIONS_TOTAL; i++){
+//            regionCenters[i] = comms.getRegionCenter(i);
+//        }
+//    }
 
-    public MapLocation getRegionCenter(int regionIndex) throws GameActionException{
-        return regionCenters[regionIndex];
-    }
+//    public MapLocation getRegionCenter(int regionIndex) throws GameActionException{
+//        return regionCenters[regionIndex];
+//    }
 
     public void updatedPrevCommsArray() throws GameActionException {
         for(int i = 0; i < prevCommsArray.length; i++){
@@ -149,14 +150,22 @@ public class Robot {
         readWellLocations();
     }
 
-
-    // NOTE: This takes a SHIT TON of bytecode and causes robots to go over their bytecode limit
+    // TODO: We need to change this up a little bit once we start using elixir and the well's resource can change.
     public void readWellLocations() throws GameActionException {
-
-//        for(int regionNum = 0; regionNum < comms.NUM_REGIONS_TOTAL; regionNum++){
-//            RegionData data = comms.getRegionData(regionNum);
-//            // TODO: Process this and somehow add it to the Wells list
-//        }
+        for(int HQIdx = 0; HQIdx < numHQs; HQIdx++){
+            MapLocation adamantiumLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
+            if(adamantiumLoc != null){
+                updateWells(new WellSquareInfo(adamantiumLoc, ResourceType.ADAMANTIUM, true));
+            }
+            MapLocation manaLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
+            if(manaLoc != null){
+                updateWells(new WellSquareInfo(manaLoc, ResourceType.MANA, true));
+            }
+            MapLocation elixirLoc = comms.getClosestWell(HQIdx, ResourceType.ELIXIR);
+            if(elixirLoc != null){
+                updateWells(new WellSquareInfo(elixirLoc, ResourceType.ELIXIR, true));
+            }
+        }
     }
 
     public void readIslandLocs() throws GameActionException {
@@ -189,6 +198,28 @@ public class Robot {
         numHQs = locs.size();
         HQlocs = new MapLocation[0];
         HQlocs = locs.toArray(HQlocs);
+    }
+
+    public MapLocation getClosestWellToHQ(int HQIndex) throws GameActionException {
+        MapLocation well1 = comms.getClosestWell(HQIndex, ResourceType.ADAMANTIUM);
+        MapLocation well2 = comms.getClosestWell(HQIndex, ResourceType.MANA);
+        MapLocation well3 = comms.getClosestWell(HQIndex, ResourceType.ELIXIR);
+        MapLocation HQLoc = HQlocs[HQIndex];
+        MapLocation closest = null;
+        int closestDist = Integer.MAX_VALUE;
+        if(well1 != null && HQLoc.distanceSquaredTo(well1) < closestDist){
+            closest = well1;
+            closestDist = HQLoc.distanceSquaredTo(well1);
+        }
+        if(well2 != null && HQLoc.distanceSquaredTo(well2) < closestDist){
+            closest = well2;
+            closestDist = HQLoc.distanceSquaredTo(well2);
+        }
+        if(well3 != null && HQLoc.distanceSquaredTo(well3) < closestDist){
+            closest = well3;
+            closestDist = HQLoc.distanceSquaredTo(well3);
+        }
+        return closest;
     }
 
     // tried to unroll this to save bytecode
@@ -254,6 +285,7 @@ public class Robot {
         if(wells.containsKey(info.loc)){
             WellSquareInfo existingInfo = wells.get(info.loc);
             if(existingInfo.type == info.type){
+                existingInfo.commed |= info.commed;
                 return;
             }
         }
@@ -276,7 +308,8 @@ public class Robot {
         WellInfo[] nearbyWells = rc.senseNearbyWells();
         for(WellInfo well : nearbyWells){
             MapLocation wellLocation = well.getMapLocation();
-            WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(), true,false);
+//            WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(), true,false);
+            WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(),false);
             updateWells(info);
         }
 
@@ -299,22 +332,36 @@ public class Robot {
         }
 
         // Comm any new wells updates to shared array
+//        for(WellSquareInfo info : wells.values()){
+//            if(info.commed){
+//                continue;
+//            }
+//            int regionNum = comms.getRegionNum(info.loc);
+//            RegionData data = comms.getRegionData(regionNum);
+//            if(info.type == ResourceType.ADAMANTIUM){
+//                data.adamantiumWell = true;
+//            }
+//            else if(info.type == ResourceType.MANA){
+//                data.manaWell = true;
+//            }
+//            else{
+//                data.elixirWell = true;
+//            }
+//            comms.saveRegionData(regionNum, data);
+//            info.commed = true;
+//        }
+
         for(WellSquareInfo info : wells.values()){
             if(info.commed){
                 continue;
             }
-            int regionNum = comms.getRegionNum(info.loc);
-            RegionData data = comms.getRegionData(regionNum);
-            if(info.type == ResourceType.ADAMANTIUM){
-                data.adamantiumWell = true;
+            for(int HQIdx = 0; HQIdx < numHQs; HQIdx++){
+                MapLocation HQLoc = HQlocs[HQIdx];
+                MapLocation closestWellToThatHQ = comms.getClosestWell(HQIdx, info.type);
+                if(closestWellToThatHQ == null || HQLoc.distanceSquaredTo(info.loc) < HQLoc.distanceSquaredTo(closestWellToThatHQ)){
+                    comms.setClosestWell(HQIdx, info.type, info.loc);
+                }
             }
-            else if(info.type == ResourceType.MANA){
-                data.manaWell = true;
-            }
-            else{
-                data.elixirWell = true;
-            }
-            comms.saveRegionData(regionNum, data);
             info.commed = true;
         }
 
@@ -344,7 +391,7 @@ public class Robot {
             if(dist < closestDist){
                 closestDist = dist;
                 closestWell = keyLoc;
-            }
+             }
         }
         return closestWell;
     }

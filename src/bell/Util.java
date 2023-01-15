@@ -14,7 +14,6 @@ public class Util {
 
 
     public static boolean tryMine(ResourceType type, int numResources) throws GameActionException {
-        Util.log("Trying to mine " + numResources + " of type " + type.toString());
         MapLocation me = rc.getLocation();
         for (Direction dir : Robot.allDirections) {
             MapLocation wellLocation = me.add(dir);
@@ -31,7 +30,6 @@ public class Util {
                     rate = info.getRate();
                 }
                 // See if you can collect the requested amount.
-                Util.log("Collecting at a rate of: " + rate);
                 if (rc.canCollectResource(wellLocation, rate)) {
                     rc.collectResource(wellLocation, rate);
                     return true;

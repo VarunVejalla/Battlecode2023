@@ -8,19 +8,19 @@ enum NavigationMode{
 
 public class Navigation {
 
-
     RobotController rc;
     Robot robot;
 
     NavigationMode mode = NavigationMode.FUZZYNAV;
 
     // Bugnav variables
-    boolean runningBugNav = false;
     int closestDistToTarget = Integer.MAX_VALUE;
     MapLocation lastWallFollowed = null;
     Direction lastDirectionMoved = null;
     int roundsSinceClosestDistReset = 0;
     MapLocation prevTarget = null;
+
+    final int ROUNDS_TO_RESET_BUG_CLOSEST = 15;
 
     public Navigation(RobotController rc, Robot robot){
         this.rc = rc;
@@ -133,7 +133,7 @@ public class Navigation {
     public Direction bugNav(MapLocation target) throws GameActionException {
         Util.log("Running bugnav");
         // Every 20 turns reset the closest distance to target
-        if(roundsSinceClosestDistReset >= 20){
+        if(roundsSinceClosestDistReset >= ROUNDS_TO_RESET_BUG_CLOSEST){
             closestDistToTarget = Integer.MAX_VALUE;
             roundsSinceClosestDistReset = 0;
         }

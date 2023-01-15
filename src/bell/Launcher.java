@@ -207,7 +207,13 @@ public class Launcher extends Robot {
             targetLoc = null;
         }
         if(targetLoc == null){
-            targetLoc = getNearestWell();
+            int HQIdx = rng.nextInt(numHQs);
+            if(rng.nextBoolean()){
+                targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
+            }
+            else{
+                targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
+            }
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
             }
