@@ -2,7 +2,7 @@ package cicero;
 
 import battlecode.common.*;
 
-import static bell.Constants.*;
+import static cicero.Constants.*;
 
 // some parts inspired by: https://github.com/mvpatel2000/Battlecode2022/blob/main/src/athena/CommsHandler.java
 

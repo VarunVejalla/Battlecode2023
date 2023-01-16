@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static bell.Constants.ISLAND_START_IDX;
+import static cicero.Constants.ISLAND_START_IDX;
 
 class WellSquareInfo {
     MapLocation loc;
