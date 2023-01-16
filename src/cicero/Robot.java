@@ -399,6 +399,24 @@ public class Robot {
         return closestIsland;
     }
 
+    // Find the nearest island with specified controlling team
+    public int getNumIslandsControlledByTeam(Team controllingTeam){
+        int count = 0;
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null){
+                continue;
+            }
+            Util.log("Island: " + info.loc);
+            if(info.controllingTeam != controllingTeam){
+                continue;
+            }
+            count++;
+        }
+
+        return count;
+    }
+
     public MapLocation getNearestUncontrolledIsland(){ return getNearestIsland(Team.NEUTRAL); }
     public MapLocation getNearestFriendlyIsland(){ return getNearestIsland(myTeam); }
     public MapLocation getNearestOpposingIsland(){ return getNearestIsland(opponent); }

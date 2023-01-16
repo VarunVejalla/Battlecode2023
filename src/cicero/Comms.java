@@ -194,6 +194,9 @@ public class Comms {
         }
         int xVal = extractVal(commsIdx, WELLS_X_MASK, WELLS_X_SHIFT);
         int yVal = extractVal(commsIdx, WELLS_Y_MASK, WELLS_Y_SHIFT) - 1;
+        if(yVal == -1){
+            return null;
+        }
         return new MapLocation(xVal, yVal);
     }
 

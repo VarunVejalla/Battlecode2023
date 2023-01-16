@@ -116,9 +116,12 @@ public class Headquarters extends Robot {
 
     // criteria on whether hq should start saving up for an anchor
     //TODO: improve this criteria?
-    public void shouldISaveUp(){
-        savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
-        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
+    public void shouldISaveUp() {
+//        savingUp = false;
+        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
+        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
+        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
+        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > howOftenToSpawnAnchors;
         savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
         savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
     }

@@ -29,7 +29,6 @@ public class Carrier extends Robot {
         boolean dangerNearby = runAway();
         if(!dangerNearby) {
             if (rc.getAnchor() != null) {
-//            Util.log("Moving towards nearest uncontrolled island");
                 moveTowardsNearestUncontrolledIsland();
                 tryPlacing();
             }
@@ -75,16 +74,20 @@ public class Carrier extends Robot {
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){
                 targetLoc = closestUncontrolledIsland;
+                Util.log("Moving towards nearest uncontrolled island");
             }
             else{
                 targetLoc = getRandomScoutingLocation();
+                Util.log("Scouting random location");
             }
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            rc.setIndicatorString("Uncontrolled island. Bugging to " + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
+            rc.setIndicatorString("Uncontrolled island. Fuzzying to " + targetLoc);
         }
     }
 
@@ -134,15 +137,17 @@ public class Carrier extends Robot {
 //            MapLocation closestWell = getNearestWell(targetType);
             MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
             targetLoc = closestWell;
-            if(closestWell == null){
+            if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
             }
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            rc.setIndicatorString("Nearby well. Bugging to " + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
+            rc.setIndicatorString("Nearby well. Fuzzying to " + targetLoc);
         }
     }
 
@@ -157,9 +162,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            rc.setIndicatorString("HQ. Bugging to " + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
+            rc.setIndicatorString("HQ. Fuzzying to " + targetLoc);
         }
     }
 
