@@ -152,7 +152,11 @@ public class Launcher extends Robot {
     }
 
     public boolean haveUncommedIsland() {
-        for(IslandInfo info : islands.values()){
+        for(int i = 0; i < numIslands; i++){
+            IslandInfo info = islands[i];
+            if(info == null){
+                continue;
+            }
             if(!info.commed){
                 return true;
             }

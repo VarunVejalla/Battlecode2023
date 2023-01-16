@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Headquarters extends Robot {
 
@@ -24,11 +26,11 @@ public class Headquarters extends Robot {
     int initialCarrierThreshold = 10; //how many carriers an hq should see in its vision radius before transitioning over to ratio strategy
 
     boolean savingUp = false;
-
     Spawner spawner;
-
     HashMap<Integer, Integer> seenCarriers = new HashMap<Integer, Integer>();         // keys are the ids of carriers we've seen, values are the last round we say them
 
+//    int[] prevCommsArray = new int[63];
+//    Queue<Integer> commsChanges = new LinkedList<>();
 
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
@@ -142,6 +144,10 @@ public class Headquarters extends Robot {
 
     public void run() throws GameActionException {
         super.run();
+        if(myIndex == 0){
+//            updateCommsChangesQueue();
+        }
+
         if(rc.getRoundNum() > 2){
             computeAdamantiumDeltaEMA();
             computeManaDeltaEMA();
@@ -193,6 +199,22 @@ public class Headquarters extends Robot {
         prevAdamantium = rc.getResourceAmount(ResourceType.ADAMANTIUM);
         prevMana = rc.getResourceAmount(ResourceType.MANA);
     }
+
+//    public void updateCommsChangesQueue() throws GameActionException {
+//        int newVal;
+//        for(int i = 0; i < prevCommsArray.length; i++){
+//            newVal = rc.readSharedArray(i);
+//            if(newVal != prevCommsArray[i]){
+//                commsChanges.add(i);
+//            }
+//            prevCommsArray[i] = newVal;
+//        }
+//        if(!commsChanges.isEmpty()){
+//            int changedIdx = commsChanges.poll();
+//            rc.writeSharedArray(63, changedIdx);
+//        }
+//
+//    }
 
     public void buildCarriers() throws GameActionException {
         MapLocation closestWell = getNearestWell();

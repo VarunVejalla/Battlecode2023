@@ -35,6 +35,8 @@ public final class Constants {
 
     public static final int WELLS_START_IDX = 43;
     public static final int NUM_WELLS_PER_HQ = 3;
+    // NOTE: IF THESE 3 VALUES EVER CHANGE, THEN MAKE SURE TO CONSIDER THAT CHANGE Robot.java readWellLocations
+    // Ask srikar if you have any questions abt that
     public static final int ADAMANTIUM_WELL_OFFSET = 0;
     public static final int MANA_WELL_OFFSET = 1;
     public static final int ELIXIR_WELL_OFFSET = 2;

@@ -48,13 +48,14 @@ public class Robot {
     MapLocation myLoc;
     MapInfo myLocInfo;
     HashMap<MapLocation, WellSquareInfo> wells;
-    HashMap<Integer, IslandInfo> islands;
+//    HashMap<Integer, IslandInfo> islands;
+    int numIslands;
+    IslandInfo[] islands;
     Comms comms;
     int numHQs;
     MapLocation[] HQlocs;
     int turnCount = 0;
     int[] prevCommsArray = new int[64];
-    int numIslands;
 
     static Random rng;
 
@@ -93,10 +94,11 @@ public class Robot {
         Util.rc = rc;
         Util.robot = this;
         wells = new HashMap();
-        islands = new HashMap();
+//        islands = new HashMap();
+        numIslands = rc.getIslandCount();
+        islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);
         numHQs = 0;
-        numIslands = rc.getIslandCount();
         if(myType == RobotType.HEADQUARTERS){
             scanNearbySquares();
             readComms();
@@ -117,24 +119,16 @@ public class Robot {
             readHQLocs();
         }
         if(rc.getRoundNum() >= 2){
-            System.out.println("Bytecode before reading comms: " + Clock.getBytecodesLeft());
             readComms();
-            System.out.println("Bytecode after reading comms: " + Clock.getBytecodesLeft());
         }
         if(myType != RobotType.HEADQUARTERS){
             scanNearbySquares();
             updateComms();
         }
-        updatedPrevCommsArray();
+        updatePrevCommsArray();
 //        for(IslandInfo info : islands.values()){
 //            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
 //        }
-    }
-
-    public void updatedPrevCommsArray() throws GameActionException { // 1000 bytecode
-        for(int i = 0; i < prevCommsArray.length; i++){
-            prevCommsArray[i] = rc.readSharedArray(i);
-        }
     }
 
     public void readComms() throws GameActionException { // 2500 bytecode
@@ -143,19 +137,28 @@ public class Robot {
     }
 
     // TODO: We need to change this up a little bit once we start using elixir and the well's resource can change.
-    public void readWellLocations() throws GameActionException {
+    public void readWellLocations() throws GameActionException { // 1500-2000 bytecode
         for(int HQIdx = 0; HQIdx < numHQs; HQIdx++){
-            MapLocation adamantiumLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
-            if(adamantiumLoc != null){
-                updateWells(new WellSquareInfo(adamantiumLoc, ResourceType.ADAMANTIUM, true));
+            int wellIndex = comms.getClosestWellCommsIndex(HQIdx, ResourceType.ADAMANTIUM); // Ada well index
+            if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]){
+                MapLocation adamantiumLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
+                if(adamantiumLoc != null){
+                    updateWells(new WellSquareInfo(adamantiumLoc, ResourceType.ADAMANTIUM, true));
+                }
             }
-            MapLocation manaLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-            if(manaLoc != null){
-                updateWells(new WellSquareInfo(manaLoc, ResourceType.MANA, true));
+            wellIndex++; // Mana well index
+            if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]) {
+                MapLocation manaLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
+                if (manaLoc != null) {
+                    updateWells(new WellSquareInfo(manaLoc, ResourceType.MANA, true));
+                }
             }
-            MapLocation elixirLoc = comms.getClosestWell(HQIdx, ResourceType.ELIXIR);
-            if(elixirLoc != null){
-                updateWells(new WellSquareInfo(elixirLoc, ResourceType.ELIXIR, true));
+            wellIndex++; // Elixir well index
+            if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]) {
+                MapLocation elixirLoc = comms.getClosestWell(HQIdx, ResourceType.ELIXIR);
+                if (elixirLoc != null) {
+                    updateWells(new WellSquareInfo(elixirLoc, ResourceType.ELIXIR, true));
+                }
             }
         }
     }
@@ -168,12 +171,11 @@ public class Robot {
             }
             MapLocation islandLoc = comms.getIslandLocation(idx);
             if(islandLoc == null){
-                // Message is empty
                 continue;
             }
             Team controllingTeam = comms.getIslandControl(idx);
             IslandInfo info = new IslandInfo(islandLoc, idx, controllingTeam, true);
-            updateIslands(info);
+            updateIslands(info); // 150 bytecode
         }
     }
 
@@ -285,14 +287,14 @@ public class Robot {
     }
 
     public void updateIslands(IslandInfo info) {
-        if(islands.containsKey(info.idx)){
-            IslandInfo existingInfo = islands.get(info.idx);
+        if(islands[info.idx] != null){
+            IslandInfo existingInfo = islands[info.idx];
             if(existingInfo.controllingTeam == info.controllingTeam){
                 existingInfo.commed |= info.commed;
                 return;
             }
         }
-        islands.put(info.idx, info);
+        islands[info.idx] = info;
     }
 
     public void scanNearbySquares() throws GameActionException { // 1000 bytecode
@@ -300,7 +302,6 @@ public class Robot {
         WellInfo[] nearbyWells = rc.senseNearbyWells();
         for(WellInfo well : nearbyWells){
             MapLocation wellLocation = well.getMapLocation();
-//            WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(), true,false);
             WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(),false);
             updateWells(info);
         }
@@ -339,8 +340,9 @@ public class Robot {
         }
 
         // Comm any new island updates to shared array
-        for(IslandInfo info : islands.values()){
-            if(info.commed){
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null || info.commed){
                 continue;
             }
             Util.log("Updating comms w/ new island info: " + info.toString());
@@ -378,7 +380,11 @@ public class Robot {
     private MapLocation getNearestIsland(Team controllingTeam){
         int closestDist = Integer.MAX_VALUE;
         MapLocation closestIsland = null;
-        for(IslandInfo info : islands.values()){
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null){
+                continue;
+            }
             Util.log("Island: " + info.loc);
             if(info.controllingTeam != controllingTeam){
                 continue;
@@ -404,6 +410,71 @@ public class Robot {
     }
 
 
-
+    public void updatePrevCommsArray() throws GameActionException { // 1000 bytecode
+        prevCommsArray[0] = rc.readSharedArray(0);
+        prevCommsArray[1] = rc.readSharedArray(1);
+        prevCommsArray[2] = rc.readSharedArray(2);
+        prevCommsArray[3] = rc.readSharedArray(3);
+        prevCommsArray[4] = rc.readSharedArray(4);
+        prevCommsArray[5] = rc.readSharedArray(5);
+        prevCommsArray[6] = rc.readSharedArray(6);
+        prevCommsArray[7] = rc.readSharedArray(7);
+        prevCommsArray[8] = rc.readSharedArray(8);
+        prevCommsArray[9] = rc.readSharedArray(9);
+        prevCommsArray[10] = rc.readSharedArray(10);
+        prevCommsArray[11] = rc.readSharedArray(11);
+        prevCommsArray[12] = rc.readSharedArray(12);
+        prevCommsArray[13] = rc.readSharedArray(13);
+        prevCommsArray[14] = rc.readSharedArray(14);
+        prevCommsArray[15] = rc.readSharedArray(15);
+        prevCommsArray[16] = rc.readSharedArray(16);
+        prevCommsArray[17] = rc.readSharedArray(17);
+        prevCommsArray[18] = rc.readSharedArray(18);
+        prevCommsArray[19] = rc.readSharedArray(19);
+        prevCommsArray[20] = rc.readSharedArray(20);
+        prevCommsArray[21] = rc.readSharedArray(21);
+        prevCommsArray[22] = rc.readSharedArray(22);
+        prevCommsArray[23] = rc.readSharedArray(23);
+        prevCommsArray[24] = rc.readSharedArray(24);
+        prevCommsArray[25] = rc.readSharedArray(25);
+        prevCommsArray[26] = rc.readSharedArray(26);
+        prevCommsArray[27] = rc.readSharedArray(27);
+        prevCommsArray[28] = rc.readSharedArray(28);
+        prevCommsArray[29] = rc.readSharedArray(29);
+        prevCommsArray[30] = rc.readSharedArray(30);
+        prevCommsArray[31] = rc.readSharedArray(31);
+        prevCommsArray[32] = rc.readSharedArray(32);
+        prevCommsArray[33] = rc.readSharedArray(33);
+        prevCommsArray[34] = rc.readSharedArray(34);
+        prevCommsArray[35] = rc.readSharedArray(35);
+        prevCommsArray[36] = rc.readSharedArray(36);
+        prevCommsArray[37] = rc.readSharedArray(37);
+        prevCommsArray[38] = rc.readSharedArray(38);
+        prevCommsArray[39] = rc.readSharedArray(39);
+        prevCommsArray[40] = rc.readSharedArray(40);
+        prevCommsArray[41] = rc.readSharedArray(41);
+        prevCommsArray[42] = rc.readSharedArray(42);
+        prevCommsArray[43] = rc.readSharedArray(43);
+        prevCommsArray[44] = rc.readSharedArray(44);
+        prevCommsArray[45] = rc.readSharedArray(45);
+        prevCommsArray[46] = rc.readSharedArray(46);
+        prevCommsArray[47] = rc.readSharedArray(47);
+        prevCommsArray[48] = rc.readSharedArray(48);
+        prevCommsArray[49] = rc.readSharedArray(49);
+        prevCommsArray[50] = rc.readSharedArray(50);
+        prevCommsArray[51] = rc.readSharedArray(51);
+        prevCommsArray[52] = rc.readSharedArray(52);
+        prevCommsArray[53] = rc.readSharedArray(53);
+        prevCommsArray[54] = rc.readSharedArray(54);
+        prevCommsArray[55] = rc.readSharedArray(55);
+        prevCommsArray[56] = rc.readSharedArray(56);
+        prevCommsArray[57] = rc.readSharedArray(57);
+        prevCommsArray[58] = rc.readSharedArray(58);
+        prevCommsArray[59] = rc.readSharedArray(59);
+        prevCommsArray[60] = rc.readSharedArray(60);
+        prevCommsArray[61] = rc.readSharedArray(61);
+        prevCommsArray[62] = rc.readSharedArray(62);
+        prevCommsArray[63] = rc.readSharedArray(63);
+    }
 
 }

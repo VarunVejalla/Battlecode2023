@@ -167,7 +167,7 @@ public class Comms {
 
     /// Wells stuff
 
-    private int getClosestWellCommsIndex(int HQIndex, ResourceType resource){
+    public int getClosestWellCommsIndex(int HQIndex, ResourceType resource){
         switch(resource){
             case ADAMANTIUM:
                 return WELLS_START_IDX + HQIndex * NUM_WELLS_PER_HQ + ADAMANTIUM_WELL_OFFSET;
