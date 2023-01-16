@@ -80,10 +80,10 @@ public class Headquarters extends Robot {
     }
 
 
-    // count the number of miners that we've seen in the past 50 rounds
-    public void updateSeenCarriers(){
-        Integer roundNum = rc.getRoundNum();
-        Integer forgetCarriersBeforeThisRound = roundNum - timeToForgetCarrier;
+    // TODO: Make this use less bytecode
+    public void forgetOldCarriers() { // 7k bytecode!
+        int roundNum = rc.getRoundNum();
+        int forgetCarriersBeforeThisRound = roundNum - timeToForgetCarrier;
 
         // forget carriers that we haven't seen in the past "timeToForgetCarrier" rounds
         for(Iterator<HashMap.Entry<Integer, Integer>> it = seenCarriers.entrySet().iterator(); it.hasNext();){
@@ -92,14 +92,26 @@ public class Headquarters extends Robot {
                 it.remove();
             }
         }
-        // check the robots in your vision radius and add them to seenCarriers
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+    }
+
+    public void addNewCarriers() throws GameActionException { // 7k bytecode!
+        int roundNum = rc.getRoundNum();
+        // check the robots that may have deposited resources to you and add them to seenCarriers
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.CARRIER.visionRadiusSquared, myTeam);
         for(RobotInfo info: nearbyRobots){
             if(info.type == RobotType.CARRIER){
-                Integer id = info.getID();
+                int id = info.getID();
                 seenCarriers.put(id, roundNum);
             }
         }
+    }
+
+    // count the number of miners that we've seen in the past 50 rounds
+    // This method will run fully every other round cuz it takes so much goddamn bytecode
+    public void updateSeenCarriers() throws GameActionException {
+        forgetOldCarriers();
+        addNewCarriers();
+//        System.out.println("# of carriers: " + seenCarriers.size());
     }
 
     // criteria on whether hq should start saving up for an anchor
