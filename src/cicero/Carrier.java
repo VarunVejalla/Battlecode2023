@@ -26,22 +26,25 @@ public class Carrier extends Robot {
         tryTakingAnchor();
 //        Util.log("Anchor: " + rc.getAnchor());
         // If you're holding an anchor, make your top priority to deposit it.
-        if(rc.getAnchor() != null){
+        boolean dangerNearby = runAway();
+        if(!dangerNearby) {
+            if (rc.getAnchor() != null) {
 //            Util.log("Moving towards nearest uncontrolled island");
-            moveTowardsNearestUncontrolledIsland();
-            tryPlacing();
-        }
-        // Otherwise, go mine
-        else if(mining){
+                moveTowardsNearestUncontrolledIsland();
+                tryPlacing();
+            }
+            // Otherwise, go mine
+            else if (mining) {
 //            Util.log("Mining");
-            moveTowardsNearbyWell();
-            tryMining();
-        }
-        // If you're at full capacity, go deposit
-        else{
+                moveTowardsNearbyWell();
+                tryMining();
+            }
+            // If you're at full capacity, go deposit
+            else {
 //            Util.log("Moving towards HQ");
-            moveTowardsHQ();
-            tryTransferring();
+                moveTowardsHQ();
+                tryTransferring();
+            }
         }
     }
 
@@ -158,6 +161,39 @@ public class Carrier extends Robot {
         else{
             nav.goToFuzzy(targetLoc, 0);
         }
+    }
+
+    // Returns true if there's danger nearby, false if everything's safe
+    public boolean runAway() throws GameActionException {
+        // If you're in a fight w/ an enemy, run launcher micro
+        RobotInfo[] enemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+        RobotInfo closestDanger = null;
+        for (RobotInfo info : enemies) {
+//            if (info.type == RobotType.LAUNCHER || info.type == RobotType.CARRIER) {
+            // TODO: Should they also run away from carriers?
+            if (info.type == RobotType.LAUNCHER) {
+                if (closestDanger == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestDanger.location)) {
+                    closestDanger = info;
+                }
+            }
+        }
+        if(closestDanger != null) {
+            Util.log("Danger nearby! Gonna try running away");
+            // Try to attack the enemy
+            if(rc.isActionReady()){
+                if(rc.canAttack(closestDanger.location)){
+                    rc.attack(closestDanger.location);
+                }
+            }
+            // Get the hell outta there.
+            if (rc.isMovementReady()) {
+                Direction enemyDir = myLoc.directionTo(closestDanger.location);
+                MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
+                nav.goToFuzzy(farAway, 0);
+                rc.setIndicatorString("Danger! Fuzzying away from " + closestDanger.location);
+            }
+        }
+        return closestDanger != null;
     }
 
     public void tryPlacing() throws GameActionException {
