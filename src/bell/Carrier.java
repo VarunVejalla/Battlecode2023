@@ -91,17 +91,31 @@ public class Carrier extends Robot {
         int HQMana = comms.readMana(HQImHelpingIdx);
 
         int[] ratio = comms.readRatio(HQImHelpingIdx);
-        int num = rng.nextInt(16);
-        if(num <= ratio[0]) return ResourceType.ADAMANTIUM;
-        else if(num <= ratio[1]) return ResourceType.MANA;
-        else return ResourceType.ELIXIR;
+        int num = rng.nextInt(16);  // note that 16 is an excluusive bond
 
-//        if(HQAdamantium < HQMana){
-//            System.out.println("THERE'S LESS ADA, IM GONNA GET THAT");
-//            return ResourceType.ADAMANTIUM;
-//        }
-//        System.out.println("THERE'S LESS MANA, IM GONNA GET THAT");
-//        return ResourceType.MANA;
+        // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
+        // cumuulative sums become [10, 12, 15]
+
+        // we first check if the random number is less than 10, if so we return adamantium
+        // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
+        // otherwise, return elixir
+
+        if(num <= ratio[0]) {
+            Util.log("Gonna go find Adamantium");
+            return ResourceType.ADAMANTIUM;
+        }
+
+        // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
+        ratio[1] += ratio[0];   //get cumulative sum up till now
+        if(num <= ratio[1]) {
+            Util.log("Gonna go find Mana");
+            return ResourceType.MANA;
+        }
+
+        else{
+            Util.log("Gonna go find Elixir");
+            return ResourceType.ELIXIR;}
+
     }
 
     public void moveTowardsNearbyWell() throws GameActionException {

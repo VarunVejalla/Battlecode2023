@@ -21,7 +21,7 @@ public class Headquarters extends Robot {
     int lastAnchorBuiltTurn = 0;
 
     int timeToForgetCarrier = 50; // forget we've seen a carrier after this many rounds
-    int initialCarrierThreshold = 15; //how many carriers an hq should see in its vision radius before transitioning over to ratio strategy
+    int initialCarrierThreshold = 10; //how many carriers an hq should see in its vision radius before transitioning over to ratio strategy
 
     boolean savingUp = false;
 
@@ -132,7 +132,10 @@ public class Headquarters extends Robot {
             comms.writeRatio(myIndex, 4, 8, 0);
             return;
         }
-        comms.writeRatio(myIndex,8,4,0);        // we need to make more carriers, so prioritize adamantium
+        else {
+            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
+            return;
+        }
     }
 
 
@@ -153,9 +156,10 @@ public class Headquarters extends Robot {
         shouldISaveUp();
         setResourceRatios();
         int[] ratio = comms.readRatio(myIndex);
-        rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2]);
 
         if(savingUp){
+            rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "saving up for anchor");
+
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
                 rc.buildAnchor(Anchor.STANDARD);
@@ -170,8 +174,16 @@ public class Headquarters extends Robot {
         }
 
         else {
-            if(seenCarriers.size() < initialCarrierThreshold) buildCarriers();
-            buildLaunchers();
+            if(seenCarriers.size() < initialCarrierThreshold) {
+                rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "trying to build carriers");
+                buildCarriers();
+                buildLaunchers();
+            }
+            else {
+                rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "trying to build launchers");
+                buildLaunchers();
+                buildCarriers();
+            }
         }
 
         // We only want to consider the rate at which we're gaining resources we don't wanna consider spending, so we wanna set
