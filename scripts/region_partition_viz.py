@@ -1,5 +1,5 @@
-width = 20
-height = 20
+width = 60
+height = 60
 
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -106,8 +106,6 @@ for y_delta in y_incr:
     y_index += 1
 
 
-
-
 x_major_tick = 0
 x_ticks = []
 for x_tick in x_incr:
@@ -125,19 +123,27 @@ ax = plt.gca()
 ax.set_xticks(np.arange(width)-0.5, labels=[str(i) for i in range(width)])
 ax.set_yticks(np.arange(height)-0.5, labels=[str(i) for i in range(height)])
 
+
 plt.xlim(0,width)
 plt.ylim(0,height)
 
 ax.spines[:].set_visible(False)
 
-plt.imshow(grid, interpolation='none', aspect='auto', origin='lower')
+# ax.set_xticks(np.arange(width)-.5, minor=True)
+# ax.set_yticks(np.arange(height)-.5, minor=True)
+
+ax.grid(which='major', color='w', linestyle='-', linewidth=0.5)
+ax.tick_params(which="major", bottom=False, left=False)
+
+
+im = ax.imshow(grid, interpolation='none', aspect='auto', origin='lower')
+
+
+# setting labels
+data = im.get_array()
+for i in range(data.shape[0]):
+    for j in range(data.shape[1]):
+        text = im.axes.text(i, j, str((i, j)),fontsize=3, color = 'white')
+
+
 plt.show()
-
-
-# # ax.grid(which='major', color='w', linestyle='-', linewidth=0.5)
-
-
-# plt.imshow(grid, interpolation='none', aspect='auto', origin='upper', vmin=0, vmax=49)
-# im = ax.imshow(grid)
-
-# plt.show()

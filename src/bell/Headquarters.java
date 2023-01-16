@@ -101,6 +101,7 @@ public class Headquarters extends Robot {
     }
 
     // criteria on whether hq should start saving up for an anchor
+    //TODO: improve this criteria?
     public void shouldISaveUp(){
         savingUp = adamantiumDeltaEMA > 4 && manaDeltaEMA > 4;
         savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 1.5 && manaDeltaEMA > 1.5 && turnCount - lastAnchorBuiltTurn > 30;
@@ -164,6 +165,7 @@ public class Headquarters extends Robot {
             if(rc.canBuildAnchor(Anchor.STANDARD)){
                 rc.buildAnchor(Anchor.STANDARD);
                 lastAnchorBuiltTurn = turnCount;
+                savingUp = false;
             }
             if(rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
                 buildCarriers();
