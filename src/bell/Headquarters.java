@@ -112,7 +112,7 @@ public class Headquarters extends Robot {
     public void setResourceRatios() throws GameActionException{
         if(savingUp){   // if we're trying to make an anchor but don't have enough of a specific resource, get that resource
             boolean needAdamantium = rc.getResourceAmount(ResourceType.ADAMANTIUM) < Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM);
-            boolean needMana = rc.getResourceAmount(ResourceType.ADAMANTIUM) < Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM);
+            boolean needMana = rc.getResourceAmount(ResourceType.MANA) < Anchor.STANDARD.getBuildCost(ResourceType.MANA);
             if(needAdamantium && needMana) {
                 comms.writeRatio(myIndex, 1, 1, 0);
                 return;
@@ -158,7 +158,7 @@ public class Headquarters extends Robot {
         int[] ratio = comms.readRatio(myIndex);
 
         if(savingUp){
-            rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "saving up for anchor");
+            rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; saving up for anchor");
 
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
@@ -175,12 +175,12 @@ public class Headquarters extends Robot {
 
         else {
             if(seenCarriers.size() < initialCarrierThreshold) {
-                rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "trying to build carriers");
+                rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; trying to build carriers");
                 buildCarriers();
                 buildLaunchers();
             }
             else {
-                rc.setIndicatorString(ratio[0] + ", " + ratio[1] + ", " + ratio[2] + "trying to build launchers");
+                rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; trying to build launchers");
                 buildLaunchers();
                 buildCarriers();
             }
