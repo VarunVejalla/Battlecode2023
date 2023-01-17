@@ -17,13 +17,21 @@ public class Launcher extends Robot {
     }
 
 
+    // this method is used in the constructor, runAttackMovement(), and runDefensiveMovement()
     public void decideIfAttacking(){
         // look at enemyIslands vs homeIslands
-        if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent)*1.5){
-            isAttacking = true;
+        // if we're clearly winning, push it
+
+        double defenseProbability = 0.7;
+        if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent) * 1.5){
+            defenseProbability = 0.2;   // make it more likely that we attack if we're clearly winning
         }
-        isAttacking = false;
+        double randomChoice = rng.nextDouble();
+        if (randomChoice < defenseProbability) isAttacking = false;    //defend with 70% probability if we're not clearly winning
+        else isAttacking=true;
+
     }
+
 
     public void run() throws GameActionException{
         super.run();
@@ -40,6 +48,7 @@ public class Launcher extends Robot {
         runMovement();
         runAttack();
     }
+
 
     public int value(RobotInfo enemy) {
         if(enemy.type == RobotType.LAUNCHER) {
@@ -213,68 +222,80 @@ public class Launcher extends Robot {
 
 
     // Go attack an island
+    //TODO: determine symmetry of map and try to surround HQs?
     public void runAttackMovement() throws GameActionException {
+
         if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             targetLoc = null;
         }
-        if(targetLoc == null){
-            targetLoc = getNearestUncontrolledIsland();
-            if(targetLoc == null){
-                targetLoc = getRandomScoutingLocation();
-                Util.log("Going towards random scouting location: " + targetLoc);
-            }
-            else{
-                Util.log("Going towards nearest uncontrolled island: " + targetLoc);
-            }
-        }
 
+        targetLoc = getNearestUncontrolledIsland();
+        if(targetLoc == null){
+            targetLoc = getNearestOpposingIsland();
+        }
+        if(targetLoc == null)
+            targetLoc = getRandomScoutingLocation();
+
+        rc.setIndicatorString("going to " + targetLoc + " to attack");
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            nav.moveRandom();
-            rc.setIndicatorString("attackingly moving random" + targetLoc);
-        }
-        else{
             nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("attackingly going to " + targetLoc);
-        }
-    }
 
-    // Go defend a well
-    public void runDefensiveMovement() throws GameActionException {
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            targetLoc = null;
-        }
-        if(targetLoc == null){
-            int HQIdx = rng.nextInt(numHQs);
-            if(rng.nextBoolean()){
-                targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
-            }
-            else{
-                targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-            }
-
-            if(targetLoc == null){
-                targetLoc = getRandomScoutingLocation();
-            }
-        }
-
-        int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
-        if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
-            // rc.senseNearby
-
-
-            // if there are already more than DEFE
-            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any mining areas so leave if you're not super close
-                targetLoc = getRandomScoutingLocation();        // move on to a different location to scout
-                nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            }
-            else {
-                nav.circle(targetLoc, 2, (int) (myType.actionRadiusSquared * 1.5));  // the constants here are kinda arbitrary
-                rc.setIndicatorString("defensively circling " + targetLoc);
+            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENDING_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
+                {
+                    decideIfAttacking();
+                    targetLoc = null;
+                }
             }
         }
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("defensively going to " + targetLoc);
+        }
+
+
+    }
+
+    // Go defend a well
+    //  We should not crowd wells
+    // maybe scale the guarding radius upwards as we see more friendly troops?
+    //TODO: also defend islands (with the highest priority)
+    // TODO: if enough luanchers are already at you're place, go into attacking mode
+    public void runDefensiveMovement() throws GameActionException {
+        if(targetLoc == null){
+            // choose between defending an island, or well (and if well, what type of well?)
+            double defensiveChoice = rng.nextDouble();
+            if(defensiveChoice < 0.5){
+                targetLoc = getNearestFriendlyIsland();     // defend a friendly island with probability 50%
+            }
+            else{       // defend a well with probability 25%
+                MapLocation closestHQ = getNearestFriendlyHQ();
+                int HQIdx = getFriendlyHQIndex(closestHQ);
+                if(rng.nextBoolean()){      // randomly select between Adamantium and Mana
+                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
+                }
+                else{
+                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
+                }
+            }
+            if(targetLoc == null){
+                targetLoc = getRandomScoutingLocation();
+            }
+        }
+
+        rc.setIndicatorString("going to  " + targetLoc + " to defend");
+        int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
+        if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
+            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENDING_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any areas so leave if you're not super close
+                targetLoc = null;
+                decideIfAttacking();    // see if we should switch to attacking mode
+            }
+
+            else {
+                nav.circle(targetLoc, 2, myType.actionRadiusSquared);
+            }
+        }
+
+        else{
+            nav.goToBug(targetLoc, myType.actionRadiusSquared);
         }
     }
 

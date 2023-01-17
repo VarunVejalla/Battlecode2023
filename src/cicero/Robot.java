@@ -355,6 +355,8 @@ public class Robot {
 
     }
 
+
+
     // Find the nearest well of a specific resource. Null to allow any resource
     public MapLocation getNearestWell(ResourceType type){
         int closestDist = Integer.MAX_VALUE;
@@ -376,6 +378,29 @@ public class Robot {
     // Find the nearest well
     public MapLocation getNearestWell(){
         return getNearestWell(null);
+    }
+
+
+
+    public MapLocation getFurthestIsland(Team controllingTeam){
+        int furthestDist = Integer.MIN_VALUE;
+        MapLocation furthestIsland = null;
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null){
+                continue;
+            }
+            Util.log("Island: " + info.loc);
+            if(info.controllingTeam != controllingTeam){
+                continue;
+            }
+            int dist = myLoc.distanceSquaredTo(info.loc);
+            if(dist > furthestDist){
+                furthestDist     = dist;
+                furthestIsland = info.loc;
+            }
+        }
+        return furthestIsland;
     }
 
     // Find the nearest island with specified controlling team
@@ -422,6 +447,11 @@ public class Robot {
     public MapLocation getNearestUncontrolledIsland(){ return getNearestIsland(Team.NEUTRAL); }
     public MapLocation getNearestFriendlyIsland(){ return getNearestIsland(myTeam); }
     public MapLocation getNearestOpposingIsland(){ return getNearestIsland(opponent); }
+
+
+    public MapLocation getFurthestFriendlyIsland(){
+        return getFurthestIsland(myTeam);
+    }
 
     public MapLocation getRandomScoutingLocation() {
         int x = rng.nextInt(rc.getMapWidth());
