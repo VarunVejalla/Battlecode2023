@@ -14,7 +14,10 @@ public class Launcher extends Robot {
         super(rc);
         // TODO: Do something smart to figure this out instead of just random.
         // TODO: For some reason this is always set to false. Figure out why.
+
+        rng.nextBoolean();
         isAttacking = rng.nextBoolean();
+
     }
 
     public void run() throws GameActionException{
@@ -26,6 +29,7 @@ public class Launcher extends Robot {
         else{
             rc.setIndicatorDot(myLoc, 0, 255, 0);
             Util.log("Yam defending");
+//            Util.log("next boolean: " + rng.nextBoolean());
         }
         runAttack();
         runMovement();

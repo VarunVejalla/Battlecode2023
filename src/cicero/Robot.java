@@ -57,7 +57,7 @@ public class Robot {
     int turnCount = 0;
     int[] prevCommsArray = new int[64];
 
-    static Random rng;
+    Random rng;
 
     /** Array containing all the possible movement directions. */
     static final Direction[] movementDirections = {
@@ -84,7 +84,9 @@ public class Robot {
     };
 
     public Robot(RobotController rc) throws GameActionException{
-        rng = new Random(rc.getID());
+        this.rng = new Random(rc.getID()+2);
+//        this.rng = new Random();
+
         this.rc = rc;
         myLoc = rc.getLocation();
         myTeam = rc.getTeam();
