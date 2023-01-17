@@ -2,6 +2,9 @@ package cicero;
 
 import battlecode.common.*;
 
+import static cicero.Constants.ADAMANTIUM_RATIO_INDEX;
+import static cicero.Constants.MANA_RATIO_INDEX;
+
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
@@ -106,13 +109,15 @@ public class Carrier extends Robot {
         // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
         // otherwise, return elixir
 
-        if(num <= ratio[0]) {
+        //Ratio data indices
+
+        if(num <= ratio[ADAMANTIUM_RATIO_INDEX]) {
             Util.log("Gonna go find Adamantium");
             return ResourceType.ADAMANTIUM;
         }
 
         // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[1] += ratio[0];   //get cumulative sum up till now
+        ratio[MANA_RATIO_INDEX] += ratio[ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
         if(num <= ratio[1]) {
             Util.log("Gonna go find Mana");
             return ResourceType.MANA;

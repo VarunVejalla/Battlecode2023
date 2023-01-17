@@ -1,6 +1,6 @@
 package cicero;
 
-public final class Constants {
+public class Constants {
 
     private Constants(){
         // restrict instantiation
@@ -58,7 +58,10 @@ public final class Constants {
     public static final int ISLAND_CONTROL_MASK = 12288;
     public static final int ISLAND_CONTROL_SHIFT = 12;
 
-
+    //Ratio data indices
+    public static final int ADAMANTIUM_RATIO_INDEX = 0;
+    public static final int MANA_RATIO_INDEX = 1;
+    public static final int ELIXIR_RATIO_INDEX = 2;
 
 
 }
