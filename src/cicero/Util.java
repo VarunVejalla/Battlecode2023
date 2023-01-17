@@ -13,6 +13,21 @@ public class Util {
     }
 
 
+    public static Direction[] closeDirections(Direction dir){
+        Direction[] close = {
+                dir,
+                dir.rotateLeft(),
+                dir.rotateRight(),
+                dir.rotateLeft().rotateLeft(),
+                dir.rotateRight().rotateRight(),
+                dir.rotateLeft().rotateLeft().rotateLeft(),
+                dir.rotateRight().rotateRight().rotateRight(),
+                dir.opposite()
+        };
+        return close;
+    }
+
+
     public static boolean tryMine(ResourceType type, int numResources) throws GameActionException {
         MapLocation me = rc.getLocation();
         for (Direction dir : Robot.allDirections) {

@@ -72,8 +72,7 @@ public class Launcher extends Robot {
     // check to see is attack is ready. if not, you can't do anything so return
     // check to see nearby enemies (note we sense nearby enemies several times in a round, so can optimize that)
     // find the enemy to attack by selecting the one with highest priority / lowest health
-    // if you found an enemy, attack
-
+    // if you found an enemy, attack. otherwise, don't do anything.
     public void runAttack() throws GameActionException {
         if(!rc.isActionReady()){
             return;
@@ -105,6 +104,20 @@ public class Launcher extends Robot {
     }
 
 
+
+    // summary of this method: trying to achieve the strat of staying on the border of the enemies' action radius so you don't get hit
+
+    // if you're in a fight (if there's danger nearby), run fighting micro
+    //      if you're within range, try attacking
+    //      if you're not within range, move in, then try attacking
+    //      if you couldn't attack, step away so the enemy can't hit you
+
+    // otherwise (not in danger)
+    //      - if we have uncommed islands, go to nearest hq so we can relay info
+    //      - if we're in attacking mode (isAttacking == True), run AttackMovement(), which takes us to the nearest uncontrolled island or scouting location
+    //      - otherwise, we're defending, so run defensive movement
+
+
     public void runMovement() throws GameActionException {
         if(!rc.isMovementReady()){
             return;
@@ -118,11 +131,11 @@ public class Launcher extends Robot {
                 dangerNearby = true;
             }
         }
-        if(dangerNearby){
+        if(dangerNearby) {
             RobotInfo closestDanger = null;
-            for(RobotInfo info : enemies){
-                if(info.type == RobotType.LAUNCHER || info.type == RobotType.CARRIER){
-                    if(closestDanger == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestDanger.location)){
+            for (RobotInfo info : enemies) {
+                if (info.type == RobotType.LAUNCHER || info.type == RobotType.CARRIER) {
+                    if (closestDanger == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestDanger.location)) {
                         closestDanger = info;
                     }
                 }
@@ -130,46 +143,48 @@ public class Launcher extends Robot {
 
             // If you're within range, try attacking then move out.
             runAttack();
+
             // If you're outside of range but your attack is ready, move in then attack, but only move in if attack is ready
-            if(rc.isActionReady()){
-                Direction enemyDir = myLoc.directionTo(closestDanger.location);
+            if (rc.isActionReady()) {
+                // get bestDirection to enemy from (should also incorporate info about cooldowns and currents)
+                Direction bestDirection = nav.fuzzyNav(closestDanger.location);
+
+                //get all directions sorted by closeness to best direction
+                Direction[] potentialMoveDirs = Util.closeDirections(bestDirection);
+
                 // If I can move towards enemy and attack him, then do it.
-                Direction[] potentialMoveDirs = {enemyDir, enemyDir.rotateLeft(), enemyDir.rotateRight()};
-                for(Direction potentialMoveDir : potentialMoveDirs){
-                    if(!rc.canMove(potentialMoveDir)){
+                for (Direction potentialMoveDir : potentialMoveDirs) {
+                    if (!rc.canMove(potentialMoveDir)) {
                         continue;
                     }
-
-                    // TODO: Check for currents and cooldowns and stuff
                     // TODO: Do the whole "do we have more allied troops than enemy troops" thing to figure out if it's a fight worth taking
                     // Can prolly copy some of that stuff from last year.
-
                     // If I can move in and attack, then do that.
-                    if(myLoc.add(potentialMoveDir).distanceSquaredTo(closestDanger.location) <= myType.actionRadiusSquared){
+                    if (myLoc.add(potentialMoveDir).distanceSquaredTo(closestDanger.location) <= myType.actionRadiusSquared) {
                         rc.move(potentialMoveDir);
                         runAttack();
                     }
                 }
+
+                // If you couldn't move in then attack, then simply move away until your attack comes back.
+                if (rc.isMovementReady()) {
+                    Direction enemyDir = myLoc.directionTo(closestDanger.location);
+                    MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
+                    nav.goToFuzzy(farAway, 0);
+                }
             }
-            // If you couldn't move in then attack, then simply move away until your attack comes back.
-            if(rc.isMovementReady()){
-                Direction enemyDir = myLoc.directionTo(closestDanger.location);
-                MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
-                nav.goToFuzzy(farAway, 0);
-            }
-        } else{
-            // Otherwise, run normal launcher movement
-            if(haveUncommedIsland()) {
-                returnToClosestHQ();
-            }
-            else if(isAttacking){
-                runAttackMovement();
-            }
-            else{
-                runDefensiveMovement();
+        }else {
+                // Otherwise, run normal launcher movement
+                if (haveUncommedIsland()) {
+                    returnToClosestHQ();
+                } else if (isAttacking) {
+                    runAttackMovement();
+                } else {
+                    runDefensiveMovement();
+                }
             }
         }
-    }
+
 
     public boolean haveUncommedIsland() {
         for(int i = 0; i < numIslands; i++){
