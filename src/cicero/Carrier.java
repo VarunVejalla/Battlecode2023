@@ -9,6 +9,8 @@ public class Carrier extends Robot {
 
     private MapLocation targetLoc;
     boolean mining = true;
+    int HQImHelpingIdx = -1;
+
 
     public Carrier(RobotController rc) throws GameActionException {
         super(rc);
@@ -17,6 +19,9 @@ public class Carrier extends Robot {
     public void run() throws GameActionException {
         super.run();
         int weight = totalResourceWeight();
+
+
+
         if(weight == GameConstants.CARRIER_CAPACITY && mining){
             mining = false;
             targetLoc = null;
@@ -24,6 +29,7 @@ public class Carrier extends Robot {
         else if(weight == 0 && !mining){
             mining = true;
             targetLoc = null;
+            HQImHelpingIdx = -1;
         }
 
         tryTakingAnchor();
@@ -31,6 +37,8 @@ public class Carrier extends Robot {
         // If you're holding an anchor, make your top priority to deposit it.
         boolean dangerNearby = runAway();
         if(!dangerNearby) {
+
+
             if (rc.getAnchor() != null) {
                 moveTowardsNearestUncontrolledIsland();
                 tryPlacing();
@@ -49,6 +57,7 @@ public class Carrier extends Robot {
             }
         }
     }
+
 
     public int totalResourceWeight() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
@@ -126,8 +135,10 @@ public class Carrier extends Robot {
         else{
             Util.log("Gonna go find Elixir");
             return ResourceType.ELIXIR;}
-
     }
+
+
+
 
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
@@ -137,7 +148,7 @@ public class Carrier extends Robot {
 
         if(targetLoc == null){
             MapLocation HQImHelping = getNearestFriendlyHQ();
-            int HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+            HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
             ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
 //            MapLocation closestWell = getNearestWell(targetType);
             MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
@@ -156,9 +167,9 @@ public class Carrier extends Robot {
         }
     }
 
-    // TODO: For now this is random, but we should have HQs set a flag or smth on comms for when they need a resource?
     public MapLocation getHQToReturnTo() {
-        return HQlocs[rng.nextInt(numHQs)];
+        if(HQImHelpingIdx > -1) return HQlocs[HQImHelpingIdx];
+        else return HQlocs[rng.nextInt(numHQs)];
     }
 
     public void moveTowardsHQ() throws GameActionException {
