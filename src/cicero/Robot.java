@@ -84,7 +84,7 @@ public class Robot {
     };
 
     public Robot(RobotController rc) throws GameActionException{
-        this.rng = new Random(rc.getID()+2);
+        this.rng = new Random(rc.getID()/2+10);
 //        this.rng = new Random();
 
         this.rc = rc;
