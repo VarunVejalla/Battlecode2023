@@ -7,29 +7,34 @@ public class Launcher extends Robot {
     private MapLocation targetLoc;
 
     // TODO: Replace this with an actually good strategy
-    boolean isAttacking;
+    boolean isAttacking = false;
     int DEFENDING_THRESHOLD = 15;
+
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
-        // TODO: Do something smart to figure this out instead of just random.
-        // TODO: For some reason this is always set to false. Figure out why.
+        decideIfAttacking();
+    }
 
-        rng.nextBoolean();
-        isAttacking = rng.nextBoolean();
 
+    public void decideIfAttacking(){
+        // look at enemyIslands vs homeIslands
+        if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent)*1.5){
+            isAttacking = true;
+        }
+        isAttacking = false;
     }
 
     public void run() throws GameActionException{
         super.run();
+
         if(isAttacking){
             rc.setIndicatorDot(myLoc, 255, 0, 0);
             Util.log("Yam attacking");
         }
         else{
             rc.setIndicatorDot(myLoc, 0, 255, 0);
-            Util.log("Yam defending");
-//            Util.log("next boolean: " + rng.nextBoolean());
+            Util.log(rc.getID() + ": Yam defending");
         }
         runAttack();
         runMovement();
@@ -61,6 +66,14 @@ public class Launcher extends Robot {
         }
     }
 
+
+
+    // summary of this method:
+    // check to see is attack is ready. if not, you can't do anything so return
+    // check to see nearby enemies (note we sense nearby enemies several times in a round, so can optimize that)
+    // find the enemy to attack by selecting the one with highest priority / lowest health
+    // if you found an enemy, attack
+
     public void runAttack() throws GameActionException {
         if(!rc.isActionReady()){
             return;
@@ -90,6 +103,7 @@ public class Launcher extends Robot {
             rc.attack(toAttack);
         }
     }
+
 
     public void runMovement() throws GameActionException {
         if(!rc.isMovementReady()){
@@ -125,9 +139,11 @@ public class Launcher extends Robot {
                     if(!rc.canMove(potentialMoveDir)){
                         continue;
                     }
+
                     // TODO: Check for currents and cooldowns and stuff
                     // TODO: Do the whole "do we have more allied troops than enemy troops" thing to figure out if it's a fight worth taking
                     // Can prolly copy some of that stuff from last year.
+
                     // If I can move in and attack, then do that.
                     if(myLoc.add(potentialMoveDir).distanceSquaredTo(closestDanger.location) <= myType.actionRadiusSquared){
                         rc.move(potentialMoveDir);
@@ -197,7 +213,6 @@ public class Launcher extends Robot {
             }
         }
 
-        // TODO: Maybe circle the island to defend it better instead of just standing in one spot?
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.moveRandom();
             rc.setIndicatorString("attackingly moving random" + targetLoc);
@@ -206,7 +221,6 @@ public class Launcher extends Robot {
             nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
             rc.setIndicatorString("attackingly going to " + targetLoc);
         }
-
     }
 
     // Go defend a well
@@ -222,6 +236,7 @@ public class Launcher extends Robot {
             else{
                 targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
             }
+
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
             }
@@ -232,7 +247,7 @@ public class Launcher extends Robot {
             // rc.senseNearby
 
 
-            //TODO: make this strategy better. Determine whether or not we should try to defened depending on how much pressure we're under
+            // if there are already more than DEFE
             if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length  > DEFENDING_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any mining areas so leave if you're not super close
                 targetLoc = getRandomScoutingLocation();        // move on to a different location to scout
                 nav.goToBug(targetLoc, myType.actionRadiusSquared);
@@ -246,8 +261,6 @@ public class Launcher extends Robot {
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
             rc.setIndicatorString("defensively going to " + targetLoc);
         }
-
-
     }
 
 }
