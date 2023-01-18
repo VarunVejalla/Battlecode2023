@@ -2,6 +2,33 @@ package liskov;
 
 import battlecode.common.*;
 
+class LauncherHeuristic {
+    double friendlyHP;
+    double friendlyDamage;
+    double enemyHP;
+    double enemyDamage;
+    double totalEnemyDamage;
+
+    public LauncherHeuristic(double FH, double FD, double EH, double ED, double TED){
+        friendlyHP = FH;
+        friendlyDamage = FD;
+        enemyHP = EH;
+        enemyDamage = ED;
+        totalEnemyDamage = TED;
+    }
+
+    public boolean getSafe(Robot robot){
+        double myTurnsNeeded = enemyHP / friendlyDamage;
+        double enemyTurnsNeeded = friendlyHP / enemyDamage;
+//        System.out.println("Friendly HP: " + friendlyHP + ", DMG: " + friendlyDamage + ", Enemy HP: " + enemyHP + ", DMG: " + enemyDamage);
+        robot.indicatorString += "MT: " + (int)myTurnsNeeded + ", ET: " + (int)enemyTurnsNeeded + "; ";
+
+        // 1.5 simply because im ballsy and wanna go for it
+        return myTurnsNeeded <= enemyTurnsNeeded * 1.2; // If you can kill them faster than they can kill you, return true
+    }
+
+}
+
 public class Launcher extends Robot {
 
     private MapLocation targetLoc;
@@ -134,6 +161,15 @@ public class Launcher extends Robot {
         if(!rc.isMovementReady()){
             return;
         }
+
+
+        RobotInfo[] nearbyFriendlies = rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam);
+        RobotInfo[] nearbyActionEnemies = rc.senseNearbyRobots(myType.actionRadiusSquared, opponent);
+        RobotInfo[] nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+
+        RobotInfo nearestEnemyInfo = getNearestEnemy(nearbyVisionEnemies);
+        LauncherHeuristic heuristic = getHeuristic(nearbyFriendlies, nearbyVisionEnemies, nearestEnemyInfo);
+
 
         // If you're in a fight w/ an enemy, run launcher micro
         RobotInfo[] enemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
@@ -278,14 +314,13 @@ public class Launcher extends Robot {
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
         }
-
-
     }
 
     // Go defend a well
     //  We should not crowd wells
     // maybe scale the guarding radius upwards as we see more friendly troops?
     // TODO: also defend islands (with the highest priority)
+    // TODO: if enough launchers are already at you're place, go into attacking mode
     public void runDefensiveMovement() throws GameActionException {
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
             targetLoc = null;
@@ -328,6 +363,105 @@ public class Launcher extends Robot {
         else{
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
         }
+    }
+    public RobotInfo getNearestEnemy(RobotInfo[] nearbyEnemies) throws GameActionException {
+        // Find nearest enemy
+        RobotInfo nearestEnemyInfo = null;
+        int minDist = Integer.MAX_VALUE;
+        for(int i = 0; i < nearbyEnemies.length; i++){
+            int dist = myLoc.distanceSquaredTo(nearbyEnemies[i].location);
+            if(dist < minDist){
+                minDist = dist;
+                nearestEnemyInfo = nearbyEnemies[i];
+            }
+        }
+        return nearestEnemyInfo;
+    }
+
+    // TODO Count the # of soldiers on their front lines? I'm alr kinda doing that, but maybe comm that info so that everyone's aware of how fucked you are?
+    public LauncherHeuristic getHeuristic(RobotInfo[] nearbyFriendlies, RobotInfo[] dangerousEnemies, RobotInfo nearestEnemyInfo) throws GameActionException { // TODO: Maybe only check # of attackers on the robot closest to you?
+        //TODO: Fix this method?
+
+        // your attack isn't ready, then don't engage
+
+        if(nearestEnemyInfo == null){ // No enemies nearby, we safe
+            indicatorString += "NE1; ";
+            return null;
+        }
+        Util.log("Nearest enemy Info: " + nearestEnemyInfo.location.toString());
+
+        double friendlyDamage = 0.0;
+        double enemyDamage = 0.0;
+        double friendlyHP = 0.0;
+        double enemyHP = 0.0;
+        double totalEnemyDamage = 0.0;
+
+        // Calculate enemies attacking you
+
+
+        for(int i = 0; i < dangerousEnemies.length; i++){
+            RobotInfo info = dangerousEnemies[i];
+            if(info.type == RobotType.LAUNCHER){
+                double attackCooldown = 10;
+                attackCooldown *= info.type.actionCooldown;
+                enemyDamage += info.type.damage / attackCooldown;
+                totalEnemyDamage += info.type.damage;
+                enemyHP += info.getHealth();
+            }
+//            else if(info.type == RobotType.ARCHON){
+////                friendlyDamage -= info.type.damage / repairCooldown;
+//                double damageDiff = 2.0 / (rc.senseRubble(info.location) + 10.0);
+//                if(friendlyDamage <= damageDiff){
+//                    friendlyDamage = 0;
+//                }
+//                else{
+//                    friendlyDamage -= damageDiff;
+//                }
+//                enemyHP += info.getHealth();
+//            }
+        }
+
+        // Calculate friendlies attacking the enemy
+        for(int i = 0; i < nearbyFriendlies.length; i++){
+            RobotInfo info = nearbyFriendlies[i];
+            if(info.type != RobotType.LAUNCHER){
+                continue.
+            }
+            if(info.getLocation().distanceSquaredTo(nearestEnemyInfo.getLocation()) > info.type.actionRadiusSquared){
+                continue; // Only count friendlies that can attack said enemy
+            }
+//            if(info.getHealth() < health_to_retreat){
+//                continue;
+//            }
+//            if(info.type == RobotType.SAGE){
+//                continue;
+//            }
+            double attackCooldown = 10;
+            attackCooldown *= info.type.actionCooldown;
+            friendlyDamage += info.type.damage / attackCooldown;
+            friendlyHP += info.getHealth();
+//            if(info.type == RobotType.ARCHON){ // NOTE: Archons can't attack, but this just makes you more likely to wanna protect your own archon
+////                friendlyHP += info.getHealth();
+//                double damageDiff = 2.0 / (rc.senseRubble(info.location) + 10.0);
+//                if(enemyDamage <= damageDiff){
+//                    enemyDamage = 0;
+//                }
+//                else{
+//                    enemyDamage -= damageDiff;
+//                }
+//            }
+        }
+
+        if(enemyHP == 0 || enemyDamage == 0){
+            indicatorString += "NE2; ";
+            return null;
+        }
+
+        double myAttackCooldown = 10;
+        friendlyDamage += myType.damage / myAttackCooldown;
+        friendlyHP += rc.getHealth();
+
+        return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage, totalEnemyDamage);
     }
 
 }
