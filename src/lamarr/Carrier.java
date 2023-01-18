@@ -5,6 +5,8 @@ import battlecode.common.*;
 import static lamarr.Constants.ADAMANTIUM_RATIO_INDEX;
 import static lamarr.Constants.MANA_RATIO_INDEX;
 
+// TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
+
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
