@@ -115,13 +115,13 @@ public class Headquarters extends Robot {
     // criteria on whether hq should start saving up for an anchor
     //TODO: improve this criteria?
     public void shouldISaveUp() {
-//        savingUp = false;
-        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
-        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
-        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
-        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > howOftenToSpawnAnchors;
-        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
-        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+        savingUp = false;
+//        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
+//        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
+//        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
+//        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > howOftenToSpawnAnchors;
+//        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
+//        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
     }
 
 
@@ -144,14 +144,25 @@ public class Headquarters extends Robot {
         }
 
         //TODO: maybe we can make this ratio dynamic based on adamantiumEMA and manaEMA i.e. manaEMA should be twice as large as adamantiumEMA or something like that
-        if(seenCarriers.size() > initialCarrierThreshold){          // if we've made enough carriers, prioritize mana so we can make launchers
-            comms.writeRatio(myIndex, 4, 8, 0);
-            return;
+//        if(seenCarriers.size() > initialCarrierThreshold){          // if we've made enough carriers, prioritize mana so we can make launchers
+//            comms.writeRatio(myIndex, 4, 8, 0);
+//            return;
+//        }
+//        else {
+//            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
+//            return;
+//        }
+        int numCarriers = seenCarriers.size();
+        if(numCarriers > 7) {
+            comms.writeRatio(myIndex, 0, 15, 0);
         }
-        else {
-            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
-            return;
+        else if(numCarriers < 3){
+            comms.writeRatio(myIndex, 15, 0, 0);
         }
+        else{
+            comms.writeRatio(myIndex, 15 - numCarriers - 1, numCarriers + 1, 0);
+        }
+
     }
 
 

@@ -239,7 +239,8 @@ public class Launcher extends Robot {
 
         rc.setIndicatorString("going to " + targetLoc + " to attack");
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
+//            nav.goToFuzzy(targetLoc, 0);
+            nav.circle(targetLoc, 0, myType.actionRadiusSquared);
 
             if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > ATTACKING_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
                 {
