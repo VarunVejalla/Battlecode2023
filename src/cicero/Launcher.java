@@ -9,7 +9,7 @@ public class Launcher extends Robot {
     // TODO: Replace this with an actually good strategy
     boolean isAttacking = false;
     int DEFENDING_THRESHOLD = 15;
-
+    int ATTACKING_THRESHOLD = 15;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -156,6 +156,7 @@ public class Launcher extends Robot {
             // If you're outside of range but your attack is ready, move in then attack, but only move in if attack is ready
             if (rc.isActionReady()) {
                 // get bestDirection to enemy from (should also incorporate info about cooldowns and currents)
+                // TODO: Reimplement fuzzynav kinda
                 Direction bestDirection = nav.fuzzyNav(closestDanger.location);
 
                 //get all directions sorted by closeness to best direction
@@ -240,7 +241,7 @@ public class Launcher extends Robot {
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.goToFuzzy(targetLoc, myType.actionRadiusSquared);
 
-            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENDING_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
+            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > ATTACKING_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
                 {
                     decideIfAttacking();
                     targetLoc = null;
