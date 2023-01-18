@@ -2,8 +2,6 @@ package liskov;
 
 import battlecode.common.*;
 
-import static liskov.Constants.*;
-
 // TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
 
 public class Carrier extends Robot {
@@ -121,13 +119,13 @@ public class Carrier extends Robot {
 
         //Ratio data indices
 
-        if(num <= ratio[ADAMANTIUM_RATIO_INDEX]) {
+        if(num <= ratio[constants.ADAMANTIUM_RATIO_INDEX]) {
             Util.log("Gonna go find Adamantium");
             return ResourceType.ADAMANTIUM;
         }
 
         // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[MANA_RATIO_INDEX] += ratio[ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
+        ratio[constants.MANA_RATIO_INDEX] += ratio[constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
         if(num <= ratio[1]) {
             Util.log("Gonna go find Mana");
             return ResourceType.MANA;
