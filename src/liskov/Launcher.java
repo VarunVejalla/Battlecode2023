@@ -425,7 +425,7 @@ public class Launcher extends Robot {
         for(int i = 0; i < nearbyFriendlies.length; i++){
             RobotInfo info = nearbyFriendlies[i];
             if(info.type != RobotType.LAUNCHER){
-                continue.
+                continue;
             }
             if(info.getLocation().distanceSquaredTo(nearestEnemyInfo.getLocation()) > info.type.actionRadiusSquared){
                 continue; // Only count friendlies that can attack said enemy

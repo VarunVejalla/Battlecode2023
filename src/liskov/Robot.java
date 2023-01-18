@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+// TODO: Fix code (tune).
 
 class WellSquareInfo {
     MapLocation loc;

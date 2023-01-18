@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 // TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
 // TODO: hq cycles through well locations and carriers keep a running list of well locations
+// TODO: Don't just run away from launchers, but also don't walk into squares where you could be attacked
+
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
@@ -195,7 +197,6 @@ public class Carrier extends Robot {
         RobotInfo closestDanger = null;
         for (RobotInfo info : enemies) {
 //            if (info.type == RobotType.LAUNCHER || info.type == RobotType.CARRIER) {
-            // TODO: Should they also run away from carriers?
             if (info.type == RobotType.LAUNCHER) {
                 if (closestDanger == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestDanger.location)) {
                     closestDanger = info;

@@ -146,7 +146,6 @@ public class Headquarters extends Robot {
             }
         }
 
-        //TODO: maybe we can make this ratio dynamic based on adamantiumEMA and manaEMA i.e. manaEMA should be twice as large as adamantiumEMA or something like that
 //        if(seenCarriers.size() > initialCarrierThreshold){          // if we've made enough carriers, prioritize mana so we can make launchers
 //            comms.writeRatio(myIndex, 4, 8, 0);
 //            return;

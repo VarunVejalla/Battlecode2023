@@ -6,6 +6,8 @@ enum NavigationMode{
     FUZZYNAV, BUGNAV;
 }
 
+//TODO: Fix bugnav
+
 public class Navigation {
 
     RobotController rc;
@@ -101,6 +103,7 @@ public class Navigation {
 
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
+            // TODO: Lowkey idk if this code works
             // If there's a current, add that to the end of the new location
             if(newLocInfo.getCurrentDirection() != Direction.CENTER){
                 newLoc = newLoc.add(newLocInfo.getCurrentDirection());
