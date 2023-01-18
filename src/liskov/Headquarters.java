@@ -188,8 +188,9 @@ public class Headquarters extends Robot {
         setResourceRatios();
         int[] ratio = comms.readRatio(myIndex);
 
+        indicatorString += "Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; ";
         if(savingUp){
-            rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; saving up for anchor");
+            indicatorString += "saving up for anchor";
 
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
@@ -207,12 +208,12 @@ public class Headquarters extends Robot {
 
         else {
             if(seenCarriers.size() < initialCarrierThreshold) {
-                rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; trying to build carriers");
+                indicatorString += "trying to build carriers";
                 buildCarriers();
                 buildLaunchers();
             }
             else {
-                rc.setIndicatorString("Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; trying to build launchers");
+                indicatorString += "trying to build launchers";
                 buildLaunchers();
                 buildCarriers();
             }

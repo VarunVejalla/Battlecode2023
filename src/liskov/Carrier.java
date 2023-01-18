@@ -94,11 +94,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("Uncontrolled island. Bugging to " + targetLoc);
+            indicatorString += "Uncontrolled island. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("Uncontrolled island. Fuzzying to " + targetLoc);
+            indicatorString += "Uncontrolled island. Fuzzying to " + targetLoc;
         }
     }
 
@@ -158,11 +158,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("Nearby well. Bugging to " + targetLoc);
+            indicatorString += "Nearby well. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("Nearby well. Fuzzying to " + targetLoc);
+            indicatorString += "Nearby well. Fuzzying to " + targetLoc;
         }
     }
 
@@ -177,11 +177,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("HQ. Bugging to " + targetLoc);
+            indicatorString += "HQ. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("HQ. Fuzzying to " + targetLoc);
+            indicatorString += "HQ. Fuzzying to " + targetLoc;
         }
     }
 
@@ -212,7 +212,7 @@ public class Carrier extends Robot {
                 Direction enemyDir = myLoc.directionTo(closestDanger.location);
                 MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
                 nav.goToFuzzy(farAway, 0);
-                rc.setIndicatorString("Danger! Fuzzying away from " + closestDanger.location);
+                indicatorString += "Danger! Fuzzying away from " + closestDanger.location;
             }
         }
         return closestDanger != null;
