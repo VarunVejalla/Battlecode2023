@@ -174,7 +174,7 @@ public class Headquarters extends Robot {
 //            updateCommsChangesQueue();
             if(Util.checkNumSymmetriesPossible() == 0){
                 System.out.println("Goddamnit we fucked up the symmetries");
-                rc.resign();
+//                rc.resign();
                 comms.resetSymmetry();
             }
         }
@@ -205,25 +205,20 @@ public class Headquarters extends Robot {
                 lastAnchorBuiltTurn = turnCount;
                 savingUp = false;
             }
-            if(rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
-                buildCarriers();
-            }
+            // Always prioritize building launchers over carriers
             if(rc.getResourceAmount(ResourceType.MANA) > Anchor.STANDARD.getBuildCost(ResourceType.MANA) + RobotType.LAUNCHER.buildCostMana){
                 buildLaunchers();
+            }
+            if(rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
+                buildCarriers();
             }
         }
 
         else {
-            if(seenCarriers.size() < initialCarrierThreshold) {
-                indicatorString += "trying to build carriers";
-                buildCarriers();
-                buildLaunchers();
-            }
-            else {
-                indicatorString += "trying to build launchers";
-                buildLaunchers();
-                buildCarriers();
-            }
+            // Always prioritize building launchers over carriers
+            indicatorString += "trying normal build order";
+            buildLaunchers();
+            buildCarriers();
         }
 
         // We only want to consider the rate at which we're gaining resources we don't wanna consider spending, so we wanna set
