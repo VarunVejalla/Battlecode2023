@@ -3,7 +3,7 @@ package liskov;
 import battlecode.common.*;
 
 // TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
-
+// TODO: hq cycles through well locations and carriers keep a running list of well locations
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
