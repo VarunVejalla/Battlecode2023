@@ -2,8 +2,6 @@ package liskov;
 
 import battlecode.common.*;
 
-import java.util.Map;
-
 public class Launcher extends Robot {
 
     private MapLocation targetLoc;
@@ -112,7 +110,7 @@ public class Launcher extends Robot {
 
         if(toAttackIndex != -1){
             MapLocation toAttack = enemies[toAttackIndex].location;
-            rc.setIndicatorString("Attacking");
+            indicatorString += "Attacking";
             rc.attack(toAttack);
         }
     }
@@ -224,11 +222,11 @@ public class Launcher extends Robot {
         targetLoc = getNearestFriendlyHQ();
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("have uncommed info, fuzzying to HQ: " + targetLoc);
+            indicatorString += "have uncommed info, fuzzying to HQ: " + targetLoc;
         }
         else{
             nav.goToBug(targetLoc, 0);
-            rc.setIndicatorString("have uncommed info, bugging to HQ: " + targetLoc);
+            indicatorString += "have uncommed info, bugging to HQ: " + targetLoc;
         }
     }
 
@@ -251,6 +249,7 @@ public class Launcher extends Robot {
             targetLoc = getRandomScoutingLocation();
         }
 
+        indicatorString += "going to " + targetLoc + " to attack";
 //        targetLoc = getNearestUncontrolledIsland();
 //        if(targetLoc == null){
 //            targetLoc = getNearestOpposingIsland();
@@ -312,7 +311,8 @@ public class Launcher extends Robot {
                 targetLoc = getRandomScoutingLocation();
             }
         }
-        rc.setIndicatorString("going to  " + targetLoc + " to defend");
+
+        indicatorString += "going to  " + targetLoc + " to defend";
         int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
         if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
             if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENDING_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any areas so leave if you're not super close

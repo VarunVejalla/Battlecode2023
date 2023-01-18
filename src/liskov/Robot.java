@@ -4,10 +4,8 @@ import battlecode.common.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
-import static liskov.Constants.ISLAND_START_IDX;
 
 class WellSquareInfo {
     MapLocation loc;
@@ -63,6 +61,8 @@ public class Robot {
     ArrayList<SymmetryType> impossibleSymmetries = new ArrayList<>();
 
 
+    String indicatorString = "";
+    Constants constants;
     Random rng;
 
     /** Array containing all the possible movement directions. */
@@ -91,8 +91,7 @@ public class Robot {
 
     public Robot(RobotController rc) throws GameActionException{
         this.rng = new Random(rc.getID()/2+10);
-//        this.rng = new Random();
-
+        this.constants = new Constants();
         this.rc = rc;
         myLoc = rc.getLocation();
         myTeam = rc.getTeam();
@@ -200,7 +199,7 @@ public class Robot {
 
     public void readIslandLocs() throws GameActionException {
         for(int idx = 1; idx <= numIslands; idx++){
-            int commsIdx = ISLAND_START_IDX + idx - 1;
+            int commsIdx = constants.ISLAND_START_IDX + idx - 1;
             if(rc.readSharedArray(commsIdx) == prevCommsArray[commsIdx]){
                 continue;
             }

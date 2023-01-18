@@ -2,8 +2,6 @@ package liskov;
 
 import battlecode.common.*;
 
-import static liskov.Constants.*;
-
 // TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
 
 public class Carrier extends Robot {
@@ -97,11 +95,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("Uncontrolled island. Bugging to " + targetLoc);
+            indicatorString += "Uncontrolled island. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("Uncontrolled island. Fuzzying to " + targetLoc);
+            indicatorString += "Uncontrolled island. Fuzzying to " + targetLoc;
         }
     }
 
@@ -122,13 +120,13 @@ public class Carrier extends Robot {
 
         //Ratio data indices
 
-        if(num <= ratio[ADAMANTIUM_RATIO_INDEX]) {
+        if(num <= ratio[constants.ADAMANTIUM_RATIO_INDEX]) {
             Util.log("Gonna go find Adamantium");
             return ResourceType.ADAMANTIUM;
         }
 
         // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[MANA_RATIO_INDEX] += ratio[ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
+        ratio[constants.MANA_RATIO_INDEX] += ratio[constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
         if(num <= ratio[1]) {
             Util.log("Gonna go find Mana");
             return ResourceType.MANA;
@@ -163,11 +161,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("Nearby well. Bugging to " + targetLoc);
+            indicatorString += "Nearby well. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("Nearby well. Fuzzying to " + targetLoc);
+            indicatorString += "Nearby well. Fuzzying to " + targetLoc;
         }
     }
 
@@ -182,11 +180,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            rc.setIndicatorString("HQ. Bugging to " + targetLoc);
+            indicatorString += "HQ. Bugging to " + targetLoc;
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            rc.setIndicatorString("HQ. Fuzzying to " + targetLoc);
+            indicatorString += "HQ. Fuzzying to " + targetLoc;
         }
     }
 
@@ -217,7 +215,7 @@ public class Carrier extends Robot {
                 Direction enemyDir = myLoc.directionTo(closestDanger.location);
                 MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
                 nav.goToFuzzy(farAway, 0);
-                rc.setIndicatorString("Danger! Fuzzying away from " + closestDanger.location);
+                indicatorString += "Danger! Fuzzying away from " + closestDanger.location;
             }
         }
         return closestDanger != null;
