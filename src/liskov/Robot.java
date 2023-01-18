@@ -1,4 +1,4 @@
-package lamarr;
+package liskov;
 
 import battlecode.common.*;
 
@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static lamarr.Constants.ISLAND_START_IDX;
+import static liskov.Constants.ISLAND_START_IDX;
 
 class WellSquareInfo {
     MapLocation loc;
