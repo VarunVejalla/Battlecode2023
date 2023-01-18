@@ -67,12 +67,15 @@ public strictfp class RobotPlayer {
 //                rc.resign();
 //            }
             try {
+                robot.indicatorString = "";
                 int roundNum = rc.getRoundNum();
                 robot.run();
+                rc.setIndicatorString(robot.indicatorString);
                 if(roundNum != rc.getRoundNum()){
                     System.out.println("BYTECODE EXCEEDED REEEE!");
                     rc.resign();
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {

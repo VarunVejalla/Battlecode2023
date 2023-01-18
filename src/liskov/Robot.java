@@ -56,6 +56,7 @@ public class Robot {
     MapLocation[] HQlocs;
     int turnCount = 0;
     int[] prevCommsArray = new int[64];
+    String indicatorString = "";
 
     Random rng;
 
