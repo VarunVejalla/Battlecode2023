@@ -29,26 +29,19 @@ public class Util {
 
 
     public static boolean tryMine(ResourceType type, int numResources) throws GameActionException {
-        MapLocation me = rc.getLocation();
-        for (Direction dir : Robot.allDirections) {
-            MapLocation wellLocation = me.add(dir);
-            if (rc.canSenseLocation(wellLocation)) {
-                WellInfo info = rc.senseWell(wellLocation);
-                if (info == null) {
-                    continue;
-                }
-                if (info.getResourceType() != type) {
-                    continue;
-                }
-                int rate = numResources;
-                if(rate > info.getRate()){
-                    rate = info.getRate();
-                }
-                // See if you can collect the requested amount.
-                if (rc.canCollectResource(wellLocation, rate)) {
-                    rc.collectResource(wellLocation, rate);
-                    return true;
-                }
+        WellInfo[] nearbyWells = rc.senseNearbyWells(RobotType.CARRIER.actionRadiusSquared);
+        for(WellInfo well : nearbyWells){
+            if(well.getResourceType() != type){
+                continue;
+            }
+            int rate = numResources;
+            if(rate > well.getRate()){
+                rate = well.getRate();
+            }
+            // See if you can collect the requested amount.
+            if (rc.canCollectResource(well.getMapLocation(), rate)) {
+                rc.collectResource(well.getMapLocation(), rate);
+                return true;
             }
         }
 
@@ -66,14 +59,82 @@ public class Util {
         return false;
     }
 
-    public static void log(String str){
-//        if(true){
-//            return;
-//        }
+    public static int checkNumSymmetriesPossible() throws GameActionException {
+        return getPotentialSymmetries().length;
+    }
 
-        if(rc.getType() != RobotType.LAUNCHER){
+    public static SymmetryType[] getPotentialSymmetries() throws GameActionException {
+        SymmetryType[] potential = new SymmetryType[3];
+        int num = 0;
+        if(robot.comms.checkSymmetryPossible(SymmetryType.HORIZONTAL)){
+            potential[num] = SymmetryType.HORIZONTAL;
+            num++;
+        }
+        if(robot.comms.checkSymmetryPossible(SymmetryType.VERTICAL)){
+            potential[num] = SymmetryType.VERTICAL;
+            num++;
+        }
+        if(robot.comms.checkSymmetryPossible(SymmetryType.ROTATIONAL)){
+            potential[num] = SymmetryType.ROTATIONAL;
+            num++;
+        }
+        SymmetryType[] output = new SymmetryType[num];
+        for(int i = 0; i < num; i++){
+            output[i] = potential[i];
+        }
+        return output;
+    }
+
+    public static MapLocation applySymmetry(MapLocation loc, SymmetryType type){
+        int width = rc.getMapWidth();
+        int height = rc.getMapHeight();
+        switch(type){
+            case HORIZONTAL:
+                return new MapLocation(width - loc.x - 1, loc.y);
+            case VERTICAL:
+                return new MapLocation(loc.x, height - loc.y - 1);
+            case ROTATIONAL:
+                return new MapLocation(width - loc.x - 1, height - loc.y - 1);
+        }
+        return null;
+    }
+
+    public MapLocation getClosestMapLocation(MapLocation[] locs){
+        MapLocation closest = null;
+        int closestDist = Integer.MAX_VALUE;
+        for(MapLocation loc : locs){
+            int dist = robot.myLoc.distanceSquaredTo(loc);
+            if(dist < closestDist){
+                closest = loc;
+                closestDist = dist;
+            }
+        }
+        return closest;
+    }
+
+    public static int getNumTroopsInRange(int radius, Team team, RobotType type) throws GameActionException {
+        RobotInfo[] infos = team == null ? rc.senseNearbyRobots(radius) : rc.senseNearbyRobots(radius, team);
+        if(type == null){
+            return infos.length;
+        }
+        int count = 0;
+        for(RobotInfo info : infos){
+            if(info.type == type){
+                count++;
+            }
+        }
+        return count;
+    }
+
+
+    public static void log(String str){
+        if(true){
             return;
         }
+
+//        if(rc.getType() != RobotType.LAUNCHER){
+//            return;
+//        }
 
 //        if(rc.getID() != 12586){
 //            return;

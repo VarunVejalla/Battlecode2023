@@ -9,6 +9,7 @@ import static liskov.Constants.*;
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
+    private ResourceType targetResource;
     boolean mining = true;
     int HQImHelpingIdx = -1;
 
@@ -135,7 +136,8 @@ public class Carrier extends Robot {
 
         else{
             Util.log("Gonna go find Elixir");
-            return ResourceType.ELIXIR;}
+            return ResourceType.ELIXIR;
+        }
     }
 
 
@@ -153,6 +155,7 @@ public class Carrier extends Robot {
             ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
 //            MapLocation closestWell = getNearestWell(targetType);
             MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
+            targetResource = targetType;
             targetLoc = closestWell;
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
@@ -243,6 +246,11 @@ public class Carrier extends Robot {
     }
 
     public void tryMining() throws GameActionException {
+        if(targetResource != null){
+            tryMine(targetResource);
+        }
+
+        // Default priority order of resource mining
         tryMine(ResourceType.ELIXIR);
         tryMine(ResourceType.MANA);
         tryMine(ResourceType.ADAMANTIUM);

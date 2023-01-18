@@ -67,13 +67,13 @@ public class Util {
     }
 
     public static void log(String str){
-//        if(true){
-//            return;
-//        }
-
-        if(rc.getType() != RobotType.LAUNCHER){
+        if(true){
             return;
         }
+
+//        if(rc.getType() != RobotType.LAUNCHER){
+//            return;
+//        }
 
 //        if(rc.getID() != 12586){
 //            return;

@@ -209,32 +209,34 @@ public class Comms {
     // Symmetry methods
 
     public void resetSymmetry() throws GameActionException {
-
+        rc.writeSharedArray(SYMMETRY_COMMS_IDX, 7);
     }
 
-    public boolean horizontalSymmetryPossible() throws GameActionException {
-        return extractVal(SYMMETRY_COMMS_IDX, HORIZONTAL_SYMMETRY_MASK, HORIZONTAL_SYMMETRY_SHIFT) == 1;
+    public boolean checkSymmetryPossible(SymmetryType type) throws GameActionException {
+        switch(type) {
+            case HORIZONTAL:
+                return extractVal(SYMMETRY_COMMS_IDX, HORIZONTAL_SYMMETRY_MASK, HORIZONTAL_SYMMETRY_SHIFT) == 1;
+            case VERTICAL:
+                return extractVal(SYMMETRY_COMMS_IDX, VERTICAL_SYMMETRY_MASK, VERTICAL_SYMMETRY_SHIFT) == 1;
+            case ROTATIONAL:
+                return extractVal(SYMMETRY_COMMS_IDX, ROTATIONAL_SYMMETRY_MASK, ROTATIONAL_SYMMETRY_SHIFT) == 1;
+        }
+
+        return true;
     }
 
-    public boolean verticalSymmetryPossible() throws GameActionException {
-        return extractVal(SYMMETRY_COMMS_IDX, VERTICAL_SYMMETRY_MASK, VERTICAL_SYMMETRY_SHIFT) == 1;
+    public void eliminateSymmetry(SymmetryType type) throws GameActionException {
+        switch(type) {
+            case HORIZONTAL:
+                insertVal(SYMMETRY_COMMS_IDX, HORIZONTAL_SYMMETRY_MASK, HORIZONTAL_SYMMETRY_SHIFT, 0);
+                break;
+            case VERTICAL:
+                insertVal(SYMMETRY_COMMS_IDX, VERTICAL_SYMMETRY_MASK, VERTICAL_SYMMETRY_SHIFT, 0);
+                break;
+            case ROTATIONAL:
+                insertVal(SYMMETRY_COMMS_IDX, ROTATIONAL_SYMMETRY_MASK, ROTATIONAL_SYMMETRY_SHIFT, 0);
+                break;
+        }
     }
-
-    public boolean rotationalSymmetryPossible() throws GameActionException {
-        return extractVal(SYMMETRY_COMMS_IDX, ROTATIONAL_SYMMETRY_MASK, ROTATIONAL_SYMMETRY_SHIFT) == 1;
-    }
-
-    public void eliminateHorizontalSymmetry() throws GameActionException {
-        insertVal(SYMMETRY_COMMS_IDX, HORIZONTAL_SYMMETRY_MASK, HORIZONTAL_SYMMETRY_SHIFT, 0);
-    }
-
-    public void eliminateVerticalSymmetry() throws GameActionException {
-        insertVal(SYMMETRY_COMMS_IDX, VERTICAL_SYMMETRY_MASK, VERTICAL_SYMMETRY_SHIFT, 0);
-    }
-
-    public void eliminateRotationalSymmetry() throws GameActionException {
-        insertVal(SYMMETRY_COMMS_IDX, ROTATIONAL_SYMMETRY_MASK, ROTATIONAL_SYMMETRY_SHIFT, 0);
-    }
-
 
 }

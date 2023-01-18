@@ -34,6 +34,9 @@ public class Headquarters extends Robot {
         super(rc);
         myLoc = rc.getLocation();
         computeIndex();
+        if(myIndex == 0){
+            comms.resetSymmetry();
+        }
         spawner = new Spawner(rc, this);
         comms.writeOurHQLocation(myIndex, myLoc);
     }
@@ -170,6 +173,11 @@ public class Headquarters extends Robot {
         super.run();
         if(myIndex == 0){
 //            updateCommsChangesQueue();
+            if(Util.checkNumSymmetriesPossible() == 0){
+                System.out.println("Goddamnit we fucked up the symmetries");
+                rc.resign();
+                comms.resetSymmetry();
+            }
         }
 
         if(rc.getRoundNum() > 2){
