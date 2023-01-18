@@ -1,4 +1,4 @@
-package cicero;
+package lamarr;
 
 import battlecode.common.*;
 
@@ -45,7 +45,7 @@ public class Navigation {
     }
 
     public boolean goTo(MapLocation target, int minDistToSatisfy) throws GameActionException{
-        rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
+//        rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
 //        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
 
         // thy journey hath been completed

@@ -1,11 +1,16 @@
-package cicero;
+package lamarr;
 
 import battlecode.common.*;
+
+import static lamarr.Constants.ADAMANTIUM_RATIO_INDEX;
+import static lamarr.Constants.MANA_RATIO_INDEX;
 
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
     boolean mining = true;
+    int HQImHelpingIdx = -1;
+
 
     public Carrier(RobotController rc) throws GameActionException {
         super(rc);
@@ -14,6 +19,9 @@ public class Carrier extends Robot {
     public void run() throws GameActionException {
         super.run();
         int weight = totalResourceWeight();
+
+
+
         if(weight == GameConstants.CARRIER_CAPACITY && mining){
             mining = false;
             targetLoc = null;
@@ -21,6 +29,7 @@ public class Carrier extends Robot {
         else if(weight == 0 && !mining){
             mining = true;
             targetLoc = null;
+            HQImHelpingIdx = -1;
         }
 
         tryTakingAnchor();
@@ -28,6 +37,8 @@ public class Carrier extends Robot {
         // If you're holding an anchor, make your top priority to deposit it.
         boolean dangerNearby = runAway();
         if(!dangerNearby) {
+
+
             if (rc.getAnchor() != null) {
                 moveTowardsNearestUncontrolledIsland();
                 tryPlacing();
@@ -46,6 +57,7 @@ public class Carrier extends Robot {
             }
         }
     }
+
 
     public int totalResourceWeight() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
@@ -106,13 +118,15 @@ public class Carrier extends Robot {
         // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
         // otherwise, return elixir
 
-        if(num <= ratio[0]) {
+        //Ratio data indices
+
+        if(num <= ratio[ADAMANTIUM_RATIO_INDEX]) {
             Util.log("Gonna go find Adamantium");
             return ResourceType.ADAMANTIUM;
         }
 
         // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[1] += ratio[0];   //get cumulative sum up till now
+        ratio[MANA_RATIO_INDEX] += ratio[ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
         if(num <= ratio[1]) {
             Util.log("Gonna go find Mana");
             return ResourceType.MANA;
@@ -121,8 +135,10 @@ public class Carrier extends Robot {
         else{
             Util.log("Gonna go find Elixir");
             return ResourceType.ELIXIR;}
-
     }
+
+
+
 
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
@@ -132,7 +148,7 @@ public class Carrier extends Robot {
 
         if(targetLoc == null){
             MapLocation HQImHelping = getNearestFriendlyHQ();
-            int HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+            HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
             ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
 //            MapLocation closestWell = getNearestWell(targetType);
             MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
@@ -151,9 +167,9 @@ public class Carrier extends Robot {
         }
     }
 
-    // TODO: For now this is random, but we should have HQs set a flag or smth on comms for when they need a resource?
     public MapLocation getHQToReturnTo() {
-        return HQlocs[rng.nextInt(numHQs)];
+        if(HQImHelpingIdx > -1) return HQlocs[HQImHelpingIdx];
+        else return HQlocs[rng.nextInt(numHQs)];
     }
 
     public void moveTowardsHQ() throws GameActionException {

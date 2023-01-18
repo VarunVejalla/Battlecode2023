@@ -1,4 +1,4 @@
-package cicero;
+package lamarr;
 
 import battlecode.common.*;
 
@@ -10,6 +10,21 @@ public class Util {
         int dx = a.x - b.x;
         int dy = a.y - b.y;
         return Math.max(Math.abs(dx), Math.abs(dy));
+    }
+
+
+    public static Direction[] closeDirections(Direction dir){
+        Direction[] close = {
+                dir,
+                dir.rotateLeft(),
+                dir.rotateRight(),
+                dir.rotateLeft().rotateLeft(),
+                dir.rotateRight().rotateRight(),
+                dir.rotateLeft().rotateLeft().rotateLeft(),
+                dir.rotateRight().rotateRight().rotateRight(),
+                dir.opposite()
+        };
+        return close;
     }
 
 
@@ -52,13 +67,13 @@ public class Util {
     }
 
     public static void log(String str){
-        if(true){
-            return;
-        }
-
-//        if(rc.getType() != RobotType.CARRIER){
+//        if(true){
 //            return;
 //        }
+
+        if(rc.getType() != RobotType.LAUNCHER){
+            return;
+        }
 
 //        if(rc.getID() != 12586){
 //            return;

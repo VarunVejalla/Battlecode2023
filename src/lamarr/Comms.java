@@ -1,8 +1,8 @@
-package cicero;
+package lamarr;
 
 import battlecode.common.*;
 
-import static cicero.Constants.*;
+import static lamarr.Constants.*;
 
 // some parts inspired by: https://github.com/mvpatel2000/Battlecode2022/blob/main/src/athena/CommsHandler.java
 
@@ -71,7 +71,13 @@ public class Comms {
         int mana = extractVal(manaWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT);
         int elixir = extractVal(elixirWellIndex, RESOURCE_RATIO_MASK, RESOURCE_RATIO_SHIFT);
 
-        return new int[]{adamantium, mana, elixir};
+
+        int[] ratioData = new int[3];
+        ratioData[ADAMANTIUM_RATIO_INDEX] = adamantium;
+        ratioData[MANA_RATIO_INDEX] = mana;
+        ratioData[ELIXIR_RATIO_INDEX] = elixir;
+
+        return ratioData;
     }
 
     public int readOurHQXCoord(int idx) throws GameActionException {
