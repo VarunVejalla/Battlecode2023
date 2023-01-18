@@ -287,7 +287,7 @@ public class Launcher extends Robot {
     // maybe scale the guarding radius upwards as we see more friendly troops?
     // TODO: also defend islands (with the highest priority)
     public void runDefensiveMovement() throws GameActionException {
-        if(rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
+        if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
             targetLoc = null;
         }
 

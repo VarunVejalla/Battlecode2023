@@ -210,22 +210,11 @@ public class Comms {
     // Symmetry methods
 
     public void resetSymmetry() throws GameActionException {
-        rc.writeSharedArray(SYMMETRY_COMMS_IDX, 7);
+        rc.writeSharedArray(constants.SYMMETRY_COMMS_IDX, 7);
     }
 
-    public boolean horizontalSymmetryPossible() throws GameActionException {
-        return extractVal(constants.SYMMETRY_COMMS_IDX, constants.HORIZONTAL_SYMMETRY_MASK, constants.HORIZONTAL_SYMMETRY_SHIFT) == 1;
-    }
-
-    public boolean verticalSymmetryPossible() throws GameActionException {
-        return extractVal(constants.SYMMETRY_COMMS_IDX, constants.VERTICAL_SYMMETRY_MASK, constants.VERTICAL_SYMMETRY_SHIFT) == 1;
-    }
-
-    public boolean rotationalSymmetryPossible() throws GameActionException {
-        return extractVal(constants.SYMMETRY_COMMS_IDX, constants.ROTATIONAL_SYMMETRY_MASK, constants.ROTATIONAL_SYMMETRY_SHIFT) == 1;
-    }
     public boolean checkSymmetryPossible(SymmetryType type) throws GameActionException {
-        switch(type) {
+        switch (type) {
             case HORIZONTAL:
                 return extractVal(constants.SYMMETRY_COMMS_IDX, constants.HORIZONTAL_SYMMETRY_MASK, constants.HORIZONTAL_SYMMETRY_SHIFT) == 1;
             case VERTICAL:
@@ -233,17 +222,6 @@ public class Comms {
             case ROTATIONAL:
                 return extractVal(constants.SYMMETRY_COMMS_IDX, constants.ROTATIONAL_SYMMETRY_MASK, constants.ROTATIONAL_SYMMETRY_SHIFT) == 1;
         }
-
-    public void eliminateHorizontalSymmetry() throws GameActionException {
-        insertVal(constants.SYMMETRY_COMMS_IDX, constants.HORIZONTAL_SYMMETRY_MASK, constants.HORIZONTAL_SYMMETRY_SHIFT, 0);
-    }
-
-    public void eliminateVerticalSymmetry() throws GameActionException {
-        insertVal(constants.SYMMETRY_COMMS_IDX, constants.VERTICAL_SYMMETRY_MASK, constants.VERTICAL_SYMMETRY_SHIFT, 0);
-    }
-
-    public void eliminateRotationalSymmetry() throws GameActionException {
-        insertVal(constants.SYMMETRY_COMMS_IDX, constants.ROTATIONAL_SYMMETRY_MASK, constants.ROTATIONAL_SYMMETRY_SHIFT, 0);
         return true;
     }
 
