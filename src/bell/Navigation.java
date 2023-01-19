@@ -258,7 +258,7 @@ public class Navigation {
             if(center.distanceSquaredTo(newLoc) > maxDist){
                 continue;
             }
-            double cooldown = rc.senseCooldownMultiplier(newLoc);
+            double cooldown = rc.senseMapInfo(newLoc).getCooldownMultiplier(robot.myTeam);
             if(cooldown < lowestCooldown){
                 lowestCooldown = cooldown;
                 bestDirection = options[i];
