@@ -49,8 +49,12 @@ public strictfp class RobotPlayer {
         switch (rc.getType()) {
             case HEADQUARTERS:
                 robot = new Headquarters(rc); break;
-            default:
+            case LAUNCHER:
+                robot = new Launcher(rc); break;
+            case CARRIER:
                 robot = new Carrier(rc); break;
+            default:
+                robot = new Launcher(rc); break;
         }
 
         while (true) {

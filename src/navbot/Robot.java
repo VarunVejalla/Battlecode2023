@@ -58,6 +58,7 @@ public class Robot {
     Constants constants;
     Random rng;
 
+
     /** Array containing all the possible movement directions. */
     static final Direction[] movementDirections = {
             Direction.NORTH,
@@ -99,6 +100,7 @@ public class Robot {
         islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);
         numHQs = 0;
+
         if(myType == RobotType.HEADQUARTERS){
             scanNearbySquares();
             readComms();
@@ -113,7 +115,8 @@ public class Robot {
         // fill in with code common to all robots
         turnCount++;
         myLoc = rc.getLocation();
-        Util.log("Currently at: " + myLoc.toString());
+
+        if(rc.getType() == RobotType.HEADQUARTERS) rc.setIndicatorString(rc.getLocation().toString() +" - round: " + rc.getRoundNum());
         myLocInfo = rc.senseMapInfo(myLoc);
         if(rc.getRoundNum() == 2 && myType == RobotType.HEADQUARTERS){
             readHQLocs();

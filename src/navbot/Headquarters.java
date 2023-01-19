@@ -19,13 +19,24 @@ public class Headquarters extends Robot {
         Direction spawnDir = Direction.EAST;
         MapLocation spawnLocation = myLoc.add(spawnDir);
 
-
+//        // spawn a carrier
         if(rc.getID() == 3 &&  count < desiredCount) {
             if (rc.canBuildRobot(RobotType.CARRIER, spawnLocation)) {
                 rc.buildRobot(RobotType.CARRIER, spawnLocation);
                 count += 1;
             }
         }
+
+
+
+//// spawn a launcher
+//        if(rc.getID() == 3 &&  count < desiredCount) {
+//            if (rc.canBuildRobot(RobotType.LAUNCHER, spawnLocation)) {
+//                rc.buildRobot(RobotType.LAUNCHER, spawnLocation);
+//                count += 1;
+//            }
+//        }
+
 
 
     }
