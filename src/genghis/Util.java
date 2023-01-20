@@ -13,6 +13,7 @@ public class Util {
     }
 
 
+
     public static Direction[] closeDirections(Direction dir){
         Direction[] close = {
                 dir,
