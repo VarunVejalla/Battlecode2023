@@ -1,9 +1,6 @@
 package liskov;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 /**
  * RobotPlayer is the class that describes your main robot strategy.
@@ -63,7 +60,7 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-//            if(turnCount > 10){
+//            if(turnCount > 1200){
 //                rc.resign();
 //            }
             try {

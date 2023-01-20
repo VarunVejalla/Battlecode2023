@@ -3,9 +3,20 @@ package liskov;
 import battlecode.common.*;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
+
+class CarrierInfo {
+    int roundNum;
+    HashSet<Integer> carriers;
+    public CarrierInfo(int roundNum){
+        this.roundNum = roundNum;
+        this.carriers = new HashSet<>();
+    }
+}
 
 public class Headquarters extends Robot {
+
+    int TIME_TO_FORGET_CARRIER = 50; // forget we've seen a carrier after this many rounds
 
     MapLocation myLoc;
     int myIndex;
@@ -20,12 +31,12 @@ public class Headquarters extends Robot {
     double EMASmoothing = 5;   // parameter used in EMA --> higher value means we give more priority to recent changes
     int lastAnchorBuiltTurn = 0;
 
-    int timeToForgetCarrier = 50; // forget we've seen a carrier after this many rounds
     int initialCarrierThreshold = 10; //how many carriers an hq should see in its vision radius before transitioning over to ratio strategy
 
     boolean savingUp = false;
     Spawner spawner;
-    HashMap<Integer, Integer> seenCarriers = new HashMap<Integer, Integer>();         // keys are the ids of carriers we've seen, values are the last round we say them
+    CarrierInfo[] carriersLastSeen = new CarrierInfo[TIME_TO_FORGET_CARRIER];
+    HashMap<Integer, Integer> carrierToRoundMap = new HashMap<Integer, Integer>();
 
 //    int[] prevCommsArray = new int[63];
 //    Queue<Integer> commsChanges = new LinkedList<>();
@@ -81,38 +92,56 @@ public class Headquarters extends Robot {
     }
 
 
-    // TODO: Make this use less bytecode
-    public void forgetOldCarriers() { // 7k bytecode!
+    public void forgetOldCarriers() {
         int roundNum = rc.getRoundNum();
-        int forgetCarriersBeforeThisRound = roundNum - timeToForgetCarrier;
 
-        // forget carriers that we haven't seen in the past "timeToForgetCarrier" rounds
-        for(Iterator<HashMap.Entry<Integer, Integer>> it = seenCarriers.entrySet().iterator(); it.hasNext();){
-            HashMap.Entry<Integer, Integer> entry = it.next();
-            if(entry.getValue() < forgetCarriersBeforeThisRound){
-                it.remove();
-            }
+        // forget carriers that we haven't seen in the past "TIME_TO_FORGET_CARRIER" rounds
+        CarrierInfo info = carriersLastSeen[roundNum % TIME_TO_FORGET_CARRIER];
+        if(info == null){
+            return;
+        }
+
+        for(Integer id : info.carriers){
+            carrierToRoundMap.remove(id);
         }
     }
 
-    public void addNewCarriers() throws GameActionException { // 7k bytecode!
+    public void addNewCarriers() throws GameActionException {
         int roundNum = rc.getRoundNum();
         // check the robots that may have deposited resources to you and add them to seenCarriers
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.CARRIER.visionRadiusSquared, myTeam);
-        for(RobotInfo info: nearbyRobots){
-            if(info.type == RobotType.CARRIER){
-                int id = info.getID();
-                seenCarriers.put(id, roundNum);
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.CARRIER.actionRadiusSquared, myTeam);
+        CarrierInfo newRoundInfo = new CarrierInfo(roundNum);
+        int numCarriersParsed = 0;
+        for(int j = 0; j < nearbyRobots.length; j++) {
+            RobotInfo info = nearbyRobots[j];
+            if(info.type != RobotType.CARRIER){
+                continue;
             }
+            numCarriersParsed++;
+            if(numCarriersParsed > 15){
+                break;
+            }
+            int id = info.ID;
+            if(carrierToRoundMap.containsKey(id)){
+                int round = carrierToRoundMap.get(id);
+                carriersLastSeen[round % TIME_TO_FORGET_CARRIER].carriers.remove(id);
+            }
+            newRoundInfo.carriers.add(id);
+            carrierToRoundMap.put(id, roundNum);
         }
+        carriersLastSeen[roundNum % TIME_TO_FORGET_CARRIER] = newRoundInfo;
     }
 
     // count the number of miners that we've seen in the past 50 rounds
     // This method will run fully every other round cuz it takes so much goddamn bytecode
     public void updateSeenCarriers() throws GameActionException {
+//        System.out.println("Bytecode before forgetting: " + Clock.getBytecodesLeft());
         forgetOldCarriers();
+//        System.out.println("Bytecode after forgetting: " + Clock.getBytecodesLeft());
         addNewCarriers();
-//        System.out.println("# of carriers: " + seenCarriers.size());
+//        System.out.println("Bytecode after adding: " + Clock.getBytecodesLeft());
+//        System.out.println("# of carriers: " + carrierToRoundMap.size());
+        indicatorString += ";C: " + carrierToRoundMap.size() + ";";
     }
 
     // criteria on whether hq should start saving up for an anchor
@@ -154,7 +183,7 @@ public class Headquarters extends Robot {
 //            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
 //            return;
 //        }
-        int numCarriers = seenCarriers.size();
+        int numCarriers = carrierToRoundMap.size();
         if(numCarriers > 7) {
             comms.writeRatio(myIndex, 0, 15, 0);
         }
@@ -189,7 +218,7 @@ public class Headquarters extends Robot {
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
 
         updateSeenCarriers();
-        Util.log("Seen carriers: " + seenCarriers.size());
+//        Util.log("Seen carriers: " + carrierToRoundMap.size());
 
         shouldISaveUp();
         setResourceRatios();
