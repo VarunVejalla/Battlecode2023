@@ -1,10 +1,12 @@
-package navbot;
+package genghis;
 
 import battlecode.common.*;
 
 enum NavigationMode{
     FUZZYNAV, BUGNAV;
 }
+
+//TODO: Fix bugnav
 
 public class Navigation {
 
@@ -47,8 +49,8 @@ public class Navigation {
     public boolean goTo(MapLocation target, int minDistToSatisfy) throws GameActionException{
 //        rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
 //        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
-        // thy journey hath been completed
 
+        // thy journey hath been completed
         if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
             return true;
         }
@@ -68,9 +70,7 @@ public class Navigation {
                     break;
             }
             if(toGo == null) return false;
-
             Util.tryMove(toGo); // Should always return true since fuzzyNav checks if rc.canMove(dir)
-
             if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
                 return true;
             }
@@ -80,7 +80,6 @@ public class Navigation {
 
     public Direction fuzzyNav(MapLocation target) throws GameActionException{
         Direction toTarget = robot.myLoc.directionTo(target);
-
         Direction[] moveOptions = {
                 toTarget,
                 toTarget.rotateLeft(),
@@ -91,10 +90,8 @@ public class Navigation {
 
         Direction bestDir = null;
         double bestCost = Double.MAX_VALUE;
-        MapLocation bestNewLoc = rc.getLocation();
 
-
-        for(int i = moveOptions.length; i--> 0;){
+        for(int i = moveOptions.length; i-- > 0;){
             Direction dir = moveOptions[i];
             MapLocation newLoc = robot.myLoc.add(dir);
 
@@ -102,12 +99,12 @@ public class Navigation {
                 continue;
             }
 
-
             if(!rc.sensePassability(newLoc)) continue;  // don't consider if the new location is not passable
+
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
-
-            //TODO: only do this if this is our last turn (carriers can possibly move twice a round, so don't factor in current on next spot if you're a carrier). Do something smarter?
+            // TODO: Lowkey idk if this code works
+            // If there's a current, add that to the end of the new location
             if(newLocInfo.getCurrentDirection() != Direction.CENTER){
                 newLoc = newLoc.add(newLocInfo.getCurrentDirection());
                 if(!rc.canSenseLocation(newLoc) || !rc.canMove(dir)){
@@ -117,24 +114,14 @@ public class Navigation {
             }
 
             double cost = newLocInfo.getCooldownMultiplier(robot.myTeam) * 10;
-
-
-
-            //TODO: make this more efficient
-            cost += Math.sqrt(newLoc.distanceSquaredTo(target)) * 10;
+            cost += Util.minMovesToReach(newLoc, target) * 10;
 
             if(cost < bestCost){
                 bestCost = cost;
                 bestDir = dir;
-                bestNewLoc = newLoc;
+
             }
         }
-
-//        System.out.println("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
-//        System.out.println("newLoc from " + robot.myLoc + ": " + bestNewLoc);
-//        System.out.println("bestCost from " + robot.myLoc + ": " + bestCost);
-//        System.out.println("-------------------------");
-
 
         return bestDir;
     }

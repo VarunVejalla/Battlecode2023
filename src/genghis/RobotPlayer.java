@@ -1,4 +1,4 @@
-package navbot;
+package genghis;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -33,9 +33,6 @@ public strictfp class RobotPlayer {
             Direction.NORTHWEST,
     };
 
-
-
-
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * It is like the main function for your robot. If this method returns, the robot dies!
@@ -53,19 +50,32 @@ public strictfp class RobotPlayer {
                 robot = new Launcher(rc); break;
             case CARRIER:
                 robot = new Carrier(rc); break;
+            case BOOSTER:
+                robot = new Booster(rc); break;
+            case DESTABILIZER:
+                robot = new Destabilizer(rc); break;
+            case AMPLIFIER:
+                robot = new Amplifier(rc); break;
             default:
                 robot = new Launcher(rc); break;
         }
 
+
         while (true) {
             turnCount += 1;
+//            if(turnCount > 500){
+//                rc.resign();
+//            }
             try {
+                robot.indicatorString = "";
                 int roundNum = rc.getRoundNum();
                 robot.run();
+                rc.setIndicatorString(robot.indicatorString);
                 if(roundNum != rc.getRoundNum()){
                     System.out.println("BYTECODE EXCEEDED REEEE!");
-                    rc.resign();
+//                    rc.resign();
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -73,7 +83,4 @@ public strictfp class RobotPlayer {
             }
         }
     }
-
-
-
 }

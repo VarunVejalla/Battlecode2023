@@ -1,4 +1,4 @@
-package navbot;
+package genghis;
 
 import battlecode.common.*;
 
@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+// TODO: Fix code (tune).
 
 class WellSquareInfo {
     MapLocation loc;
@@ -37,6 +38,9 @@ class IslandInfo {
     }
 }
 
+enum SymmetryType { HORIZONTAL, VERTICAL, ROTATIONAL };
+
+
 public class Robot {
 
     RobotController rc;
@@ -55,9 +59,12 @@ public class Robot {
     MapLocation[] HQlocs;
     int turnCount = 0;
     int[] prevCommsArray = new int[64];
+    ArrayList<SymmetryType> impossibleSymmetries = new ArrayList<>();
+
+
+    String indicatorString = "";
     Constants constants;
     Random rng;
-
 
     /** Array containing all the possible movement directions. */
     static final Direction[] movementDirections = {
@@ -100,7 +107,6 @@ public class Robot {
         islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);
         numHQs = 0;
-
         if(myType == RobotType.HEADQUARTERS){
             scanNearbySquares();
             readComms();
@@ -115,9 +121,9 @@ public class Robot {
         // fill in with code common to all robots
         turnCount++;
         myLoc = rc.getLocation();
-
-        if(rc.getType() == RobotType.HEADQUARTERS) rc.setIndicatorString(rc.getLocation().toString() +" - round: " + rc.getRoundNum());
+        Util.log("Currently at: " + myLoc.toString());
         myLocInfo = rc.senseMapInfo(myLoc);
+        checkSymmetries();
         if(rc.getRoundNum() == 2 && myType == RobotType.HEADQUARTERS){
             readHQLocs();
         }
@@ -132,6 +138,32 @@ public class Robot {
 //        for(IslandInfo info : islands.values()){
 //            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
 //        }
+    }
+
+    public void checkSymmetries() throws GameActionException {
+        if(numHQs == 0){
+            return;
+        }
+
+        SymmetryType[] symmetries = Util.getPotentialSymmetries();
+        for(int i = 0; i < numHQs; i++){
+            MapLocation HQLoc = HQlocs[i];
+            for(SymmetryType type : symmetries){
+                if(impossibleSymmetries.contains(type)){
+                    continue;
+                }
+                MapLocation enemyHQLoc = Util.applySymmetry(HQLoc, type);
+
+                // If you can sense that location and there's no enemy HQ there, that means that symmetry isn't possible!
+                if(rc.canSenseLocation(enemyHQLoc)){
+                    RobotInfo info = rc.senseRobotAtLocation(enemyHQLoc);
+                    if(info == null || info.team != opponent || info.type != RobotType.HEADQUARTERS){
+                        Util.log("Eliminating symmetry " + type + " because friendly HQ at " + HQLoc + " but no enemy HQ at " + enemyHQLoc);
+                        impossibleSymmetries.add(type);
+                    }
+                }
+            }
+        }
     }
 
     public void readComms() throws GameActionException { // 2500 bytecode
@@ -354,9 +386,13 @@ public class Robot {
             info.commed = true;
         }
 
+        // Comm any symmetry updates
+        for(SymmetryType type : impossibleSymmetries){
+            comms.eliminateSymmetry(type);
+        }
+        impossibleSymmetries.clear();
+
     }
-
-
 
     // Find the nearest well of a specific resource. Null to allow any resource
     public MapLocation getNearestWell(ResourceType type){
@@ -380,8 +416,6 @@ public class Robot {
     public MapLocation getNearestWell(){
         return getNearestWell(null);
     }
-
-
 
     public MapLocation getFurthestIsland(Team controllingTeam){
         int furthestDist = Integer.MIN_VALUE;
@@ -452,6 +486,25 @@ public class Robot {
 
     public MapLocation getFurthestFriendlyIsland(){
         return getFurthestIsland(myTeam);
+    }
+
+    public MapLocation[] getPotentialEnemyHQLocs() throws GameActionException {
+        if(numHQs == 0){
+            return null;
+        }
+        SymmetryType[] types = Util.getPotentialSymmetries();
+        if(types.length == 0){
+            return null;
+        }
+        MapLocation[] potentialEnemyHQs = new MapLocation[numHQs * types.length];
+        int idx = 0;
+        for(SymmetryType type : types){
+            for(int i = 0; i < numHQs; i++){
+                potentialEnemyHQs[idx] = Util.applySymmetry(HQlocs[i], type);
+                idx++;
+            }
+        }
+        return potentialEnemyHQs;
     }
 
     public MapLocation getRandomScoutingLocation() {
