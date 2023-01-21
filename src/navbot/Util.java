@@ -66,6 +66,7 @@ public class Util {
         return false;
     }
 
+
     public static void log(String str){
 //        if(true){
 //            return;

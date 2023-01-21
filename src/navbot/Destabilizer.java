@@ -1,21 +1,20 @@
 package navbot;
 
-import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
-public class Launcher extends Robot {
+public class Destabilizer extends Robot {
 
-    private MapLocation targetLoc;
-
-
-    MapLocation destination;
-    public Launcher(RobotController rc) throws GameActionException {
+    public Destabilizer(RobotController rc) throws GameActionException {
         super(rc);
     }
 
+    MapLocation destination;
 
     public void run() throws GameActionException{
         super.run();
-
+        // code to run booster
         destination = new MapLocation(29,29);   // top right
         System.out.println("movement cooldown turns A: " + rc.getMovementCooldownTurns());
 
@@ -23,7 +22,4 @@ public class Launcher extends Robot {
             nav.goToFuzzy(destination, 0);
         }
     }
-
-
-
-}
+    }

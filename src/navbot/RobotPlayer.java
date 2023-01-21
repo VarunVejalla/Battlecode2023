@@ -53,8 +53,10 @@ public strictfp class RobotPlayer {
                 robot = new Launcher(rc); break;
             case CARRIER:
                 robot = new Carrier(rc); break;
+            case DESTABILIZER:
+                robot = new Destabilizer(rc); break;
             default:
-                robot = new Launcher(rc); break;
+                System.out.println("error; robot not initialized"); return;
         }
 
         while (true) {

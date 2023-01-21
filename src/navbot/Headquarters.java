@@ -20,7 +20,7 @@ public class Headquarters extends Robot {
         MapLocation spawnLocation = myLoc.add(spawnDir);
 
 //        // spawn a carrier
-        if(rc.getID() == 3 &&  count < desiredCount) {
+        if(rc.getID() >= 3 &&  count < desiredCount) {
             if (rc.canBuildRobot(RobotType.CARRIER, spawnLocation)) {
                 rc.buildRobot(RobotType.CARRIER, spawnLocation);
                 count += 1;
@@ -29,13 +29,21 @@ public class Headquarters extends Robot {
 
 
 
-//// spawn a launcher
+////// spawn a launcher
 //        if(rc.getID() == 3 &&  count < desiredCount) {
 //            if (rc.canBuildRobot(RobotType.LAUNCHER, spawnLocation)) {
 //                rc.buildRobot(RobotType.LAUNCHER, spawnLocation);
 //                count += 1;
 //            }
 //        }
+
+//        if(rc.getID() == 3 &&  count < desiredCount) {
+//            if (rc.canBuildRobot(RobotType.DESTABILIZER, spawnLocation)) {
+//                rc.buildRobot(RobotType.DESTABILIZER, spawnLocation);
+//                count += 1;
+//            }
+//        }
+
 
 
 
