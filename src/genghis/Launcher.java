@@ -53,6 +53,10 @@ public class Launcher extends Robot {
     MapLocation placeImDefending = null;
 
 
+    // variables used for circling behaviour in runNormalDefensiveStrategy
+    int defensiveMinDistToCircle = 0;
+    int defensiveMaxDistToCircle = 4;
+
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -82,7 +86,7 @@ public class Launcher extends Robot {
         // look at enemyIslands vs homeIslands
         // if we're clearly winning, push it
 
-        double defensiveProbability = 0.0;
+        double defensiveProbability = 0.5;
         if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent) * 1.5){
             defensiveProbability = 0.2;   // make it more likely that we attack if we're clearly winning
         }
@@ -578,9 +582,6 @@ public class Launcher extends Robot {
         final double launcherToCarrierThresholdToMoveAway = 1/3;
         final double launcherToCarrierThresholdToMoveBack = 1/6;
 
-        int minDistToCircle = 0;
-        int maxDistToCircle = 4;
-
         int numFriendlies = nearbyFriendlies.length;
         int numNearbyLaunchers = 0;
         int numNearbyCarriers = 0;
@@ -597,27 +598,30 @@ public class Launcher extends Robot {
             launcherToCarrierRatio = Double.MAX_VALUE;
         }
 
-
         if(targetLoc == null || myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared){
             isOffensive = true;
             runNormalOffensiveStrategy();
         }
 
-        //TODO: factor in enemy soldiers for whether or not you should move out
-        if(launcherToCarrierRatio > launcherToCarrierThresholdToMoveAway && numFriendlies > 35){
-                minDistToCircle += 1;
-                maxDistToCircle += 1;
-            }
+        Util.log("launcherToCarrierRatio: " + launcherToCarrierRatio);
 
-        if(launcherToCarrierRatio < launcherToCarrierThresholdToMoveBack){
-            minDistToCircle -= 1;
-            maxDistToCircle -= 1;
+        //TODO: factor in enemy soldiers for whether or not you should move out
+        if(launcherToCarrierRatio > launcherToCarrierThresholdToMoveAway){
+            Util.log("adding to radii");
+                defensiveMinDistToCircle += 1;
+                defensiveMaxDistToCircle += 1;
         }
 
+        if(launcherToCarrierRatio < launcherToCarrierThresholdToMoveBack){
+            Util.log("subtracting from radii");
 
-        nav.circle(targetLoc, minDistToCircle, maxDistToCircle);
+            defensiveMinDistToCircle -= 1;
+            defensiveMaxDistToCircle -= 1;
+        }
 
-
+        Util.log("minDistToCircle: " + defensiveMinDistToCircle);
+        Util.log("maxDistToCircle: " + defensiveMaxDistToCircle);
+        nav.circle(targetLoc, defensiveMinDistToCircle, defensiveMaxDistToCircle);
 
 
 //        if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
