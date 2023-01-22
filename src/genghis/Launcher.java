@@ -82,7 +82,7 @@ public class Launcher extends Robot {
         // look at enemyIslands vs homeIslands
         // if we're clearly winning, push it
 
-        double defensiveProbability = 0.5;
+        double defensiveProbability = 0.0;
         if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent) * 1.5){
             defensiveProbability = 0.2;   // make it more likely that we attack if we're clearly winning
         }
@@ -277,10 +277,11 @@ public class Launcher extends Robot {
     // calculates the safest direction to move in that will
     //TODO: need to make sure this doesn't each up too much bytecode if we have a vision radius filled up with enemies
     public void moveToSafestSpot() throws GameActionException{
-//        enemyDamage += info.type.damage / attackCooldown;
-        MapLocation[] possibleSpots = new MapLocation[9];
-        boolean[] newSpotIsValid = new boolean[9];
-        double[] enemyDamage = new double[9];
+
+        MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
+        boolean[] newSpotIsValid = new boolean[9];  // whether or not we can move to each new spot
+        double[] enemyDamage = new double[9];   // contains the enemy damage you will receive at each new spot
+        int[] sumOfDistanceSquaredToEnemies = new int[9]; //contains the sum of distances to enemies from each new spot
 
         possibleSpots[0] = myLoc.add(Direction.NORTH);
         possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
@@ -301,56 +302,74 @@ public class Launcher extends Robot {
             }
         }
 
-        for(RobotInfo enemy: nearbyVisionEnemies) {         //loop over each enemy in vision radiuus
+        for(RobotInfo enemy: nearbyVisionEnemies) {         //loop over each enemy in vision radius
 
             // launchers and destabilizers
             if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
                 for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enem
+                    // if the new spot is valid and an enemy can attack
                     if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
                         enemyDamage[i] += enemy.type.damage;
                     }
+                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
                 }
             }
 
             // carriers
             else if (enemy.type == RobotType.CARRIER) {
                 for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enem
+                    // if the new spot is valid and an enemy can attack us from there
                     if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
                         int massCarrying = enemy.getResourceAmount(ResourceType.MANA) + enemy.getResourceAmount(ResourceType.ADAMANTIUM) + enemy.getResourceAmount(ResourceType.ELIXIR);
                         enemyDamage[i] += (int) (massCarrying * 5/4);   // assume enemy will use their carriers to attack us
                     }
+                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
                 }
             }
 
             // headquarters
             else if (enemy.type == RobotType.HEADQUARTERS) {
                 for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enem
+                    // if the new spot is valid and an enemy can attack us from there
                     if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
                         enemyDamage[i] += 4;    // hq's deal 4 damage for all bots in their action radius
                     }
+                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
                 }
             }
         }
 
-
-
-
         for(int i=0; i<9; i++){
-            Util.log(""+newSpotIsValid[i]);
-            Util.log(""+enemyDamage[i]);
+            Util.log("--------");
+            Util.log("newLoc: " + possibleSpots[i]);
+            Util.log("is valid: " + newSpotIsValid[i]);
+            Util.log("enemyDamage: " + enemyDamage[i]);
+            Util.log("enemDistSq: " + sumOfDistanceSquaredToEnemies[i]);
+            Util.log("--------");
         }
+
         MapLocation bestSpot = myLoc;
         double leastEnemyDamage = nearbyActionEnemies.length;
+        int greatestSumDistanceSquared = Integer.MIN_VALUE;
+
         for(int i=0; i<9; i++){
+            // if the new spot will give us less enemy damage than the current best spot, make the new spot our best spot
             if(newSpotIsValid[i] && enemyDamage[i] < leastEnemyDamage){
                 bestSpot = possibleSpots[i];
                 leastEnemyDamage = enemyDamage[i];
+                greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
+            }
+
+            // if the new spot will give us the same enemy damage, but will move us farther away from the enemies, make the new spot our best spot
+            else if(newSpotIsValid[i] &&
+                    enemyDamage[i] == leastEnemyDamage &&
+                    sumOfDistanceSquaredToEnemies[i] > greatestSumDistanceSquared){
+                    bestSpot = possibleSpots[i];
+                    leastEnemyDamage = enemyDamage[i];
+                    greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
             }
         }
-        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage");
+        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage with sumDistanceSquared " + greatestSumDistanceSquared);
         nav.goToFuzzy(bestSpot, 0);
     }
 
