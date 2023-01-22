@@ -144,12 +144,11 @@ public class Launcher extends Robot {
                 Util.log("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
-                moveBackFromEnemy();
+                moveToSafestSpot();
             }
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
                 //TODO: move somewhere where youu can hit the enemy but also hit by the least number of enemies
-
                 moveTowardsEnemyCOM();
             } else if (rc.isMovementReady()) {
                 moveTowardsEnemyCOM();
@@ -171,18 +170,18 @@ public class Launcher extends Robot {
                 Util.log("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
-                moveBackFromEnemy();
+                moveToSafestSpot();
             }
         } else if (enemyInVisionRadius){
-            moveBackFromEnemy();
+            moveToSafestSpot();
         }
     }
 
     //TODO: implement this
     public void runSafeDefensiveStrategy() throws GameActionException{
-
         if(enemyInActionRadius){
             moveBackIfAvoidsEnemy();
+//            moveToSafestSpot();
         }
 
         else{
@@ -290,6 +289,60 @@ public class Launcher extends Robot {
     }
 
 
+    // calculates the safest direction to move in that will
+    //TODO: need to make sure this doesn't each up too much bytecode if we have a vision radius filled up with enemies
+    public void moveToSafestSpot() throws GameActionException{
+//        enemyDamage += info.type.damage / attackCooldown;
+        MapLocation[] possibleSpots = new MapLocation[9];
+        boolean[] newSpotIsValid = new boolean[9];
+        int[] numEnemiesWhoCanAttack = new int[9];
+
+        possibleSpots[0] = myLoc.add(Direction.NORTH);
+        possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
+        possibleSpots[2] = myLoc.add(Direction.EAST);
+        possibleSpots[3] = myLoc.add(Direction.SOUTHEAST);
+        possibleSpots[4] = myLoc.add(Direction.SOUTH);
+        possibleSpots[5] = myLoc.add(Direction.SOUTHWEST);
+        possibleSpots[6] = myLoc.add(Direction.WEST);
+        possibleSpots[7] = myLoc.add(Direction.NORTHWEST);
+        possibleSpots[8] = myLoc;
+        newSpotIsValid[8] = true;   // we know this spot is valid, because we're on it!
+
+        // check if we can sense each new possible location, and that the new location is passable
+        for(int i=0; i<8; i++){
+            newSpotIsValid[i] = false;
+            if(rc.canSenseLocation(possibleSpots[i]) && rc.senseMapInfo(possibleSpots[i]).isPassable()){
+                newSpotIsValid[i] = true;
+            }
+        }
+
+        for(RobotInfo enemy: nearbyVisionEnemies) {         //loop over each enemy in vision radiuus
+            if (enemy.type == RobotType.LAUNCHER) {
+                for (int i = 0; i < 9; i++) {
+                    // if the new spot is valid and an enem
+                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+                        numEnemiesWhoCanAttack[i] += 1;
+                    }
+                }
+            }
+        }
+//        for(int i=0; i<9; i++){
+//            Util.log(newSpotIsValid[i]);
+//            Util.log(numEnemiesWhoCanAttack[i]);
+//        }
+        MapLocation bestSpot = myLoc;
+        int leastNumEnemies = nearbyActionEnemies.length;
+        for(int i=0; i<9; i++){
+            if(newSpotIsValid[i] && numEnemiesWhoCanAttack[i] < leastNumEnemies){
+                bestSpot = possibleSpots[i];
+                leastNumEnemies = numEnemiesWhoCanAttack[i];
+            }
+        }
+//        Util.log("safest spot: " + bestSpot + ", with " + leastNumEnemies + " enemies");
+        nav.goToFuzzy(bestSpot, 0);
+    }
+
+
     public void moveTowardsEnemyCOM() throws GameActionException{
         nav.goToFuzzy(enemyCOM, 0);
     }
@@ -338,6 +391,9 @@ public class Launcher extends Robot {
         if(toAttackIndex == -1) return null;
         return nearbyActionEnemies[toAttackIndex];
     }
+
+
+
 
     // summary of this method:
     // check to see is attack is ready. if not, you can't do anything so return
@@ -534,7 +590,7 @@ public class Launcher extends Robot {
         }
 
 
-        if(myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared){
+        if(targetLoc == null || myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared){
             isOffensive = true;
             runNormalOffensiveStrategy();
         }
@@ -615,9 +671,6 @@ public class Launcher extends Robot {
 
     public LauncherHeuristic getHeuristic(RobotInfo[] nearbyFriendlies, RobotInfo[] dangerousEnemies, RobotInfo nearestEnemyInfo) throws GameActionException {
         // TODO: Maybe only check # of attackers on the robot closest to you?
-
-
-
         // your attack isn't ready, then don't engage
 
         if(nearestEnemyInfo == null){ // No enemies nearby, we safe
