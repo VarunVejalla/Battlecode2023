@@ -280,7 +280,7 @@ public class Launcher extends Robot {
 //        enemyDamage += info.type.damage / attackCooldown;
         MapLocation[] possibleSpots = new MapLocation[9];
         boolean[] newSpotIsValid = new boolean[9];
-        int[] numEnemiesWhoCanAttack = new int[9];
+        double[] enemyDamage = new double[9];
 
         possibleSpots[0] = myLoc.add(Direction.NORTH);
         possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
@@ -302,28 +302,55 @@ public class Launcher extends Robot {
         }
 
         for(RobotInfo enemy: nearbyVisionEnemies) {         //loop over each enemy in vision radiuus
-            if (enemy.type == RobotType.LAUNCHER) {
+
+            // launchers and destabilizers
+            if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
                 for (int i = 0; i < 9; i++) {
                     // if the new spot is valid and an enem
                     if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        numEnemiesWhoCanAttack[i] += 1;
+                        enemyDamage[i] += enemy.type.damage;
+                    }
+                }
+            }
+
+            // carriers
+            else if (enemy.type == RobotType.CARRIER) {
+                for (int i = 0; i < 9; i++) {
+                    // if the new spot is valid and an enem
+                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+                        int massCarrying = enemy.getResourceAmount(ResourceType.MANA) + enemy.getResourceAmount(ResourceType.ADAMANTIUM) + enemy.getResourceAmount(ResourceType.ELIXIR);
+                        enemyDamage[i] += (int) (massCarrying * 5/4);   // assume enemy will use their carriers to attack us
+                    }
+                }
+            }
+
+            // headquarters
+            else if (enemy.type == RobotType.HEADQUARTERS) {
+                for (int i = 0; i < 9; i++) {
+                    // if the new spot is valid and an enem
+                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+                        enemyDamage[i] += 4;    // hq's deal 4 damage for all bots in their action radius
                     }
                 }
             }
         }
-//        for(int i=0; i<9; i++){
-//            Util.log(newSpotIsValid[i]);
-//            Util.log(numEnemiesWhoCanAttack[i]);
-//        }
-        MapLocation bestSpot = myLoc;
-        int leastNumEnemies = nearbyActionEnemies.length;
+
+
+
+
         for(int i=0; i<9; i++){
-            if(newSpotIsValid[i] && numEnemiesWhoCanAttack[i] < leastNumEnemies){
+            Util.log(""+newSpotIsValid[i]);
+            Util.log(""+enemyDamage[i]);
+        }
+        MapLocation bestSpot = myLoc;
+        double leastEnemyDamage = nearbyActionEnemies.length;
+        for(int i=0; i<9; i++){
+            if(newSpotIsValid[i] && enemyDamage[i] < leastEnemyDamage){
                 bestSpot = possibleSpots[i];
-                leastNumEnemies = numEnemiesWhoCanAttack[i];
+                leastEnemyDamage = enemyDamage[i];
             }
         }
-//        Util.log("safest spot: " + bestSpot + ", with " + leastNumEnemies + " enemies");
+        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage");
         nav.goToFuzzy(bestSpot, 0);
     }
 
@@ -640,7 +667,6 @@ public class Launcher extends Robot {
             return new LauncherHeuristic(100, 100, 0, 0.01);
         }
         Util.log("Nearest enemy Info: " + nearestEnemyInfo.location.toString());
-
         double friendlyDamage = 0.0;
         double enemyDamage = 0.0;
         double friendlyHP = 0.0;
@@ -648,16 +674,15 @@ public class Launcher extends Robot {
 
         for(int i = 0; i < dangerousEnemies.length; i++){
             RobotInfo info = dangerousEnemies[i];
-            if(info.type == RobotType.LAUNCHER){
+            if(info.type == RobotType.LAUNCHER || info.type == RobotType.DESTABILIZER){
                 double attackCooldown = info.type.actionCooldown;
                 enemyDamage += info.type.damage / attackCooldown;
                 enemyHP += info.getHealth();
             }
             else if(info.type == RobotType.CARRIER){    //factor in damage that carrier can do (in one round)
                 int resourceMass = info.getResourceAmount(ResourceType.MANA) + info.getResourceAmount(ResourceType.ADAMANTIUM) + info.getResourceAmount(ResourceType.ELIXIR);
-                friendlyHP -=  5 + 3*resourceMass / 8;
+                friendlyHP -=  (int)(5*resourceMass/4);
             }
-
         }
 
         // Calculate friendlies attacking the enemy
