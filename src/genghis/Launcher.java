@@ -124,16 +124,22 @@ public class Launcher extends Robot {
         updateAllNearbyInfo();
 
         boolean isSafe = heuristic.getSafe(this);
+        if(isSafe){
+            indicatorString += "Safe;";
+        }
+        else{
+            indicatorString += "Unsafe;";
+        }
         if(isOffensive){
             if(isSafe){
                 runSafeOffensiveStrategy();
             }else{
                 runUnsafeOffensiveStrategy();
             }
-        }else{
+        } else{
             if(isSafe){
                 runSafeDefensiveStrategy();
-            }else{
+            } else{
                 runUnsafeDefensiveStrategy();
             }
         }
@@ -143,8 +149,7 @@ public class Launcher extends Robot {
             updateNearbyActionInfo();
             successfullyAttacked = runAttack();
         }
-
-
+        
     }
 
     public void runSafeOffensiveStrategy() throws GameActionException{
@@ -154,6 +159,7 @@ public class Launcher extends Robot {
             }
             if(rc.isMovementReady()){
                 moveToSafestSpot();
+                indicatorString += "Avoiding;";
             }
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
@@ -186,6 +192,8 @@ public class Launcher extends Robot {
             }
         } else if (enemyInVisionRadius){
             moveToSafestSpot();
+        } else {
+            Util.log("There's no enemies nearby... Why the hell is this an unsafe environment?");
         }
     }
 
@@ -238,7 +246,7 @@ public class Launcher extends Robot {
         }
 
         indicatorString += "Attack Dest:" + targetLoc;
-        rc.setIndicatorString("HQ Attack Dest: " + targetLoc);
+//        rc.setIndicatorString("HQ Attack Dest: " + targetLoc);
 
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
 
