@@ -94,9 +94,9 @@ public class Navigation {
     }
 
 
+    // TODO: should we also incorporate cooldown information
     public Direction fuzzyNav(MapLocation target) throws GameActionException{
         Direction toTarget = robot.myLoc.directionTo(target);
-
         Direction[] moveOptions = {
                 toTarget,
                 toTarget.rotateLeft(),
@@ -106,13 +106,14 @@ public class Navigation {
         };
 
         Direction bestDir = null;
-        double bestCost = Double.MAX_VALUE;
-        MapLocation bestNewLoc = rc.getLocation();
+        int leastNumMoves = Integer.MAX_VALUE;
+        int leastDistanceSquared = Integer.MAX_VALUE;
 
-        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
-        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
-        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
-        System.out.println("isMyLastTurn(): " + isThisMyLastMovementTurn());
+        MapLocation bestNewLoc = rc.getLocation();
+//        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
+//        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
+//        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
+//        System.out.println("isMyLastTurn(): " + isThisMyLastMovementTurn());
 
         for(int i = moveOptions.length; i--> 0;){
             Direction dir = moveOptions[i];
@@ -122,27 +123,34 @@ public class Navigation {
                 continue;
             }
 
-
             if(!rc.sensePassability(newLoc)) continue;  // don't consider if the new location is not passable
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
-
-            //TODO: only do this if this is our last turn (carriers can possibly move twice a round, so don't factor in current on next spot if you're a carrier). Do something smarter?
-            if(isThisMyLastMovementTurn()) {            // only factor in currents if this is your last movement on this round
+            if(isThisMyLastMovementTurn()){            // only factor in currents if this is your last movement on this round
                 if (newLocInfo.getCurrentDirection() != Direction.CENTER) {
                     newLoc = newLoc.add(newLocInfo.getCurrentDirection());
                     if (!rc.canSenseLocation(newLoc) || !rc.canMove(dir)) {
                         continue;
                     }
-                    newLocInfo = rc.senseMapInfo(newLoc);
                 }
             }
 
-            //TODO: make this more efficient
-            int distance = newLoc.distanceSquaredTo(target);
+            int numMoves = Util.minMovesToReach(newLoc, target);
+            int distanceSquared = newLoc.distanceSquaredTo(target);
 
-            if(distance < bestCost){
-                bestCost = distance;
+            // first check if this new spot decreases the number of moves we need to take to get to our target
+            // if so, make this new spot the bestNewLoc
+            if(numMoves < leastNumMoves){
+                leastNumMoves = numMoves;
+                leastDistanceSquared = distanceSquared;
+                bestDir = dir;
+                bestNewLoc = newLoc;
+            }
+
+            // if numMoves == leastNumMoves but the newLoc is closer to the target than the current loc, make this newLoc the bestLoc
+            else if(numMoves == leastNumMoves && distanceSquared < leastDistanceSquared){
+                leastNumMoves = numMoves;
+                leastDistanceSquared = distanceSquared;
                 bestDir = dir;
                 bestNewLoc = newLoc;
             }
@@ -151,7 +159,8 @@ public class Navigation {
         System.out.println("movement cooldown turns B: " + rc.getMovementCooldownTurns());
         System.out.println("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
         System.out.println("newLoc from " + robot.myLoc + ": " + bestNewLoc);
-        System.out.println("bestCost from " + robot.myLoc + ": " + bestCost);
+        System.out.println("leastNumMoves from " + robot.myLoc + ": " + leastNumMoves);
+        System.out.println("leastDistSq from " + robot.myLoc + ": " + leastDistanceSquared);
         System.out.println("-------------------------");
 
 
