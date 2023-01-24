@@ -133,10 +133,23 @@ public class Util {
         // the first numUppers should have regionWidth+1 squares
         // the rest should have regionWith squares
         if(loc.x+1 <= numUppers * (regionWidth+1)) {
-            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1);
+//            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1); //don't want integer division
+            if((loc.x+1)%(regionWidth+1) == 0){
+                return (loc.x+1)/(regionWidth+1)-1;
+            }
+            else{
+                return (loc.x+1)/(regionWidth+1);
+            }
+
         }
         else {
-            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1);
+//            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1); // don't want integer division
+            if((loc.x+1-numUppers)%(regionWidth) == 0){
+                return (loc.x+1-numUppers)/(regionWidth)-1;
+            }
+            else{
+                return (loc.x+1-numUppers)/(regionWidth);
+            }
         }
     }
 
@@ -144,10 +157,22 @@ public class Util {
         int regionHeight = rc.getMapHeight() / Constants.NUM_REGIONS_VERTICAL;
         int numUppers = rc.getMapHeight() % Constants.NUM_REGIONS_VERTICAL;
         if(loc.y+1 <= numUppers * (regionHeight+1)) {
-            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
+//            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
+            if((loc.y+1)%(regionHeight+1) == 0){
+                return (loc.y+1)/(regionHeight+1)-1;
+            }
+            else{
+                return (loc.y+1)/(regionHeight+1);
+            }
         }
         else {
-            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
+//            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
+            if((loc.y+1-numUppers)%(regionHeight) == 0){
+                return (loc.y+1-numUppers)/(regionHeight)-1;
+            }
+            else{
+                return (loc.y+1-numUppers)/(regionHeight);
+            }
         }
     }
 
