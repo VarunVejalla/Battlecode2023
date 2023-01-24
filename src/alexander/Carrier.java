@@ -3,7 +3,6 @@ package alexander;
 import battlecode.common.*;
 
 import java.util.HashSet;
-import java.util.Map;
 
 // TODO: Don't just run away from launchers, but also don't walk into squares where you could be attacked
 
@@ -165,10 +164,25 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearbyWell() throws GameActionException {
-        // If you're scouting and reach a dead end, reset.
+        // TODO: Is this necessary?
+        // If you get updated with new info about a better heuristic well, go there instead!
+//        if(targetLoc != null && HQImHelpingIdx != -1){
+//            int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetResource);
+//            if(bestRegion != -1){
+//                MapLocation[] wellList = getWellList(targetResource);
+//                MapLocation newWellLoc = wellList[bestRegion];
+//                int currHeuristic = myLoc.distanceSquaredTo(targetLoc) + 4 * HQlocs[HQImHelpingIdx].distanceSquaredTo(targetLoc);
+//                int newHeuristic = myLoc.distanceSquaredTo(newWellLoc) + 4 * HQlocs[HQImHelpingIdx].distanceSquaredTo(newWellLoc);
+//                if(newHeuristic < currHeuristic){
+//                    targetLoc = newWellLoc;
+//                    targetRegion = bestRegion;
+//                }
+//            }
+//        }
 
+        // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-            System.out.println("Resetting because there wasn't acc a well there");
+            Util.log("Resetting because there wasn't acc a well there");
             targetLoc = null;
         }
 
@@ -178,7 +192,7 @@ public class Carrier extends Robot {
             if(checkWellCrowded(targetLoc)){
                 // If there's crowding, go to the next nearest location
                 regionsToIgnore.add(targetRegion);
-                System.out.println("Resetting because well is crowded");
+                Util.log("Resetting because well is crowded");
                 targetLoc = null;
             }
 
@@ -188,7 +202,7 @@ public class Carrier extends Robot {
                 Direction fuzzyNavDir = nav.fuzzyNav(targetLoc);
                 if(fuzzyNavDir == null){
                     regionsToIgnore.add(targetRegion);
-                    System.out.println("Resetting because I can't fuzzy nav towards it");
+                    Util.log("Resetting because I can't fuzzy nav towards it");
                     targetLoc = null;
                 }
             }

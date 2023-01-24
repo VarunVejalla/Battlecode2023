@@ -318,8 +318,7 @@ public class Headquarters extends Robot {
         regionWells[newWellRegionNum] = newWellLoc;
         sortedClosestWells.add(newWellLoc);
         sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
-        // TODO: Make the 10 a constant and also make it dynamic based on map size?
-        if(sortedClosestWells.size() > 10){
+        if(sortedClosestWells.size() > constants.NUM_WELLS_TO_CYCLE_THROUGH){
             sortedClosestWells.remove(sortedClosestWells.size() - 1);
         }
     }

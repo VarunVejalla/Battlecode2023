@@ -696,11 +696,11 @@ public class Launcher extends Robot {
 
 
     // Go defend a well
-    //  We should not crowd wells
+    // We should not crowd wells
     // maybe scale the guarding radius upwards as we see more friendly troops?
     // TODO: also defend islands (with the highest priority)
     // TODO: if enough launchers are already at you're place, go into attacking mode
-    //TODO: if you're guarding a well that hasn't been in use, choose another target or become an attacker
+    // TODO: if you're guarding a well that hasn't been in use, choose another target or become an attacker
     // TODO: do the push / pull micro attacking code, but stay further back than a carrier if you're a defender
     public void runNormalDefensiveStrategy() throws GameActionException {
         if(targetLoc == null){
@@ -725,9 +725,11 @@ public class Launcher extends Robot {
             launcherToCarrierRatio = Double.MAX_VALUE;
         }
 
+        // TODO: Fix this since it doesn't check that we've tried going near the targetLoc in the first place.
         if(targetLoc == null || myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared){
             isOffensive = true;
             runNormalOffensiveStrategy();
+            return;
         }
 
         Util.log("launcherToCarrierRatio: " + launcherToCarrierRatio);
