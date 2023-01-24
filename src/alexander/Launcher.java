@@ -322,53 +322,21 @@ public class Launcher extends Robot {
             }
         }
 
-        for(RobotInfo enemy: nearbyVisionEnemies){         //loop over each enemy in vision radius
-            // launchers and destabilizers
-            if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        enemyDamage[i] += enemy.type.damage;
-                        enemyPresentToAttack[i] = true;
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
-                }
+        for (int i = 0; i < 9; i++) {
+            if(!newSpotIsValid[i]){
+                continue;
             }
-
-
-            // carriers
-            else if (enemy.type == RobotType.CARRIER) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack us from there
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        int massCarrying = enemy.getResourceAmount(ResourceType.MANA) + enemy.getResourceAmount(ResourceType.ADAMANTIUM) + enemy.getResourceAmount(ResourceType.ELIXIR);
-                        enemyDamage[i] += (int) (massCarrying * 5/4);   // assume enemy will use their carriers to attack us
-                        enemyPresentToAttack[i] = true;
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+            for (RobotInfo enemy : nearbyVisionEnemies) {         //loop over each enemy in vision radius
+                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= myType.actionRadiusSquared
+                        && enemy.type != RobotType.HEADQUARTERS){
+                    enemyPresentToAttack[i] = true;
                 }
-            }
 
-
-            // boosters can't hurt us, but they still are an enemy we would want to attack
-            else if(enemy.type == RobotType.BOOSTER){
-                for(int i = 0; i<9; i++){
-                    if(!enemyPresentToAttack[i] && newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared){
-                            enemyPresentToAttack[i] = true;
-                    }
+                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared){
+                    enemyDamage[i] += Util.getEnemyDamage(enemy);
                 }
-            }
 
-
-            // headquarters
-            else if (enemy.type == RobotType.HEADQUARTERS) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack us from there
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        enemyDamage[i] += 4;    // hq's deal 4 damage for all bots in their action radius
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
-                }
+                sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
             }
         }
 
@@ -379,13 +347,14 @@ public class Launcher extends Robot {
 
         for(int i=0; i<9; i++){
             // don't consider this new position if there is no enemy at the new location
+            // TODO: Hmm but what if you can't move to a square to attack the enemy but you're currently getting attacked, should you really stay there?
             // also don't consider this new position if this spot is not valid
             if(!enemyPresentToAttack[i] || !newSpotIsValid[i]){
                 continue;
             }
 
             // make this spot the new bestSpot if we currently don't have a best spot
-            if(bestSpot == null ){
+            if(bestSpot == null){
                 bestSpot = possibleSpots[i];
                 leastEnemyDamage = enemyDamage[i];
                 greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
@@ -402,7 +371,7 @@ public class Launcher extends Robot {
             }
         }
 
-        if(bestSpot != null && myLoc.equals(bestSpot)){
+        if(bestSpot != null && !myLoc.equals(bestSpot)){
             rc.move(myLoc.directionTo(bestSpot));
         }
 
@@ -583,6 +552,7 @@ public class Launcher extends Robot {
         }
         int xSum = 0;
         int ySum = 0;
+        int totalDamage = 0;
         for(RobotInfo info : nearbyEnemies) {
             xSum += info.location.x;
             ySum += info.location.y;

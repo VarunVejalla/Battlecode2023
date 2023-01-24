@@ -155,14 +155,19 @@ public class Util {
         return getRegionY(loc) * Constants.NUM_REGIONS_HORIZONTAL + getRegionX(loc);
     }
 
-    public static int regionNumToRegionX(int regionNum){
-        return regionNum % Constants.NUM_REGIONS_HORIZONTAL;
+    public static int getEnemyDamage(RobotInfo info){
+        switch(info.type){
+            case LAUNCHER:
+            case DESTABILIZER:
+            case HEADQUARTERS:
+                return info.type.damage;
+            case CARRIER:
+                int mass = info.getResourceAmount(ResourceType.ADAMANTIUM) +info.getResourceAmount(ResourceType.MANA) + info.getResourceAmount(ResourceType.ELIXIR);
+                return (int)(mass * GameConstants.CARRIER_DAMAGE_FACTOR);
+            default:
+                return 0;
+        }
     }
-
-    public static int regionNumToRegionY(int regionNum){
-        return regionNum / Constants.NUM_REGIONS_HORIZONTAL;
-    }
-
 
     public static void log(String str){
         if(true){
