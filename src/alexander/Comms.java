@@ -239,4 +239,42 @@ public class Comms {
         }
     }
 
+    // New well detection
+
+    public int getNewWellCommsIdx(ResourceType type){
+        switch(type){
+            case ADAMANTIUM:
+                return Constants.NEW_ADAMANTIUM_WELL_COMMS_IDX;
+            case MANA:
+                return Constants.NEW_MANA_WELL_COMMS_IDX;
+            case ELIXIR:
+                return Constants.NEW_ELIXIR_WELL_COMMS_IDX;
+        }
+        throw new RuntimeException("Resource not found for getNewWellsCommsIdx: " + type);
+    }
+
+    public MapLocation getNewWellDetected(ResourceType type) throws GameActionException {
+        int commsIdx = getNewWellCommsIdx(type);
+        int xVal = extractVal(commsIdx, constants.NEW_WELL_X_MASK, constants.NEW_WELL_X_SHIFT);
+        int yVal = extractVal(commsIdx, constants.NEW_WELL_Y_MASK, constants.NEW_WELL_Y_SHIFT) - 1;
+        if(yVal == -1){
+            return null;
+        }
+        return new MapLocation(xVal, yVal);
+    }
+
+    public void setNewWellDetected(MapLocation loc, ResourceType type) throws GameActionException {
+        int commsIdx = getNewWellCommsIdx(type);
+        int xVal = loc.x;
+        int yVal = loc.y + 1;
+        insertVal(commsIdx, constants.NEW_WELL_X_MASK, constants.NEW_WELL_X_SHIFT, xVal);
+        insertVal(commsIdx, constants.NEW_WELL_Y_MASK, constants.NEW_WELL_Y_SHIFT, yVal);
+    }
+
+    public void resetNewWellComms() throws GameActionException {
+        rc.writeSharedArray(Constants.NEW_ADAMANTIUM_WELL_COMMS_IDX, 0);
+        rc.writeSharedArray(Constants.NEW_MANA_WELL_COMMS_IDX, 0);
+        rc.writeSharedArray(Constants.NEW_ELIXIR_WELL_COMMS_IDX, 0);
+    }
+
 }

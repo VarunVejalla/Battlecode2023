@@ -374,7 +374,7 @@ public class Launcher extends Robot {
         }
 
         MapLocation bestSpot = null;
-        double leastEnemyDamage = nearbyActionEnemies.length;
+        double leastEnemyDamage = Double.MAX_VALUE;
         int greatestSumDistanceSquared = Integer.MIN_VALUE;
 
 

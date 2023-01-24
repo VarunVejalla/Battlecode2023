@@ -16,11 +16,6 @@ class CarrierInfo {
     }
 }
 
-// TODO: Cycle through nearest well locations.
-// TODO: Use regions to not double-save well locations in the same region.
-// TODO: If you get a well location via comms but already have a well location in that region, replace it with the one you got via comms.
-// TODO: HQs assign wells to each carrier. HQ already keeps track of the IDs of carriers that come back, so it can also know how many of each carrier are currently assigned to a given well.
-
 public class Headquarters extends Robot {
 
     int TIME_TO_FORGET_CARRIER = 50; // forget we've seen a carrier after this many rounds
@@ -224,6 +219,8 @@ public class Headquarters extends Robot {
             computeAdamantiumDeltaEMA();
             computeManaDeltaEMA();
 
+            // Once all HQs have processed the new well, reset it
+            // so that a new miner can comm a new well if it has one.
             if(myIndex == numHQs - 1){
                 comms.resetNewWellComms();
             }

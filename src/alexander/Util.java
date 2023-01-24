@@ -12,8 +12,6 @@ public class Util {
         return Math.max(Math.abs(dx), Math.abs(dy));
     }
 
-
-
     public static Direction[] closeDirections(Direction dir){
         Direction[] close = {
                 dir,
@@ -127,15 +125,53 @@ public class Util {
         return count;
     }
 
+    /// Region stuff
+    public static int getRegionX(MapLocation loc){
+        int regionWidth = rc.getMapWidth() / Constants.NUM_REGIONS_HORIZONTAL;
+        int numUppers = rc.getMapWidth() % Constants.NUM_REGIONS_HORIZONTAL;
+
+        // the first numUppers should have regionWidth+1 squares
+        // the rest should have regionWith squares
+        if(loc.x+1 <= numUppers * (regionWidth+1)) {
+            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1);
+        }
+        else {
+            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1);
+        }
+    }
+
+    public static int getRegionY(MapLocation loc){
+        int regionHeight = rc.getMapHeight() / Constants.NUM_REGIONS_VERTICAL;
+        int numUppers = rc.getMapHeight() % Constants.NUM_REGIONS_VERTICAL;
+        if(loc.y+1 <= numUppers * (regionHeight+1)) {
+            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
+        }
+        else {
+            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
+        }
+    }
+
+    public static int getRegionNum(MapLocation loc){
+        return getRegionY(loc) * Constants.NUM_REGIONS_HORIZONTAL + getRegionX(loc);
+    }
+
+    public static int regionNumToRegionX(int regionNum){
+        return regionNum % Constants.NUM_REGIONS_HORIZONTAL;
+    }
+
+    public static int regionNumToRegionY(int regionNum){
+        return regionNum / Constants.NUM_REGIONS_HORIZONTAL;
+    }
+
 
     public static void log(String str){
-//        if(true){
-//            return;
-//        }
-
-        if(rc.getType() != RobotType.LAUNCHER){
+        if(true){
             return;
         }
+
+//        if(rc.getType() != RobotType.LAUNCHER){
+//            return;
+//        }
 
 //        if(rc.getID() != 12586){
 //            return;

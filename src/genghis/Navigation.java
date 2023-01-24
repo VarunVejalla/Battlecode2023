@@ -109,10 +109,10 @@ public class Navigation {
         double bestCost = Double.MAX_VALUE;
         MapLocation bestNewLoc = rc.getLocation();
 
-        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
-        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
-        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
-        System.out.println("isMyLastTurn(): " + isThisMyLastMovementTurn());
+        Util.log("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
+        Util.log("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
+        Util.log("rc.isMovementReady(): " + rc.isMovementReady());
+        Util.log("isMyLastTurn(): " + isThisMyLastMovementTurn());
 
         for(int i = moveOptions.length; i--> 0;){
             Direction dir = moveOptions[i];
@@ -148,11 +148,11 @@ public class Navigation {
             }
         }
 
-        System.out.println("movement cooldown turns B: " + rc.getMovementCooldownTurns());
-        System.out.println("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
-        System.out.println("newLoc from " + robot.myLoc + ": " + bestNewLoc);
-        System.out.println("bestCost from " + robot.myLoc + ": " + bestCost);
-        System.out.println("-------------------------");
+        Util.log("movement cooldown turns B: " + rc.getMovementCooldownTurns());
+        Util.log("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
+        Util.log("newLoc from " + robot.myLoc + ": " + bestNewLoc);
+        Util.log("bestCost from " + robot.myLoc + ": " + bestCost);
+        Util.log("-------------------------");
 
 
         return bestDir;

@@ -16,7 +16,7 @@ class CarrierInfo {
 
 public class Headquarters extends Robot {
 
-    int TIME_TO_FORGET_CARRIER = 50; // forget we've seen a carrier after this many rounds
+    int TIME_TO_FORGET_CARRIER = 35; // forget we've seen a carrier after this many rounds
 
     MapLocation myLoc;
     int myIndex;

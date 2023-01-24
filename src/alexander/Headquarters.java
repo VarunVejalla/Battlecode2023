@@ -2,6 +2,8 @@ package alexander;
 
 import battlecode.common.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -16,7 +18,7 @@ class CarrierInfo {
 
 public class Headquarters extends Robot {
 
-    int TIME_TO_FORGET_CARRIER = 50; // forget we've seen a carrier after this many rounds
+    int TIME_TO_FORGET_CARRIER = 35; // forget we've seen a carrier after this many rounds
 
     MapLocation myLoc;
     int myIndex;
@@ -31,7 +33,10 @@ public class Headquarters extends Robot {
     double EMASmoothing = 5;   // parameter used in EMA --> higher value means we give more priority to recent changes
     int lastAnchorBuiltTurn = 0;
 
-    int initialCarrierThreshold = 10; //how many carriers an hq should see in its vision radius before transitioning over to ratio strategy
+    // Comms stuff
+    ArrayList<MapLocation> sortedClosestAdamantiumWells = new ArrayList<>();
+    ArrayList<MapLocation> sortedClosestManaWells = new ArrayList<>();
+    ArrayList<MapLocation> sortedClosestElixirWells = new ArrayList<>();
 
     boolean savingUp = false;
     Spawner spawner;
@@ -66,8 +71,6 @@ public class Headquarters extends Robot {
             myIndex = 3;
         }
     }
-
-
 
     // If you're past some threshold, then make sure you always have an anchor available (or save up for one) for a carrier to grab.
     // I implemented exponential moving average, which i think could solve this effeciently. see the computeEMA method above
@@ -160,6 +163,7 @@ public class Headquarters extends Robot {
         if(savingUp){   // if we're trying to make an anchor but don't have enough of a specific resource, get that resource
             boolean needAdamantium = rc.getResourceAmount(ResourceType.ADAMANTIUM) < Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM);
             boolean needMana = rc.getResourceAmount(ResourceType.MANA) < Anchor.STANDARD.getBuildCost(ResourceType.MANA);
+
             if(needAdamantium && needMana) {
                 comms.writeRatio(myIndex, 1, 1, 0);
                 return;
@@ -182,6 +186,7 @@ public class Headquarters extends Robot {
 //            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
 //            return;
 //        }
+
         int numCarriers = carrierToRoundMap.size();
         if(numCarriers > 7) {
             comms.writeRatio(myIndex, 0, 15, 0);
@@ -207,9 +212,18 @@ public class Headquarters extends Robot {
             }
         }
 
+        readNewWellLocations();
+        updateClosestWells();
+
         if(rc.getRoundNum() > 2){
             computeAdamantiumDeltaEMA();
             computeManaDeltaEMA();
+
+            // Once all HQs have processed the new well, reset it
+            // so that a new miner can comm a new well if it has one.
+            if(myIndex == numHQs - 1){
+                comms.resetNewWellComms();
+            }
         }
 
 //        rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
@@ -271,8 +285,53 @@ public class Headquarters extends Robot {
 //
 //    }
 
+    public void updateClosestWells() throws GameActionException {
+        updateClosestWells(ResourceType.ADAMANTIUM, sortedClosestAdamantiumWells);
+        updateClosestWells(ResourceType.MANA, sortedClosestManaWells);
+        updateClosestWells(ResourceType.ELIXIR, sortedClosestElixirWells);
+    }
+
+    public void updateClosestWells(ResourceType type, ArrayList<MapLocation> sortedClosestWells) throws GameActionException {
+        if(sortedClosestWells.size() == 0){
+            return;
+        }
+        int wellIdx = rc.getRoundNum() % sortedClosestWells.size();
+        MapLocation wellLoc = sortedClosestWells.get(wellIdx);
+        comms.setClosestWell(myIndex, type, wellLoc);
+    }
+
+    public void readNewWellLocations() throws GameActionException {
+        readNewWellLocations(ResourceType.ADAMANTIUM, adamantiumWells, sortedClosestAdamantiumWells);
+        readNewWellLocations(ResourceType.MANA, manaWells, sortedClosestManaWells);
+        readNewWellLocations(ResourceType.ELIXIR, elixirWells, sortedClosestElixirWells);
+    }
+
+    public void readNewWellLocations(ResourceType type, MapLocation[] regionWells, ArrayList<MapLocation> sortedClosestWells) throws GameActionException {
+        MapLocation newWellLoc = comms.getNewWellDetected(type);
+        if(newWellLoc == null){
+            return;
+        }
+        int newWellRegionNum = Util.getRegionNum(newWellLoc);
+        if(regionWells[newWellRegionNum] != null) {
+            return;
+        }
+        regionWells[newWellRegionNum] = newWellLoc;
+        sortedClosestWells.add(newWellLoc);
+        sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
+        // TODO: Make the 10 a constant and also make it dynamic based on map size?
+        if(sortedClosestWells.size() > 10){
+            sortedClosestWells.remove(sortedClosestWells.size() - 1);
+        }
+    }
+
     public void buildCarriers() throws GameActionException {
-        MapLocation closestWell = getNearestWell();
+        MapLocation closestWell = sortedClosestElixirWells.isEmpty() ? null : sortedClosestElixirWells.get(0);
+        if(closestWell == null){
+            closestWell = sortedClosestManaWells.isEmpty() ? null : sortedClosestManaWells.get(0);
+        }
+        if(closestWell == null){
+            closestWell = sortedClosestManaWells.isEmpty() ? null : sortedClosestManaWells.get(0);
+        }
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
         if (closestWell != null) {
             spawnDir = myLoc.directionTo(closestWell);

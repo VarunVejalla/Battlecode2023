@@ -317,13 +317,12 @@ public class Launcher extends Robot {
         // check if we can sense each new possible location, and that the new location is passable
         for(int i=0; i<8; i++){
             newSpotIsValid[i] = false;
-            if(rc.canSenseLocation(possibleSpots[i]) && rc.senseMapInfo(possibleSpots[i]).isPassable()){
+            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
                 newSpotIsValid[i] = true;
             }
         }
 
         for(RobotInfo enemy: nearbyVisionEnemies){         //loop over each enemy in vision radius
-
             // launchers and destabilizers
             if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
                 for (int i = 0; i < 9; i++) {
@@ -403,7 +402,10 @@ public class Launcher extends Robot {
             }
         }
 
-        nav.goToFuzzy(bestSpot, 0);
+        if(bestSpot != null && myLoc.equals(bestSpot)){
+            rc.move(myLoc.directionTo(bestSpot));
+        }
+
         Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage with sumDistanceSquared " + greatestSumDistanceSquared);
     }
 
@@ -430,7 +432,7 @@ public class Launcher extends Robot {
         // check if we can sense each new possible location, and that the new location is passable
         for(int i=0; i<8; i++){
             newSpotIsValid[i] = false;
-            if(rc.canSenseLocation(possibleSpots[i]) && rc.senseMapInfo(possibleSpots[i]).isPassable()){
+            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
                 newSpotIsValid[i] = true;
             }
         }
@@ -472,28 +474,34 @@ public class Launcher extends Robot {
         }
 
         MapLocation bestSpot = myLoc;
-        double leastEnemyDamage = nearbyActionEnemies.length;
+        double leastEnemyDamage = Double.MAX_VALUE;
         int greatestSumDistanceSquared = Integer.MIN_VALUE;
 
         for(int i=0; i<9; i++){
+            if(!newSpotIsValid[i]){
+                continue;
+            }
+
             // if the new spot will give us less enemy damage than the current best spot, make the new spot our best spot
-            if(newSpotIsValid[i] && enemyDamage[i] < leastEnemyDamage){
+            // if the new spot will give us the same enemy damage, but will move us farther away from the enemies, make the new spot our best spot
+            if(enemyDamage[i] < leastEnemyDamage
+                || (enemyDamage[i] == leastEnemyDamage &&
+                    sumOfDistanceSquaredToEnemies[i] > greatestSumDistanceSquared)){
                 bestSpot = possibleSpots[i];
                 leastEnemyDamage = enemyDamage[i];
                 greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
             }
-
-            // if the new spot will give us the same enemy damage, but will move us farther away from the enemies, make the new spot our best spot
-            else if(newSpotIsValid[i] &&
-                    enemyDamage[i] == leastEnemyDamage &&
-                    sumOfDistanceSquaredToEnemies[i] > greatestSumDistanceSquared){
-                    bestSpot = possibleSpots[i];
-                    leastEnemyDamage = enemyDamage[i];
-                    greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
-            }
         }
         Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage with sumDistanceSquared " + greatestSumDistanceSquared);
-        nav.goToFuzzy(bestSpot, 0);
+
+        if(bestSpot == null){
+            rc.resign();
+        }
+
+        if(!bestSpot.equals(myLoc)){
+            rc.move(myLoc.directionTo(bestSpot));
+        }
+//        nav.goToFuzzy(bestSpot, 0);
     }
 
 
@@ -756,6 +764,7 @@ public class Launcher extends Robot {
 //            else{       // defend a well with probability 25%
 //                MapLocation closestHQ = getNearestFriendlyHQ();
 //                int HQIdx = getFriendlyHQIndex(closestHQ);
+                  // TODO: Be smart about choosing which well to go to.
 //                if(rng.nextBoolean()){      // randomly select between Adamantium and Mana
 //                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
 //                }

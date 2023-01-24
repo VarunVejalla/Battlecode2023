@@ -6,6 +6,8 @@ enum NavigationMode{
     FUZZYNAV, BUGNAV;
 }
 
+//TODO: Fix bugnav
+
 public class Navigation {
 
     RobotController rc;
@@ -47,8 +49,8 @@ public class Navigation {
     public boolean goTo(MapLocation target, int minDistToSatisfy) throws GameActionException{
 //        rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
 //        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
-        // thy journey hath been completed
 
+        // thy journey hath been completed
         if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
             return true;
         }
@@ -68,9 +70,7 @@ public class Navigation {
                     break;
             }
             if(toGo == null) return false;
-
             Util.tryMove(toGo); // Should always return true since fuzzyNav checks if rc.canMove(dir)
-
             if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
                 return true;
             }
@@ -109,12 +109,12 @@ public class Navigation {
         double bestCost = Double.MAX_VALUE;
         MapLocation bestNewLoc = rc.getLocation();
 
-        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
-        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
-        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
-        System.out.println("isMyLastTurn(): " + isThisMyLastMovementTurn());
+        Util.log("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
+        Util.log("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
+        Util.log("rc.isMovementReady(): " + rc.isMovementReady());
+        Util.log("isMyLastTurn(): " + isThisMyLastMovementTurn());
 
-        for(int i = moveOptions.length; i--> 0;){
+        for(int i = moveOptions.length; i-- > 0;){
             Direction dir = moveOptions[i];
             MapLocation newLoc = robot.myLoc.add(dir);
 
@@ -124,6 +124,7 @@ public class Navigation {
 
 
             if(!rc.sensePassability(newLoc)) continue;  // don't consider if the new location is not passable
+
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
 
@@ -148,11 +149,11 @@ public class Navigation {
             }
         }
 
-        System.out.println("movement cooldown turns B: " + rc.getMovementCooldownTurns());
-        System.out.println("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
-        System.out.println("newLoc from " + robot.myLoc + ": " + bestNewLoc);
-        System.out.println("bestCost from " + robot.myLoc + ": " + bestCost);
-        System.out.println("-------------------------");
+        Util.log("movement cooldown turns B: " + rc.getMovementCooldownTurns());
+        Util.log("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
+        Util.log("newLoc from " + robot.myLoc + ": " + bestNewLoc);
+        Util.log("bestCost from " + robot.myLoc + ": " + bestCost);
+        Util.log("-------------------------");
 
 
         return bestDir;

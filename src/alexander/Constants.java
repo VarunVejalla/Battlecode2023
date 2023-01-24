@@ -58,7 +58,7 @@ public class Constants {
     public static final int ISLAND_CONTROL_MASK = 12288;
     public static final int ISLAND_CONTROL_SHIFT = 12;
 
-    //Ratio data indices
+    // Ratio data indices
     public static final int ADAMANTIUM_RATIO_INDEX = 0;
     public static final int MANA_RATIO_INDEX = 1;
     public static final int ELIXIR_RATIO_INDEX = 2;
@@ -71,6 +71,22 @@ public class Constants {
     public static final int VERTICAL_SYMMETRY_SHIFT = 1;
     public static final int ROTATIONAL_SYMMETRY_MASK = 1;
     public static final int ROTATIONAL_SYMMETRY_SHIFT = 0;
+
+    // New well comms consts
+    public static final int NEW_ADAMANTIUM_WELL_COMMS_IDX = 55;
+    public static final int NEW_MANA_WELL_COMMS_IDX = 56;
+    public static final int NEW_ELIXIR_WELL_COMMS_IDX = 57;
+    public static final int NEW_WELL_X_MASK = 4032;
+    public static final int NEW_WELL_X_SHIFT = 6;
+    public static final int NEW_WELL_Y_MASK = 63;
+    public static final int NEW_WELL_Y_SHIFT = 0;
+
+    // Region consts
+    public static final int NUM_REGIONS_HORIZONTAL = 7;
+    public static final int NUM_REGIONS_VERTICAL = 7;
+    public static final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
+
+
 
 
 }

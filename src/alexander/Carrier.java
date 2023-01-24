@@ -2,16 +2,19 @@ package alexander;
 
 import battlecode.common.*;
 
-// TODO: Be aware of how many carriers are at your mine and go to a farther away mine if ur mine is too crowded.
-// TODO: hq cycles through well locations and carriers keep a running list of well locations
+import java.util.HashSet;
+import java.util.Map;
+
 // TODO: Don't just run away from launchers, but also don't walk into squares where you could be attacked
 
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
     private ResourceType targetResource;
+    private int targetRegion = -1;
     boolean mining = true;
     int HQImHelpingIdx = -1;
+    HashSet<Integer> regionsToIgnore = new HashSet<>();
 
 
     public Carrier(RobotController rc) throws GameActionException {
@@ -22,8 +25,6 @@ public class Carrier extends Robot {
         super.run();
         int weight = totalResourceWeight();
 
-
-
         if(weight == GameConstants.CARRIER_CAPACITY && mining){
             mining = false;
             targetLoc = null;
@@ -32,6 +33,7 @@ public class Carrier extends Robot {
             mining = true;
             targetLoc = null;
             HQImHelpingIdx = -1;
+            regionsToIgnore.clear();
         }
 
         tryTakingAnchor();
@@ -140,27 +142,78 @@ public class Carrier extends Robot {
         }
     }
 
-
-
+    public int determineWhichWellToGoTo(int HQImHelpingIdx, ResourceType type){
+        MapLocation HQloc = HQlocs[HQImHelpingIdx];
+        int bestRegion = -1;
+        int bestDist = Integer.MAX_VALUE;
+        MapLocation[] wellList = getWellList(type);
+        for(int i = 0; i < wellList.length; i++){
+            if(regionsToIgnore.contains(i)){
+                continue;
+            }
+            MapLocation wellLoc = wellList[i];
+            if(wellLoc == null){
+                continue;
+            }
+            int dist = HQloc.distanceSquaredTo(wellLoc);
+            if(dist < bestDist){
+                bestRegion = i;
+                bestDist = dist;
+            }
+        }
+        return bestRegion;
+    }
 
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
+
+        if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
+            System.out.println("Resetting because there wasn't acc a well there");
             targetLoc = null;
         }
 
+        // Check if I should still go to the well
+        if(targetLoc != null && targetRegion != -1 && myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+            // Check crowding
+            if(checkWellCrowded(targetLoc)){
+                // If there's crowding, go to the next nearest location
+                regionsToIgnore.add(targetRegion);
+                System.out.println("Resetting because well is crowded");
+                targetLoc = null;
+            }
+
+            // If you're near the well, but you can't move towards the well, then you're prolly stuck
+            // or there's crowding so go find a new well.
+            else if(rc.canSenseLocation(targetLoc) && rc.isMovementReady()){
+                Direction fuzzyNavDir = nav.fuzzyNav(targetLoc);
+                if(fuzzyNavDir == null){
+                    regionsToIgnore.add(targetRegion);
+                    System.out.println("Resetting because I can't fuzzy nav towards it");
+                    targetLoc = null;
+                }
+            }
+        }
+
+
+        // Reset new target well location
         if(targetLoc == null){
             MapLocation HQImHelping = getNearestFriendlyHQ();
             HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
             ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
 //            MapLocation closestWell = getNearestWell(targetType);
-            MapLocation closestWell = comms.getClosestWell(HQImHelpingIdx, targetType);
-            targetResource = targetType;
-            targetLoc = closestWell;
+            int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetType);
+            if(bestRegion != -1){
+                targetResource = targetType;
+                MapLocation[] wellList = getWellList(targetType);
+                targetLoc = wellList[bestRegion];
+                targetRegion = bestRegion;
+            }
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
             }
         }
+
+        // Go to target well location
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
             indicatorString += "Nearby well. Bugging to " + targetLoc;
@@ -169,6 +222,25 @@ public class Carrier extends Robot {
             nav.goToFuzzy(targetLoc, 0);
             indicatorString += "Nearby well. Fuzzying to " + targetLoc;
         }
+    }
+
+    public boolean checkWellCrowded(MapLocation wellLoc) throws GameActionException {
+        if(wellLoc != null && rc.canSenseLocation(wellLoc)){
+            int radius = 2;
+            int troopsWithinRadius = rc.senseNearbyRobots(wellLoc, radius, myTeam).length;
+            MapInfo[] nearbyMapInfos = rc.senseNearbyMapInfos(wellLoc, radius);
+            int validMapSquares = 0;
+            for(int i = 0; i < nearbyMapInfos.length; i++){
+                MapInfo info = nearbyMapInfos[i];
+                if(info.isPassable()){
+                    validMapSquares++;
+                }
+            }
+            if(troopsWithinRadius >= validMapSquares - 1){
+                return true;
+            }
+        }
+        return false;
     }
 
     public MapLocation getHQToReturnTo() {

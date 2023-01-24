@@ -2,21 +2,19 @@ package alexander;
 
 import battlecode.common.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 
 // TODO: Fix code (tune).
 
 class WellSquareInfo {
     MapLocation loc;
     ResourceType type;
-    boolean commed;
+    int regionNum;
 
-    public WellSquareInfo(MapLocation loc, ResourceType type, boolean commed){
+    public WellSquareInfo(MapLocation loc, ResourceType type, int regionNum){
         this.loc = loc;
         this.type = type;
-        this.commed = commed;
+        this.regionNum = regionNum;
     }
 }
 
@@ -50,8 +48,16 @@ public class Robot {
     Navigation nav;
     MapLocation myLoc;
     MapInfo myLocInfo;
-    HashMap<MapLocation, WellSquareInfo> wells;
-//    HashMap<Integer, IslandInfo> islands;
+    MapLocation[] adamantiumWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
+    MapLocation[] manaWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
+    MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
+    LinkedList<WellSquareInfo> wellsToComm = new LinkedList<>();
+
+//    ArrayList<MapLocation> adamantiumWells = new ArrayList<>();
+//    ArrayList<MapLocation> manaWells = new ArrayList<>();
+//    ArrayList<MapLocation> elixirWells = new ArrayList<>();
+//    HashMap<MapLocation, WellSquareInfo> wells;
+
     int numIslands;
     IslandInfo[] islands;
     Comms comms;
@@ -101,8 +107,10 @@ public class Robot {
         nav = new Navigation(rc, this);
         Util.rc = rc;
         Util.robot = this;
-        wells = new HashMap();
-//        islands = new HashMap();
+//        wells = new HashMap();
+        MapLocation[] adamantiumWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
+        MapLocation[] manaWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
+        MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
         numIslands = rc.getIslandCount();
         islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);
@@ -173,26 +181,30 @@ public class Robot {
 
     // TODO: We need to change this up a little bit once we start using elixir and the well's resource can change.
     public void readWellLocations() throws GameActionException { // 1500-2000 bytecode
+        // Comm any new wells updates to shared array
         for(int HQIdx = 0; HQIdx < numHQs; HQIdx++){
             int wellIndex = comms.getClosestWellCommsIndex(HQIdx, ResourceType.ADAMANTIUM); // Ada well index
             if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]){
                 MapLocation adamantiumLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
                 if(adamantiumLoc != null){
-                    updateWells(new WellSquareInfo(adamantiumLoc, ResourceType.ADAMANTIUM, true));
+                    int regionNum = Util.getRegionNum(adamantiumLoc);
+                    adamantiumWells[regionNum] = adamantiumLoc;
                 }
             }
             wellIndex++; // Mana well index
             if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]) {
                 MapLocation manaLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-                if (manaLoc != null) {
-                    updateWells(new WellSquareInfo(manaLoc, ResourceType.MANA, true));
+                if(manaLoc != null){
+                    int regionNum = Util.getRegionNum(manaLoc);
+                    manaWells[regionNum] = manaLoc;
                 }
             }
             wellIndex++; // Elixir well index
             if(rc.readSharedArray(wellIndex) != prevCommsArray[wellIndex]) {
                 MapLocation elixirLoc = comms.getClosestWell(HQIdx, ResourceType.ELIXIR);
-                if (elixirLoc != null) {
-                    updateWells(new WellSquareInfo(elixirLoc, ResourceType.ELIXIR, true));
+                if(elixirLoc != null){
+                    int regionNum = Util.getRegionNum(elixirLoc);
+                    elixirWells[regionNum] = elixirLoc;
                 }
             }
         }
@@ -227,28 +239,6 @@ public class Robot {
         numHQs = locs.size();
         HQlocs = new MapLocation[0];
         HQlocs = locs.toArray(HQlocs);
-    }
-
-    public MapLocation getClosestWellToHQ(int HQIndex) throws GameActionException {
-        MapLocation well1 = comms.getClosestWell(HQIndex, ResourceType.ADAMANTIUM);
-        MapLocation well2 = comms.getClosestWell(HQIndex, ResourceType.MANA);
-        MapLocation well3 = comms.getClosestWell(HQIndex, ResourceType.ELIXIR);
-        MapLocation HQLoc = HQlocs[HQIndex];
-        MapLocation closest = null;
-        int closestDist = Integer.MAX_VALUE;
-        if(well1 != null && HQLoc.distanceSquaredTo(well1) < closestDist){
-            closest = well1;
-            closestDist = HQLoc.distanceSquaredTo(well1);
-        }
-        if(well2 != null && HQLoc.distanceSquaredTo(well2) < closestDist){
-            closest = well2;
-            closestDist = HQLoc.distanceSquaredTo(well2);
-        }
-        if(well3 != null && HQLoc.distanceSquaredTo(well3) < closestDist){
-            closest = well3;
-            closestDist = HQLoc.distanceSquaredTo(well3);
-        }
-        return closest;
     }
 
     // tried to unroll this to save bytecode
@@ -310,17 +300,6 @@ public class Robot {
         return -1;
     }
 
-    public void updateWells(WellSquareInfo info) {
-        if(wells.containsKey(info.loc)){
-            WellSquareInfo existingInfo = wells.get(info.loc);
-            if(existingInfo.type == info.type){
-                existingInfo.commed |= info.commed;
-                return;
-            }
-        }
-        wells.put(info.loc, info);
-    }
-
     public void updateIslands(IslandInfo info) {
         if(islands[info.idx] != null){
             IslandInfo existingInfo = islands[info.idx];
@@ -332,13 +311,29 @@ public class Robot {
         islands[info.idx] = info;
     }
 
+    public MapLocation[] getWellList(ResourceType type){
+        switch(type){
+            case ADAMANTIUM:
+                return adamantiumWells;
+            case MANA:
+                return manaWells;
+            case ELIXIR:
+                return elixirWells;
+        }
+        throw new RuntimeException("Trying to get well list of unknown resource: " + type);
+    }
+
     public void scanNearbySquares() throws GameActionException { // 1000 bytecode
         // Scan nearby wells
         WellInfo[] nearbyWells = rc.senseNearbyWells();
         for(WellInfo well : nearbyWells){
             MapLocation wellLocation = well.getMapLocation();
-            WellSquareInfo info = new WellSquareInfo(wellLocation, well.getResourceType(),false);
-            updateWells(info);
+            int regionNum = Util.getRegionNum(wellLocation);
+            MapLocation[] wellArr = getWellList(well.getResourceType());
+            if(wellArr[regionNum] == null){
+                wellArr[regionNum] = wellLocation;
+                wellsToComm.add(new WellSquareInfo(well.getMapLocation(), well.getResourceType(), regionNum));
+            }
         }
 
         // Scan for nearby islands
@@ -360,18 +355,20 @@ public class Robot {
         }
 
         // Comm any new wells updates to shared array
-        for(WellSquareInfo info : wells.values()){
-            if(info.commed){
+        Iterator itr = wellsToComm.iterator();
+        while(itr.hasNext()){
+            WellSquareInfo wellInfo = (WellSquareInfo) itr.next();
+            MapLocation[] wellArr = getWellList(wellInfo.type);
+            if(wellArr[wellInfo.regionNum] != wellInfo.loc){
+                itr.remove();
                 continue;
             }
-            for(int HQIdx = 0; HQIdx < numHQs; HQIdx++){
-                MapLocation HQLoc = HQlocs[HQIdx];
-                MapLocation closestWellToThatHQ = comms.getClosestWell(HQIdx, info.type);
-                if(closestWellToThatHQ == null || HQLoc.distanceSquaredTo(info.loc) < HQLoc.distanceSquaredTo(closestWellToThatHQ)){
-                    comms.setClosestWell(HQIdx, info.type, info.loc);
-                }
+            if(comms.getNewWellDetected(wellInfo.type) != null){
+                continue;
             }
-            info.commed = true;
+            comms.setNewWellDetected(wellInfo.loc, wellInfo.type);
+            itr.remove();
+            break;
         }
 
         // Comm any new island updates to shared array
@@ -392,29 +389,6 @@ public class Robot {
         }
         impossibleSymmetries.clear();
 
-    }
-
-    // Find the nearest well of a specific resource. Null to allow any resource
-    public MapLocation getNearestWell(ResourceType type){
-        int closestDist = Integer.MAX_VALUE;
-        MapLocation closestWell = null;
-        for(MapLocation keyLoc : wells.keySet()){
-            Util.log("Well: " + keyLoc);
-            if(type != null && wells.get(keyLoc).type != type){
-                continue;
-            }
-            int dist = myLoc.distanceSquaredTo(keyLoc);
-            if(dist < closestDist){
-                closestDist = dist;
-                closestWell = keyLoc;
-             }
-        }
-        return closestWell;
-    }
-
-    // Find the nearest well
-    public MapLocation getNearestWell(){
-        return getNearestWell(null);
     }
 
     public MapLocation getFurthestIsland(Team controllingTeam){
