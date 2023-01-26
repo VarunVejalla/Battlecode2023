@@ -209,6 +209,10 @@ public class Util {
         }
     }
 
+    public static void addToIndicatorString(String str){
+        robot.indicatorString += str + ";";
+    }
+
     public static void log(String str){
         if(true){
             return;

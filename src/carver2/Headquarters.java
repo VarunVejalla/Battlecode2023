@@ -138,12 +138,9 @@ public class Headquarters extends Robot {
     // count the number of miners that we've seen in the past 50 rounds
     // This method will run fully every other round cuz it takes so much goddamn bytecode
     public void updateSeenCarriers() throws GameActionException {
-//        System.out.println("Bytecode before forgetting: " + Clock.getBytecodesLeft());
         forgetOldCarriers();
-//        System.out.println("Bytecode after forgetting: " + Clock.getBytecodesLeft());
         addNewCarriers();
-//        System.out.println("Bytecode after adding: " + Clock.getBytecodesLeft());
-        indicatorString += ";C: " + carrierToRoundMap.size() + ";";
+        Util.addToIndicatorString("C:" + carrierToRoundMap.size());
     }
 
     // criteria on whether hq should start saving up for an anchor
@@ -243,9 +240,9 @@ public class Headquarters extends Robot {
         setResourceRatios();
         int[] ratio = comms.readRatio(myIndex);
 
-        indicatorString += "Ratio Request - A:" + ratio[0] + ", M:" + ratio[1] + ", E:" + ratio[2] + "; ";
+        Util.addToIndicatorString("RR - A:" + ratio[0] + ",M:" + ratio[1] + "E:" + ratio[2]);
         if(savingUp){
-            indicatorString += "saving up for anchor";
+            Util.addToIndicatorString("SAVING"); // Saving up for anchor
 
             Util.log("Saving up for anchor!");
             if(rc.canBuildAnchor(Anchor.STANDARD)){
@@ -264,7 +261,7 @@ public class Headquarters extends Robot {
 
         else {
             // Always prioritize building launchers over carriers
-            indicatorString += "trying normal build order";
+            Util.addToIndicatorString("NBD"); // Normal build order
             buildLaunchers();
             buildCarriers();
         }

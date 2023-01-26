@@ -7,6 +7,7 @@ class LauncherHeuristic {
     double friendlyDamage;
     double enemyHP;
     double enemyDamage;
+    // TODO: Factor this in. Retreat if you're about to get one shotted.
     double totalEnemyDamage;
 
     public LauncherHeuristic(double FH, double FD, double EH, double ED){
@@ -16,13 +17,12 @@ class LauncherHeuristic {
         enemyDamage = ED;
     }
 
-    public boolean getSafe(Robot robot){
+    public boolean getSafe(){
         double myTurnsNeeded = enemyHP / friendlyDamage;
         double enemyTurnsNeeded = friendlyHP / enemyDamage;
-//        System.out.println("Friendly HP: " + friendlyHP + ", DMG: " + friendlyDamage + ", Enemy HP: " + enemyHP + ", DMG: " + enemyDamage);
-        robot.indicatorString += "EH: " + enemyHP+", FD: "+ friendlyDamage+";";
-        robot.indicatorString += "MT: " + (int)myTurnsNeeded + ", ET: " + (int)enemyTurnsNeeded + "; ";
-
+        Util.addToIndicatorString("FH:" + (int)friendlyHP + ",FD:" + (int)friendlyDamage);
+        Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
+        Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
         // 1.5 simply because im ballsy and wanna go for it
         return myTurnsNeeded <= enemyTurnsNeeded * 1.0; // If you can kill them faster than they can kill you, return true
     }
@@ -33,9 +33,6 @@ public class Launcher extends Robot {
 
     private MapLocation targetLoc;
 
-    // TODO: Replace this with an actually good strategy
-    boolean isOffensive = false;
-    int DEFENSIVE_THRESHOLD = 15;
     int OFFENSIVE_THRESHOLD = 10;
     MapLocation[] enemyHQLocs = null;
     int enemyHQIdx = 0;
@@ -48,13 +45,10 @@ public class Launcher extends Robot {
     boolean enemyInActionRadius;
     boolean enemyInVisionRadius;
 
-    MapLocation lastAttacked;
-
     RobotInfo bestAttackVictim = null;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
-        determineMode();
     }
 
     public void updateAllNearbyInfo() throws GameActionException{
@@ -74,44 +68,22 @@ public class Launcher extends Robot {
         bestAttackVictim = getBestAttackVictim();
     }
 
-    // this method is used in the constructor, runAttackMovement(), and runDefensiveMovement()
-    public void determineMode(){
-        // look at enemyIslands vs homeIslands
-        // if we're clearly winning, push it
-
-        double defensiveProbability = 0.5;
-        if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent) * 1.5){
-            defensiveProbability = 0.2;   // make it more likely that we attack if we're clearly winning
-        }
-        double randomChoice = rng.nextDouble();
-        if (randomChoice < defensiveProbability) isOffensive = false;    //defend with 70% probability if we're not clearly winning
-        else isOffensive =true;
-
-    }
-
     //TODO: factor in island healing and headquarters damage
     //TODO: maybe have leaders?
     public void run() throws GameActionException{
         super.run();
 
-        if(isOffensive){
-            rc.setIndicatorDot(myLoc, 255, 0, 0);
-            Util.log("Yam attacking");
-        }
-        else{
-            rc.setIndicatorDot(myLoc, 0, 255, 0);
-            Util.log(rc.getID() + ": Yam defending");
-        }
+        rc.setIndicatorDot(myLoc, 0, 255, 0);
 
         runAttackLoop();
         updateAllNearbyInfo();
 
-        boolean isSafe = heuristic.getSafe(this);
+        boolean isSafe = heuristic.getSafe();
         if(isSafe){
-            indicatorString += "Safe;";
+            Util.addToIndicatorString("SF");
         }
         else{
-            indicatorString += "Unsafe;";
+            Util.addToIndicatorString("USF");
         }
         // TODO: Consider HP and go back for healing
         if(isSafe){
@@ -138,7 +110,7 @@ public class Launcher extends Robot {
             }
             if(rc.isMovementReady()){
                 moveBackIfAvoidsEnemy();
-                indicatorString += "Avoiding;";
+                Util.addToIndicatorString("AVD");
             }
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
@@ -194,9 +166,8 @@ public class Launcher extends Robot {
             targetLoc = getRandomScoutingLocation();
         }
 
-        indicatorString += "going to " + targetLoc + " to attack";
+        Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
 
-        rc.setIndicatorString("going to " + targetLoc + " to attack potential enemy HQ");
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
 //            nav.goToFuzzy(targetLoc, 0);
             nav.circle(targetLoc, 0, myType.actionRadiusSquared);
@@ -285,7 +256,6 @@ public class Launcher extends Robot {
 
         if(bestAttackVictim != null) {
             MapLocation toAttack = bestAttackVictim.location;
-            indicatorString += "Attacking";
             rc.attack(toAttack);
             return true;
         }
@@ -340,11 +310,11 @@ public class Launcher extends Robot {
         targetLoc = getNearestFriendlyHQ();
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "have uncommed info, fuzzying to HQ: " + targetLoc;
+            Util.addToIndicatorString("UNC,FUZ:" + targetLoc); // Uncommed info, fuzzying to targetLoc
         }
         else{
             nav.goToBug(targetLoc, 0);
-            indicatorString += "have uncommed info, bugging to HQ: " + targetLoc;
+            Util.addToIndicatorString("UNC,BUG:" + targetLoc); // Uncommed info, bugging to targetLoc
         }
     }
 
@@ -370,7 +340,7 @@ public class Launcher extends Robot {
         // your attack isn't ready, then don't engage
 
         if(nearestEnemyInfo == null){ // No enemies nearby, we safe
-            indicatorString += "NE1; ";
+            Util.addToIndicatorString("NE1");
             return new LauncherHeuristic(100, 100, 0, 0.01);
         }
         Util.log("Nearest enemy Info: " + nearestEnemyInfo.location.toString());
@@ -379,7 +349,6 @@ public class Launcher extends Robot {
         double enemyDamage = 0.0;
         double friendlyHP = 0.0;
         double enemyHP = 0.0;
-        // TODO: Factor this in
         double totalEnemyDamage = 0.0;
 
         // Calculate enemies attacking you
@@ -402,6 +371,7 @@ public class Launcher extends Robot {
             if(info.getLocation().distanceSquaredTo(nearestEnemyInfo.getLocation()) > info.type.actionRadiusSquared){
                 continue; // Only count friendlies that can attack said enemy
             }
+            // TODO: Consider this.
 //            if(info.getHealth() < health_to_retreat){
 //                continue;
 //            }

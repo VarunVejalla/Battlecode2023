@@ -98,11 +98,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            indicatorString += "Uncontrolled island. Bugging to " + targetLoc;
+            Util.addToIndicatorString("UI.BG:" + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "Uncontrolled island. Fuzzying to " + targetLoc;
+            Util.addToIndicatorString("UI.FZ:" + targetLoc);
         }
     }
 
@@ -214,11 +214,11 @@ public class Carrier extends Robot {
         // Go to target well location
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            indicatorString += "Nearby well. Bugging to " + targetLoc;
+            Util.addToIndicatorString("NW.BG:" + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "Nearby well. Fuzzying to " + targetLoc;
+            Util.addToIndicatorString("NW.FZ:" + targetLoc);
         }
     }
 
@@ -252,11 +252,11 @@ public class Carrier extends Robot {
         }
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            indicatorString += "HQ. Bugging to " + targetLoc;
+            Util.addToIndicatorString("HQ.BG:" + targetLoc);
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "HQ. Fuzzying to " + targetLoc;
+            Util.addToIndicatorString("HQ.FZ:" + targetLoc);
         }
     }
 
@@ -286,7 +286,7 @@ public class Carrier extends Robot {
                 Direction enemyDir = myLoc.directionTo(closestDanger.location);
                 MapLocation farAway = myLoc.subtract(enemyDir).subtract(enemyDir).subtract(enemyDir).subtract(enemyDir);
                 nav.goToFuzzy(farAway, 0);
-                indicatorString += "Danger! Fuzzying away from " + closestDanger.location;
+                Util.addToIndicatorString("DNG:" + closestDanger.location); // Danger!
             }
         }
         return closestDanger != null;
