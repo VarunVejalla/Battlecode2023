@@ -1,4 +1,4 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.*;
 
@@ -55,36 +55,6 @@ public class Headquarters extends Robot {
         }
         spawner = new Spawner(rc, this);
         comms.writeOurHQLocation(myIndex, myLoc);
-
-        // HQ Process all new wells initially
-        WellInfo[] nearbyWells = rc.senseNearbyWells();
-        for(WellInfo info : nearbyWells){
-            MapLocation newWellLoc = info.getMapLocation();
-            int newWellRegionNum = Util.getRegionNum(newWellLoc);
-            MapLocation[] regionWells = getWellList(info.getResourceType());
-            if(regionWells[newWellRegionNum] != null) {
-                return;
-            }
-            regionWells[newWellRegionNum] = newWellLoc;
-            ArrayList<MapLocation> sortedClosestWells = getSortedClosestWells(info.getResourceType());
-            sortedClosestWells.add(newWellLoc);
-            sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
-            if(sortedClosestWells.size() > constants.NUM_WELLS_TO_CYCLE_THROUGH){
-                sortedClosestWells.remove(sortedClosestWells.size() - 1);
-            }
-        }
-    }
-
-    public ArrayList<MapLocation> getSortedClosestWells(ResourceType type){
-        switch(type){
-            case ADAMANTIUM:
-                return sortedClosestAdamantiumWells;
-            case MANA:
-                return sortedClosestManaWells;
-            case ELIXIR:
-                return sortedClosestElixirWells;
-        }
-        throw new RuntimeException("Trying to get well list of unknown resource: " + type);
     }
 
     public void computeIndex() throws GameActionException {
@@ -281,23 +251,16 @@ public class Headquarters extends Robot {
             if(rc.getResourceAmount(ResourceType.MANA) > Anchor.STANDARD.getBuildCost(ResourceType.MANA) + RobotType.LAUNCHER.buildCostMana){
                 buildLaunchers();
             }
-            boolean spawned = true;
-            while(spawned && rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
-                spawned = buildCarriers();
+            if(rc.getResourceAmount(ResourceType.ADAMANTIUM) > Anchor.STANDARD.getBuildCost(ResourceType.ADAMANTIUM) + RobotType.CARRIER.buildCostAdamantium){
+                buildCarriers();
             }
         }
 
         else {
             // Always prioritize building launchers over carriers
             indicatorString += "trying normal build order";
-            boolean spawned = true;
-            while(spawned){
-                spawned = buildLaunchers();
-            }
-            spawned = true;
-            while(spawned){
-                spawned = buildCarriers();
-            }
+            buildLaunchers();
+            buildCarriers();
         }
 
         // We only want to consider the rate at which we're gaining resources we don't wanna consider spending, so we wanna set
@@ -360,7 +323,7 @@ public class Headquarters extends Robot {
         }
     }
 
-    public boolean buildCarriers() throws GameActionException {
+    public void buildCarriers() throws GameActionException {
         MapLocation closestWell = sortedClosestElixirWells.isEmpty() ? null : sortedClosestElixirWells.get(0);
         if(closestWell == null){
             closestWell = sortedClosestManaWells.isEmpty() ? null : sortedClosestManaWells.get(0);
@@ -375,18 +338,14 @@ public class Headquarters extends Robot {
 
         if(spawner.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)) {
             numCarriersSpawned++;
-            return true;
         }
-        return false;
     }
 
-    public boolean buildLaunchers() throws GameActionException {
+    public void buildLaunchers() throws GameActionException {
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
 
         if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
-            return true;
         }
-        return false;
     }
 }

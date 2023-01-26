@@ -1,4 +1,4 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -63,7 +63,7 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-            if(turnCount > 500){
+            if(turnCount > 1000){
                 rc.resign();
             }
             try {

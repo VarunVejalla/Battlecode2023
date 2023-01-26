@@ -1,8 +1,8 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.*;
 
-// TODO: Remember enemy location and don't push back
+import java.util.HashSet;
 
 class LauncherHeuristic {
     double friendlyHP;
@@ -22,13 +22,11 @@ class LauncherHeuristic {
         double myTurnsNeeded = enemyHP / friendlyDamage;
         double enemyTurnsNeeded = friendlyHP / enemyDamage;
 //        System.out.println("Friendly HP: " + friendlyHP + ", DMG: " + friendlyDamage + ", Enemy HP: " + enemyHP + ", DMG: " + enemyDamage);
-//        robot.indicatorString += "FD: " + friendlyDamage +", FH: "+ friendlyHP +";";
-//        robot.indicatorString += "ED: " + enemyDamage +", EH: "+ enemyHP +";";
-        robot.indicatorString += "MT: " + (int)myTurnsNeeded + ", ET: " + (int)enemyTurnsNeeded + "; ";
+//        robot.indicatorString += "EH: " + enemyHP+", FD: "+ friendlyDamage+";";
+//        robot.indicatorString += "MT: " + (int)myTurnsNeeded + ", ET: " + (int)enemyTurnsNeeded + "; ";
 
         // 1.5 simply because im ballsy and wanna go for it
-//        return myTurnsNeeded <= enemyTurnsNeeded * 1.0; // If you can kill them faster than they can kill you, return true
-        return myTurnsNeeded <= enemyTurnsNeeded * 0.6; // If you can kill them faster than they can kill you, return true
+        return myTurnsNeeded <= enemyTurnsNeeded * 1.0; // If you can kill them faster than they can kill you, return true
     }
 
 }
@@ -55,6 +53,7 @@ public class Launcher extends Robot {
 
     RobotInfo bestAttackVictim = null;
     MapLocation placeImDefending = null;
+    HashSet<Integer> defendingRegionsToIgnore = new HashSet<Integer>();
 
 
     // variables used for circling behaviour in runNormalDefensiveStrategy
@@ -90,11 +89,10 @@ public class Launcher extends Robot {
         // look at enemyIslands vs homeIslands
         // if we're clearly winning, push it
 
-        double defensiveProbability = 0.0;
+        double defensiveProbability = 0.5;
         if(getNumIslandsControlledByTeam(myTeam) > getNumIslandsControlledByTeam(opponent) * 1.5){
             defensiveProbability = 0.2;   // make it more likely that we attack if we're clearly winning
         }
-//        defensiveProbability = 0.0;
         double randomChoice = rng.nextDouble();
         if (randomChoice < defensiveProbability) isOffensive = false;    //defend with 70% probability if we're not clearly winning
         else isOffensive =true;
@@ -130,10 +128,10 @@ public class Launcher extends Robot {
 
         boolean isSafe = heuristic.getSafe(this);
         if(isSafe){
-            indicatorString += "Safe;";
+            indicatorString += "SF;";
         }
         else{
-            indicatorString += "Unsafe;";
+            indicatorString += "USF;";
         }
         if(isOffensive){
             indicatorString += "OF;";
@@ -162,11 +160,11 @@ public class Launcher extends Robot {
     public void runSafeOffensiveStrategy() throws GameActionException{
         if(enemyInActionRadius) {
             if(rc.isActionReady()){
-                Util.log("Error: why didn't you attack?");
+                System.out.println("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
                 moveToSafestSpot();
-                indicatorString += "Avoiding;";
+                indicatorString += "Avd;"; // Avoiding (moving to safest spot)
             }
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
@@ -208,8 +206,8 @@ public class Launcher extends Robot {
         if(enemyInActionRadius){
 //            moveBackIfAvoidsEnemy();
             moveToSafestSpot();
+            indicatorString += "Avd;"; // Avoiding (moving back to safest spot).
         }
-
         else{
             runNormalDefensiveStrategy();
         }
@@ -237,6 +235,7 @@ public class Launcher extends Robot {
     // Go attack an island
     // TODO: go attack enemy islands / wells
     public void runNormalOffensiveStrategy() throws GameActionException {
+        indicatorString += "NOF;";
         if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             targetLoc = null;
         }
@@ -252,7 +251,7 @@ public class Launcher extends Robot {
             targetLoc = getRandomScoutingLocation();
         }
 
-        indicatorString += "Attack Dest:" + targetLoc;
+        indicatorString += "AtkDst:" + targetLoc + ";";
 //        rc.setIndicatorString("HQ Attack Dest: " + targetLoc);
 
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
@@ -475,11 +474,9 @@ public class Launcher extends Robot {
         }
 
         if(!bestSpot.equals(myLoc)){
-            Direction targetMoveDir = myLoc.directionTo(bestSpot);
-            MapLocation targetSpot = myLoc.add(targetMoveDir).add(targetMoveDir).add(targetMoveDir).add(targetMoveDir);
-            nav.goToFuzzy(targetSpot, 0);
-//            rc.move(myLoc.directionTo(bestSpot));
+            rc.move(myLoc.directionTo(bestSpot));
         }
+//        nav.goToFuzzy(bestSpot, 0);
     }
 
 
@@ -546,7 +543,7 @@ public class Launcher extends Robot {
         }
         if(bestAttackVictim != null) {
             MapLocation toAttack = bestAttackVictim.location;
-            indicatorString += "Attacking";
+            indicatorString += "Atk;"; // Attacking
             rc.attack(toAttack);
             return true;
         }
@@ -591,11 +588,11 @@ public class Launcher extends Robot {
         targetLoc = getNearestFriendlyHQ();
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "have uncommed info, fuzzying to HQ: " + targetLoc;
+            indicatorString += "UNC;";
         }
         else{
             nav.goToBug(targetLoc, 0);
-            indicatorString += "have uncommed info, bugging to HQ: " + targetLoc;
+            indicatorString += "UNC;";
         }
     }
 
@@ -648,67 +645,85 @@ public class Launcher extends Robot {
 //        }
 //    }
 
-
-    //TODO: improve this method to defend all islands, wells, and hqs
-    public void pickPlaceToDefend() throws GameActionException {
-            MapLocation closestHQ = getNearestFriendlyHQ();
-            int HQIdx = getFriendlyHQIndex(closestHQ);
-            targetLoc = closestHQ;
-
-//        targetLoc = null;
-//        double defensiveChoice = rng.nextDouble();
-//            if(defensiveChoice < 0.5){
-//                targetLoc = getNearestFriendlyIsland();     // defend a friendly island with probability 50%
-//            }
-//
-//            if(targetLoc == null){       // defend a well with probability 25%
-//                MapLocation closestHQ = getNearestFriendlyHQ();
-//                int HQIdx = getFriendlyHQIndex(closestHQ);
-//                if(rng.nextBoolean()){      // randomly select between Adamantium and Mana
-//                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
-//                }
-//                else{
-//                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-//                }
-//            }
+    public void resetDefendingVariables() {
+        defensiveMinDistToCircle = 0;
+        defensiveMaxDistToCircle = 4;
     }
 
 
-    // Go defend a well
-    // We should not crowd wells
-    // maybe scale the guarding radius upwards as we see more friendly troops?
-    // TODO: also defend islands (with the highest priority)
-    // TODO: if enough launchers are already at you're place, go into attacking mode
-    // TODO: if you're guarding a well that hasn't been in use, choose another target or become an attacker
-    // TODO: do the push / pull micro attacking code, but stay further back than a carrier if you're a defender
-    public void runNormalDefensiveStrategy() throws GameActionException {
-        if(targetLoc == null){
-            pickPlaceToDefend();
+    // TODO: HQs should call for help when they're surrounded by enemy launchers.
+    // Pick a well or island to defend
+    public void pickPlaceToDefend() throws GameActionException {
+        resetDefendingVariables();
+        MapLocation HQImHelping = getNearestFriendlyHQ();
+
+        MapLocation bestLocToDefend = null;
+        int bestDist = Integer.MAX_VALUE;
+        ResourceType[] types = {ResourceType.ADAMANTIUM, ResourceType.MANA, ResourceType.ELIXIR};
+
+        // Process Wells
+        for(ResourceType type : types){
+            MapLocation[] wellList = getWellList(type);
+            for(int i = 0; i < wellList.length; i++){
+                if(wellList[i] == null){
+                    continue;
+                }
+                if(defendingRegionsToIgnore.contains(i)){
+                    continue;
+                }
+                if(HQImHelping.distanceSquaredTo(wellList[i]) < bestDist){
+                    bestLocToDefend = wellList[i];
+                }
+            }
         }
+
+        // TODO: Process Islands
+
+        // If you've already been to all of the regions and they're considered secure, reset the defendingRegionsToIgnore list.
+        if(bestLocToDefend == null){
+            defendingRegionsToIgnore.clear();
+            pickPlaceToDefend();
+            return;
+        }
+        targetLoc = bestLocToDefend;
+    }
+
+    // Basically keep circling around the well. Each round, count the # of carriers closer to the well than you
+    // and the # of launchers closer to the well than you, and find the launcher to carrier ratio. If that ratio
+    // is greater than the threshold, then you should move away (since there's too many launchers). If that ratio
+    // is less than the threshold, then you should move closer.
+    public void defendWell() throws GameActionException {
+        // If you're circling so far out that you can't even see the targetLoc, consider it defended.
+        if(myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared && defensiveMaxDistToCircle > myType.visionRadiusSquared){
+            indicatorString += "DONE;";
+            int currentlyDefendingRegion = Util.getRegionNum(targetLoc);
+            defendingRegionsToIgnore.add(currentlyDefendingRegion);
+            targetLoc = null;
+            pickPlaceToDefend();
+            runNormalDefensiveStrategy();
+            return;
+        }
+
+        // Check if the circling min / max radii need to be changed.
+        // TODO: Make these constants
         final double launcherToCarrierThresholdToMoveAway = 1/3;
         final double launcherToCarrierThresholdToMoveBack = 1/6;
 
-        int numFriendlies = nearbyFriendlies.length;
-        int numNearbyLaunchers = 0;
-        int numNearbyCarriers = 0;
+        double numNearbyLaunchers = 0;
+        double numNearbyCarriers = 0;
 
         for(RobotInfo info : nearbyFriendlies){
+            // Count the robots closer to the well than you are.
+            if(info.getLocation().distanceSquaredTo(targetLoc) > myLoc.distanceSquaredTo(targetLoc)){
+                continue;
+            }
             if(info.type == RobotType.LAUNCHER) numNearbyLaunchers++;
             else if(info.type == RobotType.CARRIER) numNearbyCarriers++;
         }
-        double launcherToCarrierRatio;
+
+        double launcherToCarrierRatio = Double.MAX_VALUE;
         if(numNearbyCarriers != 0) {
             launcherToCarrierRatio = numNearbyLaunchers / numNearbyCarriers;
-        }
-        else{
-            launcherToCarrierRatio = Double.MAX_VALUE;
-        }
-
-        // TODO: Fix this since it doesn't check that we've tried going near the targetLoc in the first place.
-        if(targetLoc == null || myLoc.distanceSquaredTo(targetLoc) > myType.visionRadiusSquared){
-            isOffensive = true;
-            runNormalOffensiveStrategy();
-            return;
         }
 
         Util.log("launcherToCarrierRatio: " + launcherToCarrierRatio);
@@ -716,65 +731,76 @@ public class Launcher extends Robot {
         //TODO: factor in enemy soldiers for whether or not you should move out
         if(launcherToCarrierRatio > launcherToCarrierThresholdToMoveAway){
             Util.log("adding to radii");
-                defensiveMinDistToCircle += 1;
-                defensiveMaxDistToCircle += 1;
+            defensiveMinDistToCircle = Util.addDiffToSquaredNum(defensiveMinDistToCircle, 1);
+            defensiveMaxDistToCircle = Util.addDiffToSquaredNum(defensiveMaxDistToCircle, 1);
         }
 
         if(launcherToCarrierRatio < launcherToCarrierThresholdToMoveBack){
             Util.log("subtracting from radii");
-
-            defensiveMinDistToCircle -= 1;
-            defensiveMaxDistToCircle -= 1;
+            defensiveMinDistToCircle = Util.addDiffToSquaredNum(defensiveMinDistToCircle, -1);
+            defensiveMaxDistToCircle = Util.addDiffToSquaredNum(defensiveMaxDistToCircle, -1);
         }
 
+        indicatorString += "LCR:" + (int)(launcherToCarrierRatio * 100) + "MN:" + defensiveMinDistToCircle + ";MX:" + defensiveMaxDistToCircle + ";";
+
+        // Circle around the well.
         Util.log("minDistToCircle: " + defensiveMinDistToCircle);
         Util.log("maxDistToCircle: " + defensiveMaxDistToCircle);
         nav.circle(targetLoc, defensiveMinDistToCircle, defensiveMaxDistToCircle);
-
-
-//        if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-//            targetLoc = null;
-//        }
-//
-//        if(targetLoc == null){
-//            // choose between defending an island, or well (and if well, what type of well?)
-//            double defensiveChoice = rng.nextDouble();
-//            if(defensiveChoice < 0.5){
-//                targetLoc = getNearestFriendlyIsland();     // defend a friendly island with probability 50%
-//            }
-//            else{       // defend a well with probability 25%
-//                MapLocation closestHQ = getNearestFriendlyHQ();
-//                int HQIdx = getFriendlyHQIndex(closestHQ);
-                  // TODO: Be smart about choosing which well to go to.
-//                if(rng.nextBoolean()){      // randomly select between Adamantium and Mana
-//                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
-//                }
-//                else{
-//                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-//                }
-//            }
-//            if(targetLoc == null){
-//                targetLoc = getRandomScoutingLocation();
-//            }
-//        }
-//
-//        indicatorString += "going to  " + targetLoc + " to defend";
-//        int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
-//        if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
-//            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENSIVE_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any areas so leave if you're not super close
-//                targetLoc = null;
-//                determineMode();    // see if we should switch to attacking mode
-//            }
-//
-//            else {
-//                nav.circle(targetLoc, 2, myType.actionRadiusSquared);
-//            }
-//        }
-//
-//        else{
-//            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-//        }
     }
+
+    // TODO: Implement this
+    public void defendIsland() throws GameActionException {
+        throw new RuntimeException("THIS IS UNIMPLEMENTED REEE");
+    }
+
+    // Go defend a well
+    // We should not crowd wells
+    // maybe scale the guarding radius upwards as we see more friendly troops?
+    // TODO: also defend islands (with the highest priority)
+    // TODO: if enough launchers are already at you're place, choose another target
+    // TODO: if you're guarding a well that hasn't been in use, choose another target or become an attacker
+    // TODO: do the push / pull micro attacking code, but stay further back than a carrier if you're a defender
+    public void runNormalDefensiveStrategy() throws GameActionException {
+        if(targetLoc == null){
+            pickPlaceToDefend();
+        }
+
+        if(myLoc.distanceSquaredTo(targetLoc) <= myType.visionRadiusSquared){
+            if(rc.canSenseLocation(targetLoc)){
+                // If you're near the target loc, run the proper defending mechanism.
+                if(rc.senseWell(targetLoc) != null){
+                    indicatorString += "NDF: " + targetLoc + ";";
+                    defendWell();
+                    return;
+                }
+                if(rc.senseIsland(targetLoc) == -1){
+                    indicatorString += "NDF: " + targetLoc + ";";
+                    defendIsland();
+                    return;
+                }
+                targetLoc = null;
+            }
+            else{
+                // If you were scouting and you reached your scouting loc and there's nothing there, reset targetLoc.
+                targetLoc = null;
+            }
+        }
+        else{
+            // If you're not near the targetLoc, go there
+            indicatorString += "NDF: " + targetLoc + ";";
+            nav.goToBug(targetLoc, myType.visionRadiusSquared);
+            return;
+        }
+
+        if(targetLoc == null){
+            pickPlaceToDefend();
+            runNormalDefensiveStrategy();
+            return;
+        }
+
+    }
+
     public RobotInfo getNearestEnemy(RobotInfo[] nearbyEnemies) throws GameActionException {
         // Find nearest enemy
         RobotInfo nearestEnemyInfo = null;
@@ -795,30 +821,25 @@ public class Launcher extends Robot {
     // TODO: should we also factor in headquarters in these calculations? We could loop over all soldiers in nearbyFriendlies and add 4 to enemyDamage for every bot in actionRadius of HQ, but that's pretty inefficient?
     public LauncherHeuristic getHeuristic(RobotInfo[] nearbyFriendlies, RobotInfo[] dangerousEnemies, RobotInfo nearestEnemyInfo) throws GameActionException {
         if(nearestEnemyInfo == null){ // No enemies nearby, we safe
-            indicatorString += "NE1; ";
+//            indicatorString += "NE1; ";
             return new LauncherHeuristic(100, 100, 0, 0.01);
         }
-
         Util.log("Nearest enemy Info: " + nearestEnemyInfo.location.toString());
         double friendlyDamage = 0.0;
         double enemyDamage = 0.0;
         double friendlyHP = 0.0;
         double enemyHP = 0.0;
 
-        // TODO: Consider clouds and other cooldown thingies instead of just using info.type.actionCooldown
         for(int i = 0; i < dangerousEnemies.length; i++){
             RobotInfo info = dangerousEnemies[i];
             if(info.type == RobotType.LAUNCHER || info.type == RobotType.DESTABILIZER){
-                double howOftenICanAttack = (double)info.type.actionCooldown / (double)GameConstants.COOLDOWNS_PER_TURN; // Units here is rounds
-                double damage = info.type.damage;
-                System.out.println("Considering launcher at: " + info.getLocation() + ", howOften: " + howOftenICanAttack + ", damage: " + damage);
-                enemyDamage += damage / howOftenICanAttack;
+                double attackCooldown = info.type.actionCooldown;
+                enemyDamage += info.type.damage / attackCooldown;
                 enemyHP += info.getHealth();
             }
             else if(info.type == RobotType.CARRIER){    //factor in damage that carrier can do (in one round)
-                System.out.println("Considering carrier at: " + info.getLocation());
-                double resourceMass = info.getResourceAmount(ResourceType.MANA) + info.getResourceAmount(ResourceType.ADAMANTIUM) + info.getResourceAmount(ResourceType.ELIXIR);
-                friendlyHP -= (int)(5.0 * resourceMass / 4.0);
+                int resourceMass = info.getResourceAmount(ResourceType.MANA) + info.getResourceAmount(ResourceType.ADAMANTIUM) + info.getResourceAmount(ResourceType.ELIXIR);
+                friendlyHP -=  (int)(5*resourceMass/4);
             }
         }
 
@@ -831,17 +852,12 @@ public class Launcher extends Robot {
             if(info.getLocation().distanceSquaredTo(nearestEnemyInfo.getLocation()) > info.type.actionRadiusSquared){
                 continue; // Only count friendlies that can attack said enemy
             }
-            double howOftenICanAttack = (double)info.type.actionCooldown / (double)GameConstants.COOLDOWNS_PER_TURN; // Units here is rounds
-            double damage = info.type.damage;
-            friendlyDamage += damage / howOftenICanAttack;
+            double attackCooldown = info.type.actionCooldown;
+            friendlyDamage += info.type.damage / attackCooldown;
             friendlyHP += info.getHealth();
-            System.out.println("Considering friendly at: " + info.getLocation() + ", howOften: " + howOftenICanAttack + ", damage: " + damage);
 
         }
-        double howOftenICanAttack = (double)myType.actionCooldown / (double)GameConstants.COOLDOWNS_PER_TURN; // Units here is rounds
-        double myDamage = myType.damage;
-        friendlyDamage += myDamage / howOftenICanAttack;
-        System.out.println("Considering myself; howOften: " + howOftenICanAttack + ", damage: " + myDamage);
+        friendlyDamage += myType.damage / myType.actionCooldown;
         friendlyHP += rc.getHealth();
         return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage);
     }

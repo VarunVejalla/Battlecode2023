@@ -1,4 +1,4 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.*;
 
@@ -133,23 +133,10 @@ public class Util {
         // the first numUppers should have regionWidth+1 squares
         // the rest should have regionWith squares
         if(loc.x+1 <= numUppers * (regionWidth+1)) {
-//            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1); //don't want integer division
-            if((loc.x+1)%(regionWidth+1) == 0){
-                return (loc.x+1)/(regionWidth+1)-1;
-            }
-            else{
-                return (loc.x+1)/(regionWidth+1);
-            }
-
+            return (int) Math.ceil((loc.x+1)/(regionWidth+1) - 1);
         }
         else {
-//            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1); // don't want integer division
-            if((loc.x+1-numUppers)%(regionWidth) == 0){
-                return (loc.x+1-numUppers)/(regionWidth)-1;
-            }
-            else{
-                return (loc.x+1-numUppers)/(regionWidth);
-            }
+            return (int) Math.ceil((loc.x+1-numUppers)/regionWidth - 1);
         }
     }
 
@@ -157,22 +144,10 @@ public class Util {
         int regionHeight = rc.getMapHeight() / Constants.NUM_REGIONS_VERTICAL;
         int numUppers = rc.getMapHeight() % Constants.NUM_REGIONS_VERTICAL;
         if(loc.y+1 <= numUppers * (regionHeight+1)) {
-//            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
-            if((loc.y+1)%(regionHeight+1) == 0){
-                return (loc.y+1)/(regionHeight+1)-1;
-            }
-            else{
-                return (loc.y+1)/(regionHeight+1);
-            }
+            return (int) Math.ceil((loc.y+1)/(regionHeight+1) - 1);
         }
         else {
-//            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
-            if((loc.y+1-numUppers)%(regionHeight) == 0){
-                return (loc.y+1-numUppers)/(regionHeight)-1;
-            }
-            else{
-                return (loc.y+1-numUppers)/(regionHeight);
-            }
+            return (int) Math.ceil((loc.y+1-numUppers)/regionHeight - 1);
         }
     }
 
@@ -194,40 +169,20 @@ public class Util {
         }
     }
 
-    public static void printKnownWells(Robot robot){
-        MapLocation[] wells = robot.getWellList(ResourceType.ADAMANTIUM);
-        for(int i = 0; i < wells.length; i++){
-            if(wells[i] == null){
-                continue;
-            }
-            Util.log("Adamantium Well at: " + wells[i]);
-        }
-
-        wells = robot.getWellList(ResourceType.MANA);
-        for(int i = 0; i < wells.length; i++){
-            if(wells[i] == null){
-                continue;
-            }
-            Util.log("Mana Well at: " + wells[i]);
-        }
-
-        wells = robot.getWellList(ResourceType.ELIXIR);
-        for(int i = 0; i < wells.length; i++){
-            if(wells[i] == null){
-                continue;
-            }
-            Util.log("Elixir Well at: " + wells[i]);
-        }
+    public static int addDiffToSquaredNum(int x, int diff){
+        int sqrt = (int)Math.sqrt(x);
+        int newSqrt = sqrt + diff;
+        return newSqrt * newSqrt;
     }
 
     public static void log(String str){
-//        if(true){
-//            return;
-//        }
-
-        if(rc.getType() != RobotType.CARRIER){
+        if(true){
             return;
         }
+
+//        if(rc.getType() != RobotType.LAUNCHER){
+//            return;
+//        }
 
 //        if(rc.getID() != 12586){
 //            return;

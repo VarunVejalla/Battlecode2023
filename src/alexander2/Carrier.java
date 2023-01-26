@@ -1,4 +1,4 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.*;
 
@@ -180,7 +180,6 @@ public class Carrier extends Robot {
 //            }
 //        }
 
-
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
             Util.log("Resetting because there wasn't acc a well there");
@@ -215,7 +214,6 @@ public class Carrier extends Robot {
             MapLocation HQImHelping = getNearestFriendlyHQ();
             HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
             ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
-            Util.log("Helping HQ at " + HQImHelping + " with resource " + targetType);
 //            MapLocation closestWell = getNearestWell(targetType);
             int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetType);
             if(bestRegion != -1){
@@ -223,22 +221,20 @@ public class Carrier extends Robot {
                 MapLocation[] wellList = getWellList(targetType);
                 targetLoc = wellList[bestRegion];
                 targetRegion = bestRegion;
-                Util.log("Best region is " + targetRegion + ", targetLoc is " + targetLoc);
             }
             if(targetLoc == null){
                 targetLoc = getRandomScoutingLocation();
-                Util.log("Going to random scouting location at: " + targetLoc);
             }
         }
 
         // Go to target well location
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             nav.goToBug(targetLoc, myType.actionRadiusSquared);
-            indicatorString += "Nearby well. Bugging to " + targetLoc;
+            indicatorString += "NW.BG:" + targetLoc + ";";
         }
         else{
             nav.goToFuzzy(targetLoc, 0);
-            indicatorString += "Nearby well. Fuzzying to " + targetLoc;
+            indicatorString += "NW.FZ:" + targetLoc + ";";
         }
     }
 
@@ -254,6 +250,8 @@ public class Carrier extends Robot {
                     validMapSquares++;
                 }
             }
+            indicatorString += "TWR:" + troopsWithinRadius + ";";
+            indicatorString += "VMS:" + validMapSquares + ";";
             if(troopsWithinRadius >= validMapSquares - 1){
                 return true;
             }

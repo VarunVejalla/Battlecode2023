@@ -1,8 +1,11 @@
-package alexander;
+package alexander2;
 
 import battlecode.common.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Random;
 
 // TODO: Fix code (tune).
 
@@ -146,7 +149,6 @@ public class Robot {
 //        for(IslandInfo info : islands.values()){
 //            Util.log("Island idx: " + info.idx + ", Island location: " + info.loc + ", Island control " + info.controllingTeam + ", Commed: " + info.commed);
 //        }
-        Util.printKnownWells(this);
     }
 
     public void checkSymmetries() throws GameActionException {
@@ -334,7 +336,6 @@ public class Robot {
             if(wellArr[regionNum] == null){
                 wellArr[regionNum] = wellLocation;
                 wellsToComm.add(new WellSquareInfo(well.getMapLocation(), well.getResourceType(), regionNum));
-                System.out.println("New well found at " + well.getMapLocation() + ", adding to wellstoComm!");
             }
         }
 
