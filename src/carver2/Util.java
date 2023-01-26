@@ -113,6 +113,10 @@ public class Util {
 
     public static int getNumTroopsInRange(int radius, Team team, RobotType type) throws GameActionException {
         RobotInfo[] infos = team == null ? rc.senseNearbyRobots(radius) : rc.senseNearbyRobots(radius, team);
+        return getNumTroopsInRange(infos, type);
+    }
+
+    public static int getNumTroopsInRange(RobotInfo[] infos, RobotType type){
         if(type == null){
             return infos.length;
         }
@@ -180,14 +184,30 @@ public class Util {
         return getRegionY(loc) * Constants.NUM_REGIONS_HORIZONTAL + getRegionX(loc);
     }
 
-    public static int regionNumToRegionX(int regionNum){
-        return regionNum % Constants.NUM_REGIONS_HORIZONTAL;
+    public static int attackValue(RobotInfo enemy) {
+        if(enemy.type == RobotType.LAUNCHER) {
+            return 0;
+        } else if (enemy.type == RobotType.CARRIER) {
+            return 1;
+        } else if (enemy.type == RobotType.AMPLIFIER) {
+            return 2;
+        } else {
+            return 3;
+        }
     }
 
-    public static int regionNumToRegionY(int regionNum){
-        return regionNum / Constants.NUM_REGIONS_HORIZONTAL;
+    public static int attackCompare(RobotInfo enemy1, RobotInfo enemy2) {
+        // attack launchers, then carriers, then amplifiers, then other things
+        int value1 = attackValue(enemy1);
+        int value2 = attackValue(enemy2);
+        if(value1 != value2) {
+            return value1-value2;
+        }
+        else {
+            // same type, attack whichever one is closer to dying
+            return enemy1.health - enemy2.health;
+        }
     }
-
 
     public static void log(String str){
         if(true){

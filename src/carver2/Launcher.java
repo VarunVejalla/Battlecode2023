@@ -52,8 +52,6 @@ public class Launcher extends Robot {
 
     RobotInfo bestAttackVictim = null;
 
-
-
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
         determineMode();
@@ -115,20 +113,12 @@ public class Launcher extends Robot {
         else{
             indicatorString += "Unsafe;";
         }
-        if(isOffensive){
-            if(isSafe){
-                runSafeOffensiveStrategy();
-            }else{
-                runUnsafeOffensiveStrategy();
-            }
-        } else{
-            if(isSafe){
-                runSafeDefensiveStrategy();
-            } else{
-                runUnsafeDefensiveStrategy();
-            }
+        // TODO: Consider HP and go back for healing
+        if(isSafe){
+            runSafeStrategy();
+        }else{
+            runUnsafeStrategy();
         }
-
         runAttackLoop();
     }
 
@@ -141,7 +131,7 @@ public class Launcher extends Robot {
         }
     }
 
-    public void runSafeOffensiveStrategy() throws GameActionException{
+    public void runSafeStrategy() throws GameActionException{
         if(enemyInActionRadius) {
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
@@ -161,7 +151,7 @@ public class Launcher extends Robot {
                 moveBackIfAvoidsEnemy();
             }
         } else { // no enemy in sight
-            //TODO: factor in when you saw enemies and started retreating?
+            //TODO: factor in when you saw enemies and started retreating.
             if (haveUncommedIsland() || haveUncommedSymmetry()) {
                 returnToClosestHQ();
             } else {
@@ -170,8 +160,7 @@ public class Launcher extends Robot {
         }
     }
 
-    //TODO: implement this
-    public void runUnsafeOffensiveStrategy() throws GameActionException{
+    public void runUnsafeStrategy() throws GameActionException{
         if(enemyInActionRadius){
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
@@ -186,16 +175,6 @@ public class Launcher extends Robot {
         }
     }
 
-    //TODO: implement this
-    public void runSafeDefensiveStrategy() throws GameActionException{
-        runSafeOffensiveStrategy();
-    }
-
-    //TODO: implement this
-    public void runUnsafeDefensiveStrategy() throws GameActionException{
-        runUnsafeOffensiveStrategy();
-    }
-
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
@@ -203,6 +182,7 @@ public class Launcher extends Robot {
             targetLoc = null;
         }
 
+        // TODO: Also defend islands?
         if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
             enemyHQLocs = getPotentialEnemyHQLocs();
             enemyHQIdx = 0;
@@ -215,12 +195,6 @@ public class Launcher extends Robot {
         }
 
         indicatorString += "going to " + targetLoc + " to attack";
-//        targetLoc = getNearestUncontrolledIsland();
-//        if(targetLoc == null){
-//            targetLoc = getNearestOpposingIsland();
-//        }
-//        if(targetLoc == null)
-//            targetLoc = getRandomScoutingLocation();
 
         rc.setIndicatorString("going to " + targetLoc + " to attack potential enemy HQ");
         if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
@@ -277,34 +251,6 @@ public class Launcher extends Robot {
         nav.goToFuzzy(enemyCOM, 0);
     }
 
-    public int value(RobotInfo enemy) {
-        if(enemy.type == RobotType.LAUNCHER) {
-            return 0;
-        } else if (enemy.type == RobotType.CARRIER) {
-            return 1;
-        } else if (enemy.type == RobotType.AMPLIFIER) {
-            return 2;
-        } else {
-            return 3;
-        }
-    }
-
-    public int compare(RobotInfo enemy1, RobotInfo enemy2) {
-        // attack launchers, then carriers, then amplifiers, then other things
-        int value1 = value(enemy1);
-        int value2 = value(enemy2);
-        if(value1 != value2) {
-            return value1-value2;
-        }
-        else {
-            // same type, attack whichever one is closer to dying
-            return enemy1.health-enemy2.health;
-        }
-    }
-
-
-
-
     public RobotInfo getBestAttackVictim(){
         // this method assumes nearbyActionEnemies was updated
 
@@ -312,7 +258,7 @@ public class Launcher extends Robot {
         for(int i = 0; i < nearbyActionEnemies.length; i++) {
             // if it'd be better to attack enemies[i], change attackIndex to i
             if(rc.canAttack(nearbyActionEnemies[i].location)) {
-                if(toAttackIndex == -1 || compare(nearbyActionEnemies[i], nearbyActionEnemies[toAttackIndex]) < 0) {
+                if(toAttackIndex == -1 || Util.attackCompare(nearbyActionEnemies[i], nearbyActionEnemies[toAttackIndex]) < 0) {
                     toAttackIndex = i;
                 }
             }
@@ -376,18 +322,10 @@ public class Launcher extends Robot {
         return new MapLocation(xSum/nearbyEnemies.length, ySum/ nearbyEnemies.length);
     }
 
-
-
-
-
-
     public boolean haveUncommedIsland() {
         for(int i = 0; i < numIslands; i++){
             IslandInfo info = islands[i];
-            if(info == null){
-                continue;
-            }
-            if(!info.commed){
+            if(info != null && !info.commed){
                 return true;
             }
         }
@@ -410,105 +348,6 @@ public class Launcher extends Robot {
         }
     }
 
-
-    // Go attack an island
-    //TODO: determine symmetry of map and try to surround HQs?
-    public void runAttackMovement() throws GameActionException {
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            targetLoc = null;
-        }
-
-        if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
-            enemyHQLocs = getPotentialEnemyHQLocs();
-            enemyHQIdx = 0;
-        }
-        targetLoc = enemyHQLocs[enemyHQIdx];
-//        targetLoc = getClosestPotentialEnemyHQLocation();
-        // NOTE: Theoretically this shouldn't ever happen. If it did then our symmetry got fucked somehow.
-        if(targetLoc == null){
-            targetLoc = getRandomScoutingLocation();
-        }
-
-        indicatorString += "going to " + targetLoc + " to attack";
-//        targetLoc = getNearestUncontrolledIsland();
-//        if(targetLoc == null){
-//            targetLoc = getNearestOpposingIsland();
-//        }
-//        if(targetLoc == null)
-//            targetLoc = getRandomScoutingLocation();
-
-        rc.setIndicatorString("going to " + targetLoc + " to attack potential enemy HQ");
-        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-//            nav.goToFuzzy(targetLoc, 0);
-            nav.circle(targetLoc, 0, myType.actionRadiusSquared);
-
-            int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
-            int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
-            int numEnemyCarriers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.CARRIER);
-
-            if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) > OFFENSIVE_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
-                {
-//                    decideIfAttacking();
-                    enemyHQIdx++;
-                    enemyHQIdx %= enemyHQLocs.length;
-                    targetLoc = null;
-                }
-            }
-        }
-        else{
-            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-        }
-    }
-
-    // Go defend a well
-    //  We should not crowd wells
-    // maybe scale the guarding radius upwards as we see more friendly troops?
-    // TODO: also defend islands (with the highest priority)
-    // TODO: if enough launchers are already at you're place, go into attacking mode
-    public void runDefensiveMovement() throws GameActionException {
-        if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-            targetLoc = null;
-        }
-
-        if(targetLoc == null){
-            // choose between defending an island, or well (and if well, what type of well?)
-            double defensiveChoice = rng.nextDouble();
-            if(defensiveChoice < 0.5){
-                targetLoc = getNearestFriendlyIsland();     // defend a friendly island with probability 50%
-            }
-            else{       // defend a well with probability 25%
-                MapLocation closestHQ = getNearestFriendlyHQ();
-                int HQIdx = getFriendlyHQIndex(closestHQ);
-                // TODO: Be smart about choosing which well to go to.
-                if(rng.nextBoolean()){      // randomly select between Adamantium and Mana
-                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.ADAMANTIUM);
-                }
-                else{
-                    targetLoc = comms.getClosestWell(HQIdx, ResourceType.MANA);
-                }
-            }
-            if(targetLoc == null){
-                targetLoc = getRandomScoutingLocation();
-            }
-        }
-
-        indicatorString += "going to  " + targetLoc + " to defend";
-        int distanceSquaredToTarget = myLoc.distanceSquaredTo(targetLoc);
-        if(distanceSquaredToTarget <= myType.actionRadiusSquared){   // we have arrived
-            if(rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length > DEFENSIVE_THRESHOLD && distanceSquaredToTarget > 8) { // don't want to crowd any areas so leave if you're not super close
-                targetLoc = null;
-                determineMode();    // see if we should switch to attacking mode
-            }
-
-            else {
-                nav.circle(targetLoc, 2, myType.actionRadiusSquared);
-            }
-        }
-
-        else{
-            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-        }
-    }
     public RobotInfo getNearestEnemy(RobotInfo[] nearbyEnemies) throws GameActionException {
         // Find nearest enemy
         RobotInfo nearestEnemyInfo = null;
@@ -523,7 +362,8 @@ public class Launcher extends Robot {
         return nearestEnemyInfo;
     }
 
-    // TODO Count the # of soldiers on their front lines? I'm alr kinda doing that, but maybe comm that info so that everyone's aware of how fucked you are?
+    // TODO: Consider carriers as one shot (decrease from friendly HP).
+    // TODO: Consider total enemy damage, and if ur aboutta get yeeted then dip so you can get healed.
     public LauncherHeuristic getHeuristic(RobotInfo[] nearbyFriendlies, RobotInfo[] dangerousEnemies, RobotInfo nearestEnemyInfo) throws GameActionException { // TODO: Maybe only check # of attackers on the robot closest to you?
         //TODO: Fix this method?
 
@@ -539,16 +379,16 @@ public class Launcher extends Robot {
         double enemyDamage = 0.0;
         double friendlyHP = 0.0;
         double enemyHP = 0.0;
+        // TODO: Factor this in
         double totalEnemyDamage = 0.0;
 
         // Calculate enemies attacking you
 
-
+        // TODO: Sense the square and use actual cooldown instead of just using info.type.actionCooldown.
         for(int i = 0; i < dangerousEnemies.length; i++){
             RobotInfo info = dangerousEnemies[i];
             if(info.type == RobotType.LAUNCHER){
-                double attackCooldown = info.type.actionCooldown;
-                enemyDamage += info.type.damage / attackCooldown;
+                enemyDamage += (double)info.type.damage / (double)info.type.actionCooldown;
                 enemyHP += info.getHealth();
             }
         }
@@ -565,31 +405,13 @@ public class Launcher extends Robot {
 //            if(info.getHealth() < health_to_retreat){
 //                continue;
 //            }
-//            if(info.type == RobotType.SAGE){
-//                continue;
-//            }
-            double attackCooldown = info.type.actionCooldown;
-            friendlyDamage += info.type.damage / attackCooldown;
+            friendlyDamage += (double)info.type.damage / (double)info.type.actionCooldown;
             friendlyHP += info.getHealth();
-//            if(info.type == RobotType.ARCHON){ // NOTE: Archons can't attack, but this just makes you more likely to wanna protect your own archon
-////                friendlyHP += info.getHealth();
-//                double damageDiff = 2.0 / (rc.senseRubble(info.location) + 10.0);
-//                if(enemyDamage <= damageDiff){
-//                    enemyDamage = 0;
-//                }
-//                else{
-//                    enemyDamage -= damageDiff;
-//                }
-//            }
         }
 
-        double myAttackCooldown = 0;
-        friendlyDamage += myType.damage / myType.actionCooldown;
+        friendlyDamage += (double)myType.damage / (double)myType.actionCooldown;
         friendlyHP += rc.getHealth();
 
         return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage);
     }
-
-
-
 }

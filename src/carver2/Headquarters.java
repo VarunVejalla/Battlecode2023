@@ -149,7 +149,13 @@ public class Headquarters extends Robot {
     // criteria on whether hq should start saving up for an anchor
     //TODO: improve this criteria?
     public void shouldISaveUp() {
-        savingUp = false;
+        // Super simple saving up criteria to win the games where we're destroying opponent.
+        if(carrierToRoundMap.size() > 20 && getNearestUncontrolledIsland() != null && turnCount - lastAnchorBuiltTurn > 50){
+            savingUp = true;
+        }
+        else{
+            savingUp = false;
+        }
 //        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
 //        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
 //        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
