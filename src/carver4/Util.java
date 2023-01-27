@@ -98,7 +98,7 @@ public class Util {
         return null;
     }
 
-    public MapLocation getClosestMapLocation(MapLocation[] locs){
+    public static MapLocation getClosestMapLocation(MapLocation[] locs){
         MapLocation closest = null;
         int closestDist = Integer.MAX_VALUE;
         for(MapLocation loc : locs){

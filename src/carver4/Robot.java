@@ -461,7 +461,6 @@ public class Robot {
     public MapLocation getNearestFriendlyIsland(){ return getNearestIsland(myTeam); }
     public MapLocation getNearestOpposingIsland(){ return getNearestIsland(opponent); }
 
-
     public MapLocation getFurthestFriendlyIsland(){
         return getFurthestIsland(myTeam);
     }

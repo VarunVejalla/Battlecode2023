@@ -207,7 +207,6 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException {
         super.run();
         if(myIndex == 0){
-//            updateCommsChangesQueue();
             if(Util.checkNumSymmetriesPossible() == 0){
                 System.out.println("Goddamnit we fucked up the symmetries");
 //                rc.resign();
@@ -272,22 +271,6 @@ public class Headquarters extends Robot {
         prevMana = rc.getResourceAmount(ResourceType.MANA);
     }
 
-//    public void updateCommsChangesQueue() throws GameActionException {
-//        int newVal;
-//        for(int i = 0; i < prevCommsArray.length; i++){
-//            newVal = rc.readSharedArray(i);
-//            if(newVal != prevCommsArray[i]){
-//                commsChanges.add(i);
-//            }
-//            prevCommsArray[i] = newVal;
-//        }
-//        if(!commsChanges.isEmpty()){
-//            int changedIdx = commsChanges.poll();
-//            rc.writeSharedArray(63, changedIdx);
-//        }
-//
-//    }
-
     public void updateClosestWells() throws GameActionException {
         updateClosestWells(ResourceType.ADAMANTIUM, sortedClosestAdamantiumWells);
         updateClosestWells(ResourceType.MANA, sortedClosestManaWells);
@@ -322,7 +305,7 @@ public class Headquarters extends Robot {
         sortedClosestWells.add(newWellLoc);
         sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
         // TODO: Make the 10 a constant and also make it dynamic based on map size?
-        if(sortedClosestWells.size() > 10){
+        if(sortedClosestWells.size() > constants.NUM_WELLS_TO_CYCLE_WHEN_SATURATED){
             sortedClosestWells.remove(sortedClosestWells.size() - 1);
         }
     }
@@ -340,13 +323,18 @@ public class Headquarters extends Robot {
             spawnDir = myLoc.directionTo(closestWell);
         }
 
-        if(spawner.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)) {
+        while(spawner.trySpawnGeneralDirection(RobotType.CARRIER, spawnDir)) {
             numCarriersSpawned++;
         }
     }
 
     public void buildLaunchers() throws GameActionException {
-        Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
+        MapLocation spawnLoc = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        MapLocation[] enemyHQLocs = getPotentialEnemyHQLocs();
+        if(enemyHQLocs != null){
+            spawnLoc = Util.getClosestMapLocation(enemyHQLocs);
+        }
+        Direction spawnDir = myLoc.directionTo(spawnLoc);
 
         if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;

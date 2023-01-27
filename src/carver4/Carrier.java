@@ -85,6 +85,7 @@ public class Carrier extends Robot {
         if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
             targetLoc = null;
         }
+        // TODO: Check that the island you're going to is still an uncontrolled island, and if it's not then set targetLoc = null.
         if(targetLoc == null){
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){
@@ -92,6 +93,7 @@ public class Carrier extends Robot {
                 Util.log("Moving towards nearest uncontrolled island");
             }
             else{
+                // TODO: Highkey idt they shld go to a random scouting location, I think they shld j chill.
                 targetLoc = getRandomScoutingLocation();
                 Util.log("Scouting random location");
             }

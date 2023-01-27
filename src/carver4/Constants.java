@@ -80,6 +80,7 @@ public class Constants {
     public static final int NEW_WELL_X_SHIFT = 6;
     public static final int NEW_WELL_Y_MASK = 63;
     public static final int NEW_WELL_Y_SHIFT = 0;
+    public static final int NUM_WELLS_TO_CYCLE_WHEN_SATURATED = 10;
 
     // Region consts
     public static final int NUM_REGIONS_HORIZONTAL = 7;
