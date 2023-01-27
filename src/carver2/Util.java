@@ -98,7 +98,7 @@ public class Util {
         return null;
     }
 
-    public MapLocation getClosestMapLocation(MapLocation[] locs){
+    public static MapLocation getClosestMapLocation(MapLocation[] locs){
         MapLocation closest = null;
         int closestDist = Integer.MAX_VALUE;
         for(MapLocation loc : locs){
@@ -109,6 +109,37 @@ public class Util {
             }
         }
         return closest;
+    }
+
+    public static ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
+        int[] ratio = robot.comms.readRatio(HQImHelpingIdx);
+        int num = robot.rng.nextInt(16);  // note that 16 is an excluusive bond
+
+        // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
+        // cumuulative sums become [10, 12, 15]
+
+        // we first check if the random number is less than 10, if so we return adamantium
+        // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
+        // otherwise, return elixir
+
+        //Ratio data indices
+
+        if(num <= ratio[robot.constants.ADAMANTIUM_RATIO_INDEX]) {
+            Util.log("Gonna go find Adamantium");
+            return ResourceType.ADAMANTIUM;
+        }
+
+        // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
+        ratio[robot.constants.MANA_RATIO_INDEX] += ratio[robot.constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
+        if(num <= ratio[1]) {
+            Util.log("Gonna go find Mana");
+            return ResourceType.MANA;
+        }
+
+        else{
+            Util.log("Gonna go find Elixir");
+            return ResourceType.ELIXIR;
+        }
     }
 
     public static int getNumTroopsInRange(int radius, Team team, RobotType type) throws GameActionException {
