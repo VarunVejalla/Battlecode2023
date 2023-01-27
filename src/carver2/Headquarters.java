@@ -2,10 +2,7 @@ package carver2;
 
 import battlecode.common.*;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 class CarrierInfo {
     int roundNum;
@@ -43,9 +40,6 @@ public class Headquarters extends Robot {
     CarrierInfo[] carriersLastSeen = new CarrierInfo[TIME_TO_FORGET_CARRIER];
     HashMap<Integer, Integer> carrierToRoundMap = new HashMap<Integer, Integer>();
 
-//    int[] prevCommsArray = new int[63];
-//    Queue<Integer> commsChanges = new LinkedList<>();
-
     public Headquarters(RobotController rc) throws GameActionException {
         super(rc);
         myLoc = rc.getLocation();
@@ -55,6 +49,17 @@ public class Headquarters extends Robot {
         }
         spawner = new Spawner(rc, this);
         comms.writeOurHQLocation(myIndex, myLoc);
+        for(WellSquareInfo info : wellsToComm){
+            if(info.type == ResourceType.ADAMANTIUM){
+                addWellToSortedList(info.loc, sortedClosestAdamantiumWells);
+            }
+            else if(info.type == ResourceType.MANA){
+                addWellToSortedList(info.loc, sortedClosestManaWells);
+            }
+            else if(info.type == ResourceType.ELIXIR){
+                addWellToSortedList(info.loc, sortedClosestElixirWells);
+            }
+        }
     }
 
     public void computeIndex() throws GameActionException {
@@ -207,7 +212,6 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException {
         super.run();
         if(myIndex == 0){
-//            updateCommsChangesQueue();
             if(Util.checkNumSymmetriesPossible() == 0){
                 System.out.println("Goddamnit we fucked up the symmetries");
 //                rc.resign();
@@ -272,22 +276,6 @@ public class Headquarters extends Robot {
         prevMana = rc.getResourceAmount(ResourceType.MANA);
     }
 
-//    public void updateCommsChangesQueue() throws GameActionException {
-//        int newVal;
-//        for(int i = 0; i < prevCommsArray.length; i++){
-//            newVal = rc.readSharedArray(i);
-//            if(newVal != prevCommsArray[i]){
-//                commsChanges.add(i);
-//            }
-//            prevCommsArray[i] = newVal;
-//        }
-//        if(!commsChanges.isEmpty()){
-//            int changedIdx = commsChanges.poll();
-//            rc.writeSharedArray(63, changedIdx);
-//        }
-//
-//    }
-
     public void updateClosestWells() throws GameActionException {
         updateClosestWells(ResourceType.ADAMANTIUM, sortedClosestAdamantiumWells);
         updateClosestWells(ResourceType.MANA, sortedClosestManaWells);
@@ -304,13 +292,12 @@ public class Headquarters extends Robot {
     }
 
     public void readNewWellLocations() throws GameActionException {
-        readNewWellLocations(ResourceType.ADAMANTIUM, adamantiumWells, sortedClosestAdamantiumWells);
-        readNewWellLocations(ResourceType.MANA, manaWells, sortedClosestManaWells);
-        readNewWellLocations(ResourceType.ELIXIR, elixirWells, sortedClosestElixirWells);
+        readNewWellLocations(comms.getNewWellDetected(ResourceType.ADAMANTIUM), adamantiumWells, sortedClosestAdamantiumWells);
+        readNewWellLocations(comms.getNewWellDetected(ResourceType.MANA), manaWells, sortedClosestManaWells);
+        readNewWellLocations(comms.getNewWellDetected(ResourceType.ELIXIR), elixirWells, sortedClosestElixirWells);
     }
 
-    public void readNewWellLocations(ResourceType type, MapLocation[] regionWells, ArrayList<MapLocation> sortedClosestWells) throws GameActionException {
-        MapLocation newWellLoc = comms.getNewWellDetected(type);
+    public void readNewWellLocations(MapLocation newWellLoc, MapLocation[] regionWells, ArrayList<MapLocation> sortedClosestWells) throws GameActionException {
         if(newWellLoc == null){
             return;
         }
@@ -321,20 +308,52 @@ public class Headquarters extends Robot {
         regionWells[newWellRegionNum] = newWellLoc;
         sortedClosestWells.add(newWellLoc);
         sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
-        // TODO: Make the 10 a constant and also make it dynamic based on map size?
-        if(sortedClosestWells.size() > 10){
+        if(sortedClosestWells.size() > constants.MAX_NUM_WELLS_WHEN_SATURATED){
             sortedClosestWells.remove(sortedClosestWells.size() - 1);
         }
     }
 
+    public void addWellToSortedList(MapLocation newWellLoc, ArrayList<MapLocation> sortedClosestWells){
+        sortedClosestWells.add(newWellLoc);
+        sortedClosestWells.sort(Comparator.comparingInt((MapLocation a) -> myLoc.distanceSquaredTo(a)));
+        if(sortedClosestWells.size() > constants.MAX_NUM_WELLS_WHEN_SATURATED){
+            sortedClosestWells.remove(sortedClosestWells.size() - 1);
+        }
+    }
+
+    public MapLocation getWellToSpawnTowards() throws GameActionException {
+        ResourceType resourceType = Util.determineWhichResourceToGet(myIndex);
+        ArrayList<MapLocation> sortedClosestWells = getClosestWellList(resourceType);
+        if(!sortedClosestWells.isEmpty()){
+            return sortedClosestWells.get(0);
+        }
+        if(!sortedClosestElixirWells.isEmpty()){
+            return sortedClosestElixirWells.get(0);
+        }
+        if(!sortedClosestManaWells.isEmpty()){
+            return sortedClosestManaWells.get(0);
+        }
+        if(!sortedClosestAdamantiumWells.isEmpty()){
+            return sortedClosestAdamantiumWells.get(0);
+        }
+        return null;
+    }
+
+    public ArrayList<MapLocation> getClosestWellList(ResourceType type){
+        switch(type){
+            case ADAMANTIUM:
+                return sortedClosestAdamantiumWells;
+            case MANA:
+                return sortedClosestManaWells;
+            case ELIXIR:
+                return sortedClosestElixirWells;
+        }
+        throw new RuntimeException("Trying to get closest well list of unknown resource: " + type);
+    }
+
+
     public void buildCarriers() throws GameActionException {
-        MapLocation closestWell = sortedClosestElixirWells.isEmpty() ? null : sortedClosestElixirWells.get(0);
-        if(closestWell == null){
-            closestWell = sortedClosestManaWells.isEmpty() ? null : sortedClosestManaWells.get(0);
-        }
-        if(closestWell == null){
-            closestWell = sortedClosestManaWells.isEmpty() ? null : sortedClosestManaWells.get(0);
-        }
+        MapLocation closestWell = getWellToSpawnTowards();
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
         if (closestWell != null) {
             spawnDir = myLoc.directionTo(closestWell);
@@ -345,6 +364,7 @@ public class Headquarters extends Robot {
         }
     }
 
+    // Spawn in direction of potentialHQLoc
     public void buildLaunchers() throws GameActionException {
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
 

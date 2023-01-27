@@ -56,11 +56,6 @@ public class Robot {
     MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
     LinkedList<WellSquareInfo> wellsToComm = new LinkedList<>();
 
-//    ArrayList<MapLocation> adamantiumWells = new ArrayList<>();
-//    ArrayList<MapLocation> manaWells = new ArrayList<>();
-//    ArrayList<MapLocation> elixirWells = new ArrayList<>();
-//    HashMap<MapLocation, WellSquareInfo> wells;
-
     int numIslands;
     IslandInfo[] islands;
     Comms comms;
@@ -111,10 +106,6 @@ public class Robot {
         nav = new Navigation(rc, this);
         Util.rc = rc;
         Util.robot = this;
-//        wells = new HashMap();
-        MapLocation[] adamantiumWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
-        MapLocation[] manaWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
-        MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
         numIslands = rc.getIslandCount();
         islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);

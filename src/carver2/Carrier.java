@@ -106,41 +106,6 @@ public class Carrier extends Robot {
         }
     }
 
-    public ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
-        // Find the nearest HQ
-        int HQAdamantium = comms.readAdamantium(HQImHelpingIdx);
-        int HQMana = comms.readMana(HQImHelpingIdx);
-
-        int[] ratio = comms.readRatio(HQImHelpingIdx);
-        int num = rng.nextInt(16);  // note that 16 is an excluusive bond
-
-        // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
-        // cumuulative sums become [10, 12, 15]
-
-        // we first check if the random number is less than 10, if so we return adamantium
-        // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
-        // otherwise, return elixir
-
-        //Ratio data indices
-
-        if(num <= ratio[constants.ADAMANTIUM_RATIO_INDEX]) {
-            Util.log("Gonna go find Adamantium");
-            return ResourceType.ADAMANTIUM;
-        }
-
-        // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[constants.MANA_RATIO_INDEX] += ratio[constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
-        if(num <= ratio[1]) {
-            Util.log("Gonna go find Mana");
-            return ResourceType.MANA;
-        }
-
-        else{
-            Util.log("Gonna go find Elixir");
-            return ResourceType.ELIXIR;
-        }
-    }
-
     public int determineWhichWellToGoTo(int HQImHelpingIdx, ResourceType type){
         MapLocation HQloc = HQlocs[HQImHelpingIdx];
         int bestRegion = -1;
@@ -163,21 +128,36 @@ public class Carrier extends Robot {
         return bestRegion;
     }
 
+    public void resetWellLocation() throws GameActionException {
+        MapLocation HQImHelping = getNearestFriendlyHQ();
+        HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+//            MapLocation closestWell = getNearestWell(targetType);
+        int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetResource);
+        if(bestRegion != -1){
+            MapLocation[] wellList = getWellList(targetResource);
+            targetLoc = wellList[bestRegion];
+            targetRegion = bestRegion;
+        }
+        if(targetLoc == null){
+            targetLoc = getRandomScoutingLocation();
+        }
+    }
+
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
             System.out.println("Resetting because there wasn't acc a well there");
-            targetLoc = null;
+            targetResource = null;
         }
 
         // Check if I should still go to the well
-        if(targetLoc != null && targetRegion != -1 && myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+        if(targetResource != null && targetLoc != null && targetRegion != -1 && myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             // Check crowding
             if(checkWellCrowded(targetLoc)){
                 // If there's crowding, go to the next nearest location
                 regionsToIgnore.add(targetRegion);
                 System.out.println("Resetting because well is crowded");
-                targetLoc = null;
+                targetResource = null;
             }
 
             // If you're near the well, but you can't move towards the well, then you're prolly stuck
@@ -187,29 +167,19 @@ public class Carrier extends Robot {
                 if(fuzzyNavDir == null){
                     regionsToIgnore.add(targetRegion);
                     System.out.println("Resetting because I can't fuzzy nav towards it");
-                    targetLoc = null;
+                    targetResource = null;
                 }
             }
         }
-
+        Util.addToIndicatorString("R:" + targetResource);
+        if(targetResource == null || targetResource==ResourceType.ELIXIR){
+            targetResource = Util.determineWhichResourceToGet(HQImHelpingIdx);
+        }
 
         // Reset new target well location
-        if(targetLoc == null){
-            MapLocation HQImHelping = getNearestFriendlyHQ();
-            HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
-            ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
-//            MapLocation closestWell = getNearestWell(targetType);
-            int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetType);
-            if(bestRegion != -1){
-                targetResource = targetType;
-                MapLocation[] wellList = getWellList(targetType);
-                targetLoc = wellList[bestRegion];
-                targetRegion = bestRegion;
-            }
-            if(targetLoc == null){
-                targetLoc = getRandomScoutingLocation();
-            }
-        }
+//        if(targetLoc == null) {
+            resetWellLocation();
+//        }
 
         // Go to target well location
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){

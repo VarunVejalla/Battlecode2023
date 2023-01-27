@@ -160,7 +160,7 @@ public class Launcher extends Robot {
             enemyHQIdx = 0;
         }
         targetLoc = enemyHQLocs[enemyHQIdx];
-//        targetLoc = getClosestPotentialEnemyHQLocation();
+//        targetLoc = Util.getClosestMapLocation(enemyHQLocs);
         // NOTE: Theoretically this shouldn't ever happen. If it did then our symmetry got fucked somehow.
         if(targetLoc == null){
             targetLoc = getRandomScoutingLocation();
@@ -178,7 +178,7 @@ public class Launcher extends Robot {
 
             if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) > OFFENSIVE_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
                 {
-//                    decideIfAttacking();
+                    // TODO: Fix this. Implement HQ hopping.
                     enemyHQIdx++;
                     enemyHQIdx %= enemyHQLocs.length;
                     targetLoc = null;
