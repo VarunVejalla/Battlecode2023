@@ -1,4 +1,4 @@
-package carver2;
+package carver3;
 
 public class Constants {
 
@@ -73,7 +73,6 @@ public class Constants {
     public static final int ROTATIONAL_SYMMETRY_SHIFT = 0;
 
     // New well comms consts
-    public static final int MAX_NUM_WELLS_WHEN_SATURATED = 10;
     public static final int NEW_ADAMANTIUM_WELL_COMMS_IDX = 55;
     public static final int NEW_MANA_WELL_COMMS_IDX = 56;
     public static final int NEW_ELIXIR_WELL_COMMS_IDX = 57;
