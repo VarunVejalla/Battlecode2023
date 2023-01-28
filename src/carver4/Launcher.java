@@ -364,51 +364,81 @@ public class Launcher extends Robot {
         for(int i = 0; i < nearbyEnemies.length; i++){
             RobotInfo enemyInfo = nearbyEnemies[i];
 
-            if(enemyInfo.type != RobotType.LAUNCHER){
+            if(enemyInfo.type != RobotType.HEADQUARTERS && enemyInfo.type != RobotType.LAUNCHER){
                 continue;
             }
-            added = false;
-
-            for(int j = 0; j < nearbyFriendlies.length; j++){
-                RobotInfo friendlyInfo = nearbyFriendlies[j];
-                if(friendlyInfo.type != RobotType.LAUNCHER){
-                    continue;
+            if(enemyInfo.type == RobotType.HEADQUARTERS){
+                for(int j = 0; j < nearbyFriendlies.length; j++){
+                    RobotInfo friendlyInfo = nearbyFriendlies[j];
+                    if(friendlyInfo.type != RobotType.LAUNCHER){
+                        continue;
+                    }
+                    if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)){
+                        double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
+                        enemyDamage += (double)enemyInfo.type.damage / cooldown;
+                    }
                 }
-                if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)){
-                    double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
-                    enemyDamage += (double)enemyInfo.type.damage / cooldown;
-                    enemyHP += enemyInfo.getHealth();
-                    added = true;
-                    break;
-                }
-            }
-            // accounts for yourself
-            if(!added) {
+                // accounts for yourself
                 if (myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
                     double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
                     enemyDamage += (double) enemyInfo.type.damage / cooldown;
-                    enemyHP += enemyInfo.getHealth();
+                }
+            } else if(enemyInfo.type == RobotType.LAUNCHER) {
+                added = false;
+
+                for (int j = 0; j < nearbyFriendlies.length; j++) {
+                    RobotInfo friendlyInfo = nearbyFriendlies[j];
+                    if (friendlyInfo.type != RobotType.LAUNCHER) {
+                        continue;
+                    }
+                    if (friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
+                        double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
+                        enemyDamage += (double) enemyInfo.type.damage / cooldown;
+                        enemyHP += enemyInfo.getHealth();
+                        added = true;
+                        break;
+                    }
+                }
+                // accounts for yourself
+                if (!added) {
+                    if (myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
+                        double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
+                        enemyDamage += (double) enemyInfo.type.damage / cooldown;
+                        enemyHP += enemyInfo.getHealth();
+                    }
                 }
             }
         }
 
         for(int j = 0; j < nearbyFriendlies.length; j++){
             RobotInfo friendlyInfo = nearbyFriendlies[j];
-            if(friendlyInfo.type != RobotType.LAUNCHER){
+            if(friendlyInfo.type != RobotType.LAUNCHER && friendlyInfo.type != RobotType.HEADQUARTERS){
                 continue;
             }
 
-
-            for(int i = 0; i < nearbyEnemies.length; i++){
-                RobotInfo enemyInfo = nearbyEnemies[i];
-                if(enemyInfo.type != RobotType.LAUNCHER){
-                    continue;
+            if(friendlyInfo.type == RobotType.HEADQUARTERS) {
+                for (int i = 0; i < nearbyEnemies.length; i++) {
+                    RobotInfo enemyInfo = nearbyEnemies[i];
+                    if (enemyInfo.type != RobotType.LAUNCHER) {
+                        continue;
+                    }
+                    if (enemyInfo.location.isWithinDistanceSquared(friendlyInfo.location, friendlyInfo.type.actionRadiusSquared)) {
+                        double cooldown = (double) friendlyInfo.type.actionCooldown * nearbyFriendlyMapInfo[j].getCooldownMultiplier(myTeam);
+                        friendlyDamage += (double) friendlyInfo.type.damage / cooldown;
+                    }
                 }
-                if(enemyInfo.location.isWithinDistanceSquared(friendlyInfo.location, friendlyInfo.type.actionRadiusSquared)){
-                    double cooldown = (double)friendlyInfo.type.actionCooldown * nearbyFriendlyMapInfo[j].getCooldownMultiplier(myTeam);
-                    friendlyDamage += (double)friendlyInfo.type.damage / cooldown;
-                    friendlyHP += friendlyInfo.getHealth();
-                    break;
+            } else if(friendlyInfo.type == RobotType.LAUNCHER){
+                for (int i = 0; i < nearbyEnemies.length; i++) {
+                    RobotInfo enemyInfo = nearbyEnemies[i];
+                    if (enemyInfo.type != RobotType.LAUNCHER) {
+                        continue;
+                    }
+                    if (enemyInfo.location.isWithinDistanceSquared(friendlyInfo.location, friendlyInfo.type.actionRadiusSquared)) {
+                        double cooldown = (double) friendlyInfo.type.actionCooldown * nearbyFriendlyMapInfo[j].getCooldownMultiplier(myTeam);
+                        friendlyDamage += (double) friendlyInfo.type.damage / cooldown;
+                        friendlyHP += friendlyInfo.getHealth();
+                        break;
+                    }
                 }
             }
         }
