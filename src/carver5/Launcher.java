@@ -161,42 +161,43 @@ public class Launcher extends Robot {
             enemyHQLocs = getPotentialEnemyHQLocs();
             enemyHQIdx = 0;
         }
-        targetLoc = enemyHQLocs[enemyHQIdx];
-//        targetLoc = getClosestPotentialEnemyHQLocation();
-        // NOTE: Theoretically this shouldn't ever happen. If it did then our symmetry got fucked somehow.
-        if(targetLoc == null){
+        if(enemyHQLocs == null){
             targetLoc = getRandomScoutingLocation();
         }
+        else{
+            targetLoc = enemyHQLocs[enemyHQIdx];
+        }
+        // NOTE: Theoretically this shouldn't ever happen. If it did then our symmetry got fucked somehow.
 
         Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
 
-        if(myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
+        // TODO: This criteria should be a lil different for islands (you can go close to islands. You can't go close to enemy HQs).
+        if(myLoc.distanceSquaredTo(targetLoc) <= myType.visionRadiusSquared){
 //            nav.goToFuzzy(targetLoc, 0);
-            nav.circle(targetLoc, 0, myType.actionRadiusSquared);
+            nav.circle(targetLoc, RobotType.HEADQUARTERS.actionRadiusSquared + 1, myType.visionRadiusSquared);
 
             int numFriendlyLaunchers = 0;
-            int numEnemyLaunchers = 0;
-            int numEnemyCarriers = 0;
             for(RobotInfo robot : nearbyFriendlies){
                 if(robot.type == RobotType.LAUNCHER){
                     numFriendlyLaunchers += 1;
                 }
             }
-//            int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
-//            int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
-//            int numEnemyCarriers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.CARRIER);
 
-            if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) > OFFENSIVE_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
+            if(numFriendlyLaunchers > OFFENSIVE_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) > 8) { // don't want to crowd any areas so leave if you're not super close
                 {
-//                    decideIfAttacking();
                     enemyHQIdx++;
-                    enemyHQIdx %= enemyHQLocs.length;
+                    if(enemyHQLocs == null){
+                        enemyHQIdx = 0;
+                    }
+                    else{
+                        enemyHQIdx %= enemyHQLocs.length;
+                    }
                     targetLoc = null;
                 }
             }
         }
         else{
-            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            nav.goToBug(targetLoc, myType.visionRadiusSquared);
         }
     }
 
