@@ -328,20 +328,19 @@ public class Launcher extends Robot {
             }
         }
 
-        for (int i = 0; i < 9; i++) {
+        for(int i = 0; i < 9; i++) {
             if(!newSpotIsValid[i]){
                 continue;
             }
+
             for (RobotInfo enemy : nearbyVisionEnemies) {         //loop over each enemy in vision radius
                 if(possibleSpots[i].distanceSquaredTo(enemy.location) <= myType.actionRadiusSquared
                         && enemy.type != RobotType.HEADQUARTERS){
                     enemyPresentToAttack[i] = true;
                 }
-
                 if(possibleSpots[i].distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared){
                     enemyDamage[i] += Util.getEnemyDamage(enemy);
                 }
-
                 sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
             }
         }
@@ -414,38 +413,50 @@ public class Launcher extends Robot {
 
         for(RobotInfo enemy: nearbyVisionEnemies) {         //loop over each enemy in vision radius
             // launchers and destabilizers
-            if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        enemyDamage[i] += enemy.type.damage;
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+            for(int i=0; i<9; i++){
+                if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+                    enemyDamage[i] += Util.getEnemyDamage(enemy);
                 }
+                if(enemy.type == RobotType.LAUNCHER ||
+                        enemy.type == RobotType.DESTABILIZER ||
+                        enemy.type == RobotType.CARRIER ||
+                        enemy.type == RobotType.HEADQUARTERS)
+                sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
             }
 
-            // carriers
-            else if (enemy.type == RobotType.CARRIER) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack us from there
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        int massCarrying = enemy.getResourceAmount(ResourceType.MANA) + enemy.getResourceAmount(ResourceType.ADAMANTIUM) + enemy.getResourceAmount(ResourceType.ELIXIR);
-                        enemyDamage[i] += (int) (massCarrying * 5/4);   // assume enemy will use their carriers to attack us
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
-                }
-            }
 
-            // headquarters
-            else if (enemy.type == RobotType.HEADQUARTERS) {
-                for (int i = 0; i < 9; i++) {
-                    // if the new spot is valid and an enemy can attack us from there
-                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
-                        enemyDamage[i] += 4;    // hq's deal 4 damage for all bots in their action radius
-                    }
-                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
-                }
-            }
+//            if (enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.DESTABILIZER) {
+//                for (int i = 0; i < 9; i++) {
+//                    // if the new spot is valid and an enemy can attack
+//                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+//                        enemyDamage[i] += enemy.type.damage;
+//                    }
+//                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+//                }
+//            }
+//
+//            // carriers
+//            else if (enemy.type == RobotType.CARRIER) {
+//                for (int i = 0; i < 9; i++) {
+//                    // if the new spot is valid and an enemy can attack us from there
+//                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+//                        int massCarrying = enemy.getResourceAmount(ResourceType.MANA) + enemy.getResourceAmount(ResourceType.ADAMANTIUM) + enemy.getResourceAmount(ResourceType.ELIXIR);
+//                        enemyDamage[i] += (int) (massCarrying * 5/4);   // assume enemy will use their carriers to attack us
+//                    }
+//                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+//                }
+//            }
+//
+//            // headquarters
+//            else if (enemy.type == RobotType.HEADQUARTERS) {
+//                for (int i = 0; i < 9; i++) {
+//                    // if the new spot is valid and an enemy can attack us from there
+//                    if (newSpotIsValid[i] && enemy.location.distanceSquaredTo(possibleSpots[i]) <= enemy.getType().actionRadiusSquared) {
+//                        enemyDamage[i] += 4;    // hq's deal 4 damage for all bots in their action radius
+//                    }
+//                    sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+//                }
+//            }
         }
 
         MapLocation bestSpot = myLoc;
