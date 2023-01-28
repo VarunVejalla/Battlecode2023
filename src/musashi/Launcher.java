@@ -2,6 +2,8 @@ package musashi;
 
 import battlecode.common.*;
 
+import java.util.HashSet;
+
 class LauncherHeuristic {
     double friendlyHP;
     double friendlyDamage;
@@ -28,6 +30,11 @@ class LauncherHeuristic {
     }
 }
 
+
+// enum class to customize behaviours when we arrive at different types of targets
+enum DestinationType {ENEMY_HQ, FRIENDLY_HQ, ENEMY_ISLAND, FRIENDLY_ISLAND, SYMMETRY};
+
+
 public class Launcher extends Robot {
 
     private MapLocation targetLoc;
@@ -44,10 +51,18 @@ public class Launcher extends Robot {
     boolean enemyInActionRadius;
     boolean enemyInVisionRadius;
 
+    MapLocation spawningHQ;
+    HashSet<MapLocation> locationsToIgnore = new HashSet<>();
+    DestinationType destinationType = null;
+
+
+
+
     RobotInfo bestAttackVictim = null;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
+        spawningHQ = getNearestFriendlyHQ();    // location of HQ that spawned me
     }
 
     public void updateAllNearbyInfo() throws GameActionException{
@@ -71,7 +86,6 @@ public class Launcher extends Robot {
     //TODO: maybe have leaders?
     public void run() throws GameActionException{
         super.run();
-
         rc.setIndicatorDot(myLoc, 0, 255, 0);
 
         runAttackLoop();
@@ -93,6 +107,7 @@ public class Launcher extends Robot {
         runAttackLoop();
     }
 
+
     public void runAttackLoop() throws GameActionException {
         updateNearbyActionInfo();
         boolean successfullyAttacked = runAttack();
@@ -101,6 +116,7 @@ public class Launcher extends Robot {
             successfullyAttacked = runAttack();
         }
     }
+
 
     public void runSafeStrategy() throws GameActionException{
         if(enemyInActionRadius) {
@@ -131,6 +147,7 @@ public class Launcher extends Robot {
         }
     }
 
+
     public void runUnsafeStrategy() throws GameActionException{
         if(enemyInActionRadius){
             if(rc.isActionReady()){
@@ -146,58 +163,153 @@ public class Launcher extends Robot {
         }
     }
 
-    // Go attack an enemy HQ
-    //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
-    public void runNormalOffensiveStrategy() throws GameActionException {
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared){
-            targetLoc = null;
-        }
 
-        // TODO: Also defend islands?
+
+//    public boolean locationIsCrowded(MapLocation attackLoc) throws GameActionException{
+//        // only run this method if we're within a certain radius of attackLoc
+//        // check to see if you're within a certain radius of the target
+//        // check to see if there are x soliders closer to the target than you
+//        //       if so, this spot is crowded and you should be moving on
+//        double OCCUPIED_FRACTION_THRESHOLD = 0.8;   // fixed reaction, over which we say a spot is crowded
+//        int radius = myType.visionRadiusSquared;
+//        int friendlies = rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam).length;
+//        int enemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent).length;
+//        int troopsWithinRadius  = friendlies - enemies;
+//
+//        MapInfo[] nearbyMapInfos = rc.senseNearbyMapInfos(attackLoc, radius);
+//        int validMapSquares = 0;
+//        for(int i = 0; i < nearbyMapInfos.length; i++){
+//            MapInfo info = nearbyMapInfos[i];
+//            if(info.isPassable()){       // possible squares we can sit at around attackLoc
+//                validMapSquares++;      // possible squares you can go to
+//            }
+//        }
+//        double occupiedFraction = (double)troopsWithinRadius / (double)validMapSquares;
+//        if(occupiedFraction >= 0.8){
+//            return true;
+//        }
+//        return false;
+//    }
+
+
+    // this method generates a sorted list of enemy HQ locations, sorted by distance from our HQ
+    // returns null if there are no enemyHQs to visit that are not in locationsToIgnore
+    public MapLocation getNextEnemyHQToVisit(){
+        MapLocation nextEnemyHQToVisit = null;
+        int bestDistanceSquared = Integer.MAX_VALUE;
+        for(int i=0; i<numHQs; i++){
+            if(locationsToIgnore.contains(enemyHQLocs[i])) continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
+            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);
+            if(nextEnemyHQToVisit == null ||currDistanceSquared < bestDistanceSquared){
+                bestDistanceSquared = currDistanceSquared;
+                nextEnemyHQToVisit = enemyHQLocs[i];
+            }
+        }
+        return nextEnemyHQToVisit;
+    }
+
+
+    public MapLocation getNextTargetLoc() throws GameActionException{
+        // run movement to determine symmetry
         if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
             enemyHQLocs = getPotentialEnemyHQLocs();
             enemyHQIdx = 0;
-        }
-        targetLoc = enemyHQLocs[enemyHQIdx];
-//        targetLoc = getClosestPotentialEnemyHQLocation();
-        // NOTE: Theoretically this shouldn't ever happen. If it did then our symmetry got fucked somehow.
-        if(targetLoc == null){
-            targetLoc = getRandomScoutingLocation();
-        }
-
-        Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
-
-
-        int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
-        int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
-        int numEnemyCarriers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.CARRIER);
-
-
-        if(myLoc.distanceSquaredTo(targetLoc) > 56){
-            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-        }
-
-//        else if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) >= OFFENSIVE_THRESHOLD && myLoc.distanceSquaredTo(targetLoc) <= 56){
-//                enemyHQIdx++;
-//                enemyHQIdx %= enemyHQLocs.length;
-//                targetLoc = enemyHQLocs[enemyHQIdx];
-//                nav.goToBug(targetLoc, myType.actionRadiusSquared);
-//        }
-//
-//
-
-
-        else if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) < OFFENSIVE_THRESHOLD) { // don't want to crowd any areas so leave if you're not super close
-                nav.circle(targetLoc, RobotType.HEADQUARTERS.actionRadiusSquared+2, 26);
-        }
-
-        else {
-            enemyHQIdx++;
-            enemyHQIdx %= enemyHQLocs.length;
             targetLoc = enemyHQLocs[enemyHQIdx];
-            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+            destinationType = DestinationType.SYMMETRY;
+            // TODO: make launchers go to closestPotentialEnemyHQLocation
+            //            targetLoc = getClosestPotentialEnemyHQLocation();
+        }
+
+        // go to the nearest opposing island and destroy the enemy (hopefully)
+        targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
+        destinationType = DestinationType.ENEMY_ISLAND;
+
+        // go to the next enemyHQ to visit
+        if(targetLoc == null){
+            // get the next closest HQ that we haven't already visited
+            // get the nearest hq that hasn't been visited
+            targetLoc = getNextEnemyHQToVisit();
+            destinationType = DestinationType.ENEMY_HQ;
+        }
+
+         if(targetLoc == null) destinationType = null;
+        return targetLoc;
+    }
+
+
+    // this method takes care of going to different destination types
+    //          - the code to go to a enemyHQ may be different than going to a well... (i think)
+    // rn, we only use goTo differently if we're tryna move to an enmyHQ (so we don't get hurt by enemyHQ)
+    // but we could expand this if we wanna have different behaviour around islands, hqs, or something else?
+    //TODO: need to change what we do to navigate to different destinationTypes
+    // TODO: still getting too close to enemyHQs ;(
+    public void goToHandler() throws GameActionException {
+        switch (destinationType){
+            case ENEMY_HQ:
+                nav.goToBug(targetLoc, myType.visionRadiusSquared*2);   // don't go too close to the enemyHQ
+                break;
+            default:
+                nav.goToBug(targetLoc, myType.actionRadiusSquared);
         }
     }
+
+
+    // this method checks if the launcher has arrived at its destination
+    // note that "arrived" may be different depending on where we're trying to go
+    //TODO: need to tune the values in checkIfArrived for different destination types
+    public boolean checkIfArrived() throws GameActionException{
+        if(targetLoc == null) return false;
+        switch (destinationType){
+            case ENEMY_HQ:
+                return myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared*2;   // don't go too close to the enemyHQ
+            default:
+                return myLoc.distanceSquaredTo(targetLoc) < myType.actionRadiusSquared;
+        }
+    }
+
+
+    public void arrivedHandler() throws GameActionException{
+        switch(destinationType){
+            case ENEMY_HQ:
+                locationsToIgnore.add(targetLoc); break;
+            default:
+                break;
+        }
+    }
+
+
+
+    // Go attack an enemy HQ
+    //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
+    public void runNormalOffensiveStrategy() throws GameActionException {
+        if (checkIfArrived()){
+            arrivedHandler();
+            targetLoc = null;
+        }
+        targetLoc = getNextTargetLoc();
+        if(targetLoc == null){          // if getNextTargetLoc didn't return anything, recylce all the locations in locationsToIgnore
+            locationsToIgnore.clear();
+            targetLoc = getNextTargetLoc(); // run getNextTargetLoc again to get the next HQ to go to
+        }
+        goToHandler();
+        Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
+//        if(myLoc.distanceSquaredTo(targetLoc) > 56){
+//            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+//        }
+//
+//        else if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) < OFFENSIVE_THRESHOLD){ // don't want to crowd any areas so leave if you're not super close
+//                nav.circle(targetLoc, RobotType.HEADQUARTERS.actionRadiusSquared+2, 26);
+//        }
+//
+//        else {
+//            enemyHQIdx++;
+//            enemyHQIdx %= enemyHQLocs.length;
+//            targetLoc = enemyHQLocs[enemyHQIdx];
+//            nav.goToBug(targetLoc, myType.actionRadiusSquared);
+//        }
+    }
+
+
 
     public void moveBackFromEnemy() throws GameActionException {
         // this works assuming that we've calculated enemyCOM already
@@ -208,6 +320,7 @@ public class Launcher extends Robot {
         boolean moved = nav.goToFuzzy(target, 0);
         //TODO: if you can't move, what should you do?
     }
+
 
     public void moveBackIfAvoidsEnemy() throws GameActionException{
         bestAttackVictim = getBestAttackVictim();
@@ -227,9 +340,11 @@ public class Launcher extends Robot {
         }
     }
 
+
     public void moveTowardsEnemyCOM() throws GameActionException{
         nav.goToFuzzy(enemyCOM, 0);
     }
+
 
     public RobotInfo getBestAttackVictim(){
         // this method assumes nearbyActionEnemies was updated
@@ -246,6 +361,7 @@ public class Launcher extends Robot {
         if(toAttackIndex == -1 || nearbyActionEnemies[toAttackIndex].type == RobotType.HEADQUARTERS) return null;
         return nearbyActionEnemies[toAttackIndex];
     }
+
 
     // summary of this method:
     // check to see is attack is ready. if not, you can't do anything so return
@@ -310,9 +426,11 @@ public class Launcher extends Robot {
         return false;
     }
 
+
     public boolean haveUncommedSymmetry() {
         return !impossibleSymmetries.isEmpty();
     }
+
 
     public void returnToClosestHQ() throws GameActionException {
         targetLoc = getNearestFriendlyHQ();
@@ -325,6 +443,7 @@ public class Launcher extends Robot {
             Util.addToIndicatorString("UNC,BUG:" + targetLoc); // Uncommed info, bugging to targetLoc
         }
     }
+
 
     public RobotInfo getNearestEnemy(RobotInfo[] nearbyEnemies) throws GameActionException {
         // Find nearest enemy
@@ -339,6 +458,7 @@ public class Launcher extends Robot {
         }
         return nearestEnemyInfo;
     }
+
 
     // TODO: Consider carriers as one shot (decrease from friendly HP).
     // TODO: Consider total enemy damage, and if ur aboutta get yeeted then dip so you can get healed.
