@@ -218,11 +218,29 @@ public class Launcher extends Robot {
     }
 
 
+    // checks to see if any of our HQs need help and return that location
+    // if multiple HQs need our help, go to the closest one
+    public MapLocation getNearestFriendlyHQToHelp() throws GameActionException {
+        MapLocation friendlyHQToHelp = null;
+        int bestDistanceSquared = Integer.MAX_VALUE;
+        for(int i=0; i<numHQs; i++){
+            if(comms.readCallForHelpFlag(constants.HQ_LOC_IDX_MAP[i])){
+                int currDistanceSquared = myLoc.distanceSquaredTo(HQlocs[i]);
+                if(currDistanceSquared < bestDistanceSquared){
+                    friendlyHQToHelp = HQlocs[i];
+                    bestDistanceSquared = currDistanceSquared;
+                }
+            }
+        }
+        return friendlyHQToHelp;
+    }
+
+
     public MapLocation getNextTargetLoc() throws GameActionException{
         // run movement to determine symmetry
 //        enemyHQLocs = getPotentialEnemyHQLocs();
 
-
+        // determine symmetry
         if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
             enemyHQLocs = getPotentialEnemyHQLocs();
             enemyHQIdx = 0;
@@ -232,19 +250,25 @@ public class Launcher extends Robot {
             //            targetLoc = getClosestPotentialEnemyHQLocation();
         }
 
-
-
-        if (haveUncommedIsland() || haveUncommedSymmetry()) {
+        // go to friendlyHQ to comm info
+        if (targetLoc == null && (haveUncommedIsland() || haveUncommedSymmetry())) {
             targetLoc = getNearestFriendlyHQ();
             destinationType = DestinationType.FRIENDLY_HQ;
         }
 
+        //
+        if(targetLoc == null) {
+            targetLoc = getNearestFriendlyHQToHelp();   // find a boi that needs some backup
+            destinationType = DestinationType.FRIENDLY_HQ;
+        }
 
-        // go to the nearest opposing island and destroy the enemy (hopefully)
-        targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
-        destinationType = DestinationType.ENEMY_ISLAND;
+        if(targetLoc == null){
+            // go to the nearest opposing island and destroy the enemy (hopefully)
+            targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
+            destinationType = DestinationType.ENEMY_ISLAND;
+        }
 
-        // go to the next enemyHQ to visit
+        // go to the next enemyHQ to visit (and destroy ;))
         if(targetLoc == null){
             // get the next closest HQ that we haven't already visited
             // get the nearest hq that hasn't been visited
@@ -262,7 +286,6 @@ public class Launcher extends Robot {
     // rn, we only use goTo differently if we're tryna move to an enmyHQ (so we don't get hurt by enemyHQ)
     // but we could expand this if we wanna have different behaviour around islands, hqs, or something else?
     //TODO: need to change what we do to navigate to different destinationTypes
-    // TODO: still getting too close to enemyHQs ;(
     public boolean goToHandler() throws GameActionException {
         if(destinationType == null) return false;
         switch (destinationType){
@@ -276,7 +299,6 @@ public class Launcher extends Robot {
 
     // this method checks if the launcher has arrived at its destination
     // note that "arrived" may be different depending on where we're trying to go
-    //TODO: need to tune the values in checkIfArrived for different destination types
     public boolean checkIfArrived() throws GameActionException{
         if(targetLoc == null) return false;
         if(destinationType == null) return false;
@@ -300,6 +322,16 @@ public class Launcher extends Robot {
     }
 
 
+    // this method checks to see if we should update our targetLoc
+    // if we should update, it sets targetLoc to null
+    public void rerouteHandler(){
+        // if we are going to an enemy island but it is no longer an enemy island   --> switch
+        // if we are going to a friendly HQ but it no longer needs help     -->
+
+        // if we are going to anywhere, but a friendlyHQ needs help, switch
+    }
+
+
 
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
@@ -317,26 +349,11 @@ public class Launcher extends Robot {
 
         if(targetLoc == null){          // if getNextTargetLoc didn't return anything, recylce all the locations in locationsToIgnore
             locationsToIgnore.clear();
-            targetLoc = getNextTargetLoc(); // run getNextTargetLoc again to get the next HQ to go to
+            targetLoc = getNextTargetLoc(); // run getNextTargetLoc again to get the next HQ to go to (if nothing else comes up)
         }
 
-//        Util.log("going to " + targetLoc + "for " + destinationType);
         goToHandler();
-        Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
-//        if(myLoc.distanceSquaredTo(targetLoc) > 56){
-//            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-//        }
-//
-//        else if(numFriendlyLaunchers - (numEnemyLaunchers + numEnemyCarriers) < OFFENSIVE_THRESHOLD){ // don't want to crowd any areas so leave if you're not super close
-//                nav.circle(targetLoc, RobotType.HEADQUARTERS.actionRadiusSquared+2, 26);
-//        }
-//
-//        else {
-//            enemyHQIdx++;
-//            enemyHQIdx %= enemyHQLocs.length;
-//            targetLoc = enemyHQLocs[enemyHQIdx];
-//            nav.goToBug(targetLoc, myType.actionRadiusSquared);
-//        }
+        Util.addToIndicatorString("DEST:" + targetLoc); // Potential Enemy HQ
     }
 
 

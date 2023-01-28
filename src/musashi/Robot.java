@@ -435,7 +435,6 @@ public class Robot {
                 closestIsland = info.loc;
             }
         }
-
         return closestIsland;
     }
 

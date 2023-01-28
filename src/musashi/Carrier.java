@@ -28,6 +28,7 @@ public class Carrier extends Robot {
             mining = false;
             targetLoc = null;
         }
+
         else if(weight == 0 && !mining){
             mining = true;
             targetLoc = null;
@@ -40,8 +41,6 @@ public class Carrier extends Robot {
         // If you're holding an anchor, make your top priority to deposit it.
         boolean dangerNearby = runAway();
         if(!dangerNearby) {
-
-
             if (rc.getAnchor() != null) {
                 moveTowardsNearestUncontrolledIsland();
                 tryPlacing();
@@ -65,6 +64,7 @@ public class Carrier extends Robot {
     public int totalResourceWeight() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
     }
+
 
     public void tryTakingAnchor() throws GameActionException {
         if(rc.getAnchor() != null){
@@ -141,6 +141,7 @@ public class Carrier extends Robot {
         }
     }
 
+
     public int determineWhichWellToGoTo(int HQImHelpingIdx, ResourceType type){
         MapLocation HQloc = HQlocs[HQImHelpingIdx];
         int bestRegion = -1;
@@ -162,6 +163,7 @@ public class Carrier extends Robot {
         }
         return bestRegion;
     }
+
 
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.

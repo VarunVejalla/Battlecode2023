@@ -43,6 +43,12 @@ public class Headquarters extends Robot {
     CarrierInfo[] carriersLastSeen = new CarrierInfo[TIME_TO_FORGET_CARRIER];
     HashMap<Integer, Integer> carrierToRoundMap = new HashMap<Integer, Integer>();
 
+
+    // number of consecutive rounds that there have been more enemy troops than friendly troops in my vision radius
+    int numUnsafeRounds = 0;
+    int CALL_FOR_HELP_THRESHOLD = 15;   // call for help if you've been unsafe for more than this many rounds
+
+
 //    int[] prevCommsArray = new int[63];
 //    Queue<Integer> commsChanges = new LinkedList<>();
 
@@ -143,6 +149,20 @@ public class Headquarters extends Robot {
         Util.addToIndicatorString("C:" + carrierToRoundMap.size());
     }
 
+
+    public boolean doINeedHelp() throws GameActionException{
+        RobotInfo[] nearbyVisionFriendlies = rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam);
+        RobotInfo[] nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+
+        int numFriendlies = nearbyVisionFriendlies.length;
+        int numEnemies = nearbyVisionEnemies.length;
+
+        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
+        if(numEnemies > numFriendlies) return true;
+        return false;
+    }
+
+
     // criteria on whether hq should start saving up for an anchor
     //TODO: improve this criteria?
     public void shouldISaveUp() {
@@ -228,6 +248,25 @@ public class Headquarters extends Robot {
                 comms.resetNewWellComms();
             }
         }
+
+
+        // code to check if I should call for help
+        // ------------------------------------------------------------------------------------
+        if(doINeedHelp()) numUnsafeRounds += 1;
+        else numUnsafeRounds = 0;   // reset the number of consecutive unsafe rounds if we are no longer in danger
+        if(numUnsafeRounds > CALL_FOR_HELP_THRESHOLD){
+            comms.setCallForHelpFlag(myIndex, true);    // tell friendly launchers to come save me
+            Util.addToIndicatorString("NH: 1"); // NH --> Need Help
+        }
+
+        else{
+            comms.setCallForHelpFlag(myIndex, false);   // i think i got this bois
+            Util.addToIndicatorString("NH: 0");
+//            indicatorString += "NH: 0;"; // NH --> Need Help
+        }
+        Util.addToIndicatorString("NUR: " + numUnsafeRounds);       // NUR --> Number Unsafe Rounds
+        // ------------------------------------------------------------------------------------
+
 
 //        rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
