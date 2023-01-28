@@ -73,12 +73,19 @@ public class Launcher extends Robot {
         heuristic = getHeuristic(nearbyFriendlies, nearbyVisionEnemies, nearestEnemyInfo);
         enemyCOM = getCenterOfMass(nearbyVisionEnemies);
 
+
+        // don't consider HQs as an enemyHQ as an enemy in vision radius
         enemyInVisionRadius = nearbyVisionEnemies.length > 0;
+        if(nearbyVisionEnemies.length == 1 && nearbyVisionEnemies[0].type == RobotType.HEADQUARTERS) enemyInVisionRadius = false;
     }
 
     public void updateNearbyActionInfo() throws GameActionException{
         nearbyActionEnemies = rc.senseNearbyRobots(myType.actionRadiusSquared, opponent);
+
+        // don't consider HQs as an enemyHQ as an enemy in vision radius
         enemyInActionRadius = nearbyActionEnemies.length > 0;
+        if(nearbyActionEnemies.length == 1 && nearbyActionEnemies[0].type == RobotType.HEADQUARTERS) enemyInActionRadius = false;
+
         bestAttackVictim = getBestAttackVictim();
     }
 
@@ -125,6 +132,7 @@ public class Launcher extends Robot {
             }
             if(rc.isMovementReady()){
                 moveBackIfAvoidsEnemy();
+                moveBackIfAvoidsEnemy();
                 Util.addToIndicatorString("AVD");
             }
         } else if (enemyInVisionRadius) {
@@ -139,11 +147,12 @@ public class Launcher extends Robot {
             }
         } else { // no enemy in sight
             //TODO: factor in when you saw enemies and started retreating.
-            if (haveUncommedIsland() || haveUncommedSymmetry()) {
-                returnToClosestHQ();
-            } else {
+//            Util.log("found symmetry");
+//            if (haveUncommedIsland() || haveUncommedSymmetry()) {
+//                returnToClosestHQ();
+//            } else {
                 runNormalOffensiveStrategy();
-            }
+//            }
         }
     }
 
@@ -211,6 +220,9 @@ public class Launcher extends Robot {
 
     public MapLocation getNextTargetLoc() throws GameActionException{
         // run movement to determine symmetry
+//        enemyHQLocs = getPotentialEnemyHQLocs();
+
+
         if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
             enemyHQLocs = getPotentialEnemyHQLocs();
             enemyHQIdx = 0;
@@ -219,6 +231,14 @@ public class Launcher extends Robot {
             // TODO: make launchers go to closestPotentialEnemyHQLocation
             //            targetLoc = getClosestPotentialEnemyHQLocation();
         }
+
+
+
+        if (haveUncommedIsland() || haveUncommedSymmetry()) {
+            targetLoc = getNearestFriendlyHQ();
+            destinationType = DestinationType.FRIENDLY_HQ;
+        }
+
 
         // go to the nearest opposing island and destroy the enemy (hopefully)
         targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
@@ -243,13 +263,13 @@ public class Launcher extends Robot {
     // but we could expand this if we wanna have different behaviour around islands, hqs, or something else?
     //TODO: need to change what we do to navigate to different destinationTypes
     // TODO: still getting too close to enemyHQs ;(
-    public void goToHandler() throws GameActionException {
+    public boolean goToHandler() throws GameActionException {
+        if(destinationType == null) return false;
         switch (destinationType){
             case ENEMY_HQ:
-                nav.goToBug(targetLoc, myType.visionRadiusSquared*2);   // don't go too close to the enemyHQ
-                break;
+                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
             default:
-                nav.goToBug(targetLoc, myType.actionRadiusSquared);
+                return nav.goToBug(targetLoc, myType.actionRadiusSquared);
         }
     }
 
@@ -259,9 +279,11 @@ public class Launcher extends Robot {
     //TODO: need to tune the values in checkIfArrived for different destination types
     public boolean checkIfArrived() throws GameActionException{
         if(targetLoc == null) return false;
+        if(destinationType == null) return false;
+
         switch (destinationType){
             case ENEMY_HQ:
-                return myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared*2;   // don't go too close to the enemyHQ
+                return myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared;   // don't go too close to the enemyHQ
             default:
                 return myLoc.distanceSquaredTo(targetLoc) < myType.actionRadiusSquared;
         }
@@ -282,15 +304,23 @@ public class Launcher extends Robot {
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
+//        Util.log("num impossible symmetries: " + impossibleSymmetries.size());
+
         if (checkIfArrived()){
             arrivedHandler();
             targetLoc = null;
         }
-        targetLoc = getNextTargetLoc();
+
+        if(targetLoc == null) {
+            targetLoc = getNextTargetLoc();
+        }
+
         if(targetLoc == null){          // if getNextTargetLoc didn't return anything, recylce all the locations in locationsToIgnore
             locationsToIgnore.clear();
             targetLoc = getNextTargetLoc(); // run getNextTargetLoc again to get the next HQ to go to
         }
+
+//        Util.log("going to " + targetLoc + "for " + destinationType);
         goToHandler();
         Util.addToIndicatorString("PEHQ:" + targetLoc); // Potential Enemy HQ
 //        if(myLoc.distanceSquaredTo(targetLoc) > 56){
