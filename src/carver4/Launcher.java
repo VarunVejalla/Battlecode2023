@@ -56,6 +56,7 @@ public class Launcher extends Robot {
         nearbyFriendlies = rc.senseNearbyRobots(myType.visionRadiusSquared, myTeam);
         nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
         nearestEnemyInfo = getNearestEnemy(nearbyVisionEnemies);
+        Util.addToIndicatorString(String.valueOf(nearbyVisionEnemies.length)+";");
         heuristic = getHeuristic(nearbyFriendlies, nearbyVisionEnemies, nearestEnemyInfo);
         enemyCOM = getCenterOfMass(nearbyVisionEnemies);
 
@@ -74,9 +75,13 @@ public class Launcher extends Robot {
         super.run();
 
         rc.setIndicatorDot(myLoc, 0, 255, 0);
+        Util.addToIndicatorString("run1;");
 
         runAttackLoop();
+        Util.addToIndicatorString("run2;");
         updateAllNearbyInfo();
+        Util.addToIndicatorString("run3;");
+        Util.addToIndicatorString(String.valueOf(heuristic.friendlyDamage)+";");
 
         boolean isSafe = heuristic.getSafe();
         if(isSafe){
@@ -339,7 +344,7 @@ public class Launcher extends Robot {
 
         // your attack isn't ready, then don't engage
 
-        if(nearestEnemyInfo == null){ // No enemies nearby, we safe
+        if(nearbyEnemies.length == 0){ // No enemies nearby, we safe
             Util.addToIndicatorString("NE1");
             return new LauncherHeuristic(100, 100, 0, 0.01);
         }
@@ -374,8 +379,7 @@ public class Launcher extends Robot {
                         continue;
                     }
                     if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)){
-                        double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
-                        enemyDamage += (double)enemyInfo.type.damage / cooldown;
+                        enemyDamage += (double)enemyInfo.type.damage / 10;
                     }
                 }
                 // accounts for yourself
@@ -423,8 +427,7 @@ public class Launcher extends Robot {
                         continue;
                     }
                     if (enemyInfo.location.isWithinDistanceSquared(friendlyInfo.location, friendlyInfo.type.actionRadiusSquared)) {
-                        double cooldown = (double) friendlyInfo.type.actionCooldown * nearbyFriendlyMapInfo[j].getCooldownMultiplier(myTeam);
-                        friendlyDamage += (double) friendlyInfo.type.damage / cooldown;
+                        friendlyDamage += (double) friendlyInfo.type.damage / 10.0;
                     }
                 }
             } else if(friendlyInfo.type == RobotType.LAUNCHER){
@@ -444,13 +447,16 @@ public class Launcher extends Robot {
         }
 
         //accounts for yourself
+        Util.log("num enemies nearby: " + String.valueOf(nearbyEnemies.length));
         for(int i = 0; i < nearbyEnemies.length; i++){
             RobotInfo enemyInfo = nearbyEnemies[i];
             if(enemyInfo.type != RobotType.LAUNCHER){
                 continue;
             }
+            Util.log("distance: " + String.valueOf(enemyInfo.location.distanceSquaredTo(myLoc)));
             if(enemyInfo.location.isWithinDistanceSquared(myLoc, myType.actionRadiusSquared)){
                 double cooldown = (double)myType.actionCooldown * rc.senseMapInfo(myLoc).getCooldownMultiplier(myTeam);
+                //TODO: factor in your own cooldown more accurately
                 if(rc.isActionReady()) {
                     friendlyDamage += (double) myType.damage / cooldown;
                 }
