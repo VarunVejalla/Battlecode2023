@@ -32,7 +32,7 @@ class LauncherHeuristic {
 
 
 // enum class to customize behaviours when we arrive at different types of targets
-enum DestinationType {ENEMY_HQ, FRIENDLY_HQ, ENEMY_ISLAND, FRIENDLY_ISLAND, SYMMETRY};
+enum DestinationType {ENEMY_HQ, FRIENDLY_HQ, ENEMY_ISLAND, FRIENDLY_ISLAND, SYMMETRY, COMM_INFO};
 
 
 public class Launcher extends Robot {
@@ -208,7 +208,8 @@ public class Launcher extends Robot {
         int bestDistanceSquared = Integer.MAX_VALUE;
         for(int i=0; i<numHQs; i++){
             if(locationsToIgnore.contains(enemyHQLocs[i])) continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
-            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);
+            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);   // distance between spawningHQ and enemyHQ
+//            int currDistanceSquared = myLoc.distanceSquaredTo(enemyHQLocs[i]);          // distance between current location and enemyHQ
             if(nextEnemyHQToVisit == null ||currDistanceSquared < bestDistanceSquared){
                 bestDistanceSquared = currDistanceSquared;
                 nextEnemyHQToVisit = enemyHQLocs[i];
@@ -238,7 +239,8 @@ public class Launcher extends Robot {
 
     public MapLocation getNextTargetLoc() throws GameActionException{
         // run movement to determine symmetry
-//        enemyHQLocs = getPotentialEnemyHQLocs();
+
+        enemyHQLocs = getPotentialEnemyHQLocs();
 
         // determine symmetry
         if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
@@ -247,20 +249,20 @@ public class Launcher extends Robot {
             targetLoc = enemyHQLocs[enemyHQIdx];
             destinationType = DestinationType.SYMMETRY;
             // TODO: make launchers go to closestPotentialEnemyHQLocation
-            //            targetLoc = getClosestPotentialEnemyHQLocation();
+            //  targetLoc = getClosestPotentialEnemyHQLocation();
         }
 
         // go to friendlyHQ to comm info
         if (targetLoc == null && (haveUncommedIsland() || haveUncommedSymmetry())) {
             targetLoc = getNearestFriendlyHQ();
-            destinationType = DestinationType.FRIENDLY_HQ;
+            destinationType = DestinationType.COMM_INFO;
         }
 
-        //
-        if(targetLoc == null) {
-            targetLoc = getNearestFriendlyHQToHelp();   // find a boi that needs some backup
-            destinationType = DestinationType.FRIENDLY_HQ;
-        }
+//      need to come up with something better
+//        if(targetLoc == null) {
+//            targetLoc = getNearestFriendlyHQToHelp();   // find a boi that needs some backup
+//            destinationType = DestinationType.FRIENDLY_HQ;
+//        }
 
         if(targetLoc == null){
             // go to the nearest opposing island and destroy the enemy (hopefully)
@@ -324,11 +326,26 @@ public class Launcher extends Robot {
 
     // this method checks to see if we should update our targetLoc
     // if we should update, it sets targetLoc to null
-    public void rerouteHandler(){
-        // if we are going to an enemy island but it is no longer an enemy island   --> switch
-        // if we are going to a friendly HQ but it no longer needs help     -->
+    public void rerouteHandler() throws GameActionException {
+        // if we are going to an enemy island but it is no longer the closest enemy island --> reroute
+        if(destinationType == DestinationType.ENEMY_ISLAND && targetLoc != getNearestOpposingIsland()){
+            targetLoc = null;
+            destinationType = null;
+        }
+
+        // if we are going to a friendly HQ but it no longer needs help --> reroute
+        MapLocation nearestHQToHelp = getNearestFriendlyHQToHelp();
+        if(destinationType == DestinationType.FRIENDLY_HQ && nearestHQToHelp != targetLoc){
+            targetLoc = null;
+            destinationType = null;
+        }
+
 
         // if we are going to anywhere, but a friendlyHQ needs help, switch
+        if(nearestHQToHelp != null && destinationType != DestinationType.FRIENDLY_HQ){
+            targetLoc = nearestHQToHelp;
+            destinationType = DestinationType.FRIENDLY_HQ;
+        }
     }
 
 
@@ -336,9 +353,9 @@ public class Launcher extends Robot {
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
-//        Util.log("num impossible symmetries: " + impossibleSymmetries.size());
+//        rerouteHandler();   // check to see if we should change our targetLoc
 
-        if (checkIfArrived()){
+        if(checkIfArrived()){
             arrivedHandler();
             targetLoc = null;
         }

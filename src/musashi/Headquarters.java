@@ -47,7 +47,8 @@ public class Headquarters extends Robot {
     // number of consecutive rounds that there have been more enemy troops than friendly troops in my vision radius
     int numUnsafeRounds = 0;
     int CALL_FOR_HELP_THRESHOLD = 15;   // call for help if you've been unsafe for more than this many rounds
-
+    RobotInfo[] nearbyVisionFriendlies;
+    RobotInfo[] nearbyVisionEnemies;
 
 //    int[] prevCommsArray = new int[63];
 //    Queue<Integer> commsChanges = new LinkedList<>();
@@ -259,10 +260,16 @@ public class Headquarters extends Robot {
             Util.addToIndicatorString("NH: 1"); // NH --> Need Help
         }
 
-        else{
+        // if we have been unsafe, only setCallForHelp for false once we've completely neutralized the threat
+        else if (numUnsafeRounds > 0 && nearbyVisionEnemies.length == 0){
             comms.setCallForHelpFlag(myIndex, false);   // i think i got this bois
             Util.addToIndicatorString("NH: 0");
-//            indicatorString += "NH: 0;"; // NH --> Need Help
+        }
+
+        // if we are not in danger, set callForHelp to false
+        else if (numUnsafeRounds == 0){
+            comms.setCallForHelpFlag(myIndex, false);   // i think i got this bois
+            Util.addToIndicatorString("NH: 0");
         }
         Util.addToIndicatorString("NUR: " + numUnsafeRounds);       // NUR --> Number Unsafe Rounds
         // ------------------------------------------------------------------------------------
