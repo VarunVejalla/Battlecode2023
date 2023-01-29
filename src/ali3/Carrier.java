@@ -1,4 +1,4 @@
-package ali;
+package ali3;
 
 import battlecode.common.*;
 
@@ -12,6 +12,7 @@ public class Carrier extends Robot {
     private ResourceType targetResource;
     private int targetRegion = -1;
     boolean mining = true;
+    boolean trynaHeal = false;
     int HQImHelpingIdx = -1;
     HashSet<Integer> regionsToIgnore = new HashSet<>();
 
@@ -35,28 +36,43 @@ public class Carrier extends Robot {
             regionsToIgnore.clear();
         }
 
-        tryTakingAnchor();
+        MapLocation nearestFriendlyIsland = getNearestFriendlyIsland();
+        int returnToHealThreshold = Math.max(enemyDamageOneTurn(), constants.THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL);
+        returnToHealThreshold = Math.min(returnToHealThreshold, myType.getMaxHealth() / 2);
+        if(rc.getHealth() < returnToHealThreshold && nearestFriendlyIsland != null){
+            trynaHeal = true;
+        }
+        else if(rc.getHealth() == myType.getMaxHealth() || nearestFriendlyIsland == null){
+            trynaHeal = false;
+        }
+
+        if(trynaHeal){
+            Util.addToIndicatorString("TH");
+            targetLoc = null;
+            runHealingStrategy(nearestFriendlyIsland);
+        }
+        else{
+            tryTakingAnchor();
 //        Util.log("Anchor: " + rc.getAnchor());
-        // If you're holding an anchor, make your top priority to deposit it.
-        boolean dangerNearby = runAway();
-        if(!dangerNearby) {
-
-
-            if (rc.getAnchor() != null) {
-                moveTowardsNearestUncontrolledIsland();
-                tryPlacing();
-            }
-            // Otherwise, go mine
-            else if (mining) {
+            // If you're holding an anchor, make your top priority to deposit it.
+            boolean dangerNearby = runAway();
+            if(!dangerNearby) {
+                if (rc.getAnchor() != null) {
+                    moveTowardsNearestUncontrolledIsland();
+                    tryPlacing();
+                }
+                // Otherwise, go mine
+                else if (mining) {
 //            Util.log("Mining");
-                moveTowardsNearbyWell();
-                tryMining();
-            }
-            // If you're at full capacity, go deposit
-            else {
+                    moveTowardsNearbyWell();
+                    tryMining();
+                }
+                // If you're at full capacity, go deposit
+                else {
 //            Util.log("Moving towards HQ");
-                moveTowardsHQ();
-                tryTransferring();
+                    moveTowardsHQ();
+                    tryTransferring();
+                }
             }
         }
     }
@@ -81,11 +97,19 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearestUncontrolledIsland() throws GameActionException {
-        // If you're scouting and reach a dead end, reset.
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
-            targetLoc = null;
+        if(targetLoc != null){
+            // If you're scouting and reach a dead end, reset.
+            if(rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
+                targetLoc = null;
+            }
+
+            // If the target island is no longer an uncontrolled island, reset.
+            Team controllingTeam = getControllingTeam(targetLoc);
+            if(controllingTeam != null && controllingTeam != myTeam){
+                targetLoc = null;
+            }
         }
-        // TODO: Check that the island you're going to is still an uncontrolled island, and if it's not then set targetLoc = null.
+
         if(targetLoc == null){
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){
@@ -147,7 +171,7 @@ public class Carrier extends Robot {
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-            System.out.println("Resetting because there wasn't acc a well there");
+            Util.log("Resetting because there wasn't acc a well there");
             targetResource = null;
         }
 
@@ -157,7 +181,7 @@ public class Carrier extends Robot {
             if(checkWellCrowded(targetLoc)){
                 // If there's crowding, go to the next nearest location
                 regionsToIgnore.add(targetRegion);
-                System.out.println("Resetting because well is crowded");
+                Util.log("Resetting because well is crowded");
                 targetResource = null;
             }
 
@@ -167,7 +191,7 @@ public class Carrier extends Robot {
                 Direction fuzzyNavDir = nav.fuzzyNav(targetLoc);
                 if(fuzzyNavDir == null){
                     regionsToIgnore.add(targetRegion);
-                    System.out.println("Resetting because I can't fuzzy nav towards it");
+                    Util.log("Resetting because I can't fuzzy nav towards it");
                     targetResource = null;
                 }
             }
