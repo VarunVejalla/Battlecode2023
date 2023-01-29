@@ -1,4 +1,4 @@
-package ali3;
+package musashi2;
 
 import battlecode.common.*;
 
@@ -12,7 +12,6 @@ public class Carrier extends Robot {
     private ResourceType targetResource;
     private int targetRegion = -1;
     boolean mining = true;
-    boolean trynaHeal = false;
     int HQImHelpingIdx = -1;
     HashSet<Integer> regionsToIgnore = new HashSet<>();
 
@@ -29,6 +28,7 @@ public class Carrier extends Robot {
             mining = false;
             targetLoc = null;
         }
+
         else if(weight == 0 && !mining){
             mining = true;
             targetLoc = null;
@@ -36,43 +36,26 @@ public class Carrier extends Robot {
             regionsToIgnore.clear();
         }
 
-        MapLocation nearestFriendlyIsland = getNearestFriendlyIsland();
-        int returnToHealThreshold = Math.max(enemyDamageOneTurn(), constants.THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL);
-        returnToHealThreshold = Math.min(returnToHealThreshold, myType.getMaxHealth() / 2);
-        if(rc.getHealth() < returnToHealThreshold && nearestFriendlyIsland != null){
-            trynaHeal = true;
-        }
-        else if(rc.getHealth() == myType.getMaxHealth() || nearestFriendlyIsland == null){
-            trynaHeal = false;
-        }
-
-        if(trynaHeal){
-            Util.addToIndicatorString("TH");
-            targetLoc = null;
-            runHealingStrategy(nearestFriendlyIsland);
-        }
-        else{
-            tryTakingAnchor();
+        tryTakingAnchor();
 //        Util.log("Anchor: " + rc.getAnchor());
-            // If you're holding an anchor, make your top priority to deposit it.
-            boolean dangerNearby = runAway();
-            if(!dangerNearby) {
-                if (rc.getAnchor() != null) {
-                    moveTowardsNearestUncontrolledIsland();
-                    tryPlacing();
-                }
-                // Otherwise, go mine
-                else if (mining) {
+        // If you're holding an anchor, make your top priority to deposit it.
+        boolean dangerNearby = runAway();
+        if(!dangerNearby) {
+            if (rc.getAnchor() != null) {
+                moveTowardsNearestUncontrolledIsland();
+                tryPlacing();
+            }
+            // Otherwise, go mine
+            else if (mining) {
 //            Util.log("Mining");
-                    moveTowardsNearbyWell();
-                    tryMining();
-                }
-                // If you're at full capacity, go deposit
-                else {
+                moveTowardsNearbyWell();
+                tryMining();
+            }
+            // If you're at full capacity, go deposit
+            else {
 //            Util.log("Moving towards HQ");
-                    moveTowardsHQ();
-                    tryTransferring();
-                }
+                moveTowardsHQ();
+                tryTransferring();
             }
         }
     }
@@ -81,6 +64,7 @@ public class Carrier extends Robot {
     public int totalResourceWeight() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR);
     }
+
 
     public void tryTakingAnchor() throws GameActionException {
         if(rc.getAnchor() != null){
@@ -97,19 +81,10 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearestUncontrolledIsland() throws GameActionException {
-        if(targetLoc != null){
-            // If you're scouting and reach a dead end, reset.
-            if(rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
-                targetLoc = null;
-            }
-
-            // If the target island is no longer an uncontrolled island, reset.
-            Team controllingTeam = getControllingTeam(targetLoc);
-            if(controllingTeam != null && controllingTeam != myTeam){
-                targetLoc = null;
-            }
+        // If you're scouting and reach a dead end, reset.
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
+            targetLoc = null;
         }
-
         if(targetLoc == null){
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){
@@ -117,7 +92,6 @@ public class Carrier extends Robot {
                 Util.log("Moving towards nearest uncontrolled island");
             }
             else{
-                // TODO: Highkey idt they shld go to a random scouting location, I think they shld j chill.
                 targetLoc = getRandomScoutingLocation();
                 Util.log("Scouting random location");
             }
@@ -131,6 +105,42 @@ public class Carrier extends Robot {
             Util.addToIndicatorString("UI.FZ:" + targetLoc);
         }
     }
+
+    public ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
+        // Find the nearest HQ
+        int HQAdamantium = comms.readAdamantium(HQImHelpingIdx);
+        int HQMana = comms.readMana(HQImHelpingIdx);
+
+        int[] ratio = comms.readRatio(HQImHelpingIdx);
+        int num = rng.nextInt(16);  // note that 16 is an excluusive bond
+
+        // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
+        // cumuulative sums become [10, 12, 15]
+
+        // we first check if the random number is less than 10, if so we return adamantium
+        // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
+        // otherwise, return elixir
+
+        //Ratio data indices
+
+        if(num <= ratio[constants.ADAMANTIUM_RATIO_INDEX]) {
+            Util.log("Gonna go find Adamantium");
+            return ResourceType.ADAMANTIUM;
+        }
+
+        // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
+        ratio[constants.MANA_RATIO_INDEX] += ratio[constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
+        if(num <= ratio[1]) {
+            Util.log("Gonna go find Mana");
+            return ResourceType.MANA;
+        }
+
+        else{
+            Util.log("Gonna go find Elixir");
+            return ResourceType.ELIXIR;
+        }
+    }
+
 
     public int determineWhichWellToGoTo(int HQImHelpingIdx, ResourceType type){
         MapLocation HQloc = HQlocs[HQImHelpingIdx];
@@ -153,36 +163,23 @@ public class Carrier extends Robot {
         }
         return bestRegion;
     }
-    public void resetWellLocation() throws GameActionException {
-        MapLocation HQImHelping = getNearestFriendlyHQ();
-        HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
-//            MapLocation closestWell = getNearestWell(targetType);
-        int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetResource);
-        if(bestRegion != -1){
-            MapLocation[] wellList = getWellList(targetResource);
-            targetLoc = wellList[bestRegion];
-            targetRegion = bestRegion;
-        }
-        if(targetLoc == null){
-            targetLoc = getRandomScoutingLocation();
-        }
-    }
+
 
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-            Util.log("Resetting because there wasn't acc a well there");
-            targetResource = null;
+            System.out.println("Resetting because there wasn't acc a well there");
+            targetLoc = null;
         }
 
         // Check if I should still go to the well
-        if(targetResource != null && targetLoc != null && targetRegion != -1 && myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
+        if(targetLoc != null && targetRegion != -1 && myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
             // Check crowding
             if(checkWellCrowded(targetLoc)){
                 // If there's crowding, go to the next nearest location
                 regionsToIgnore.add(targetRegion);
-                Util.log("Resetting because well is crowded");
-                targetResource = null;
+                System.out.println("Resetting because well is crowded");
+                targetLoc = null;
             }
 
             // If you're near the well, but you can't move towards the well, then you're prolly stuck
@@ -191,21 +188,30 @@ public class Carrier extends Robot {
                 Direction fuzzyNavDir = nav.fuzzyNav(targetLoc);
                 if(fuzzyNavDir == null){
                     regionsToIgnore.add(targetRegion);
-                    Util.log("Resetting because I can't fuzzy nav towards it");
-                    targetResource = null;
+                    System.out.println("Resetting because I can't fuzzy nav towards it");
+                    targetLoc = null;
                 }
             }
-        }
-        Util.addToIndicatorString("R:" + targetResource);
-        if(targetResource == null || targetResource==ResourceType.ELIXIR){
-            targetResource = Util.determineWhichResourceToGet(HQImHelpingIdx);
         }
 
 
         // Reset new target well location
-//        if(targetLoc == null) {
-            resetWellLocation();
-//        }
+        if(targetLoc == null){
+            MapLocation HQImHelping = getNearestFriendlyHQ();
+            HQImHelpingIdx = getFriendlyHQIndex(HQImHelping);
+            ResourceType targetType = determineWhichResourceToGet(HQImHelpingIdx);
+//            MapLocation closestWell = getNearestWell(targetType);
+            int bestRegion = determineWhichWellToGoTo(HQImHelpingIdx, targetType);
+            if(bestRegion != -1){
+                targetResource = targetType;
+                MapLocation[] wellList = getWellList(targetType);
+                targetLoc = wellList[bestRegion];
+                targetRegion = bestRegion;
+            }
+            if(targetLoc == null){
+                targetLoc = getRandomScoutingLocation();
+            }
+        }
 
         // Go to target well location
         if(myLoc.distanceSquaredTo(targetLoc) > myType.actionRadiusSquared){
@@ -220,7 +226,7 @@ public class Carrier extends Robot {
 
     public boolean checkWellCrowded(MapLocation wellLoc) throws GameActionException {
         if(wellLoc != null && rc.canSenseLocation(wellLoc)){
-            int radius = 2;
+            int radius = myType.actionRadiusSquared;
             int troopsWithinRadius = rc.senseNearbyRobots(wellLoc, radius, myTeam).length;
             MapInfo[] nearbyMapInfos = rc.senseNearbyMapInfos(wellLoc, radius);
             int validMapSquares = 0;

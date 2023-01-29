@@ -1,4 +1,4 @@
-package musashi;
+package musashi2;
 
 import battlecode.common.*;
 
@@ -22,9 +22,9 @@ class LauncherHeuristic {
     public boolean getSafe(){
         double myTurnsNeeded = enemyHP / friendlyDamage;
         double enemyTurnsNeeded = friendlyHP / enemyDamage;
-        Util.addToIndicatorString("FH:" + (int)friendlyHP + ",FD:" + (int)friendlyDamage);
-        Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
-        Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
+//        Util.addToIndicatorString("FH:" + (int)friendlyHP + ",FD:" + (int)friendlyDamage);
+//        Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
+//        Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
         // 1.5 simply because im ballsy and wanna go for it
         return myTurnsNeeded <= enemyTurnsNeeded * 1.0; // If you can kill them faster than they can kill you, return true
     }
@@ -59,7 +59,6 @@ public class Launcher extends Robot {
 
 
     RobotInfo bestAttackVictim = null;
-
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
         spawningHQ = getNearestFriendlyHQ();    // location of HQ that spawned me
@@ -128,7 +127,7 @@ public class Launcher extends Robot {
     public void runSafeStrategy() throws GameActionException{
         if(enemyInActionRadius) {
             if(rc.isActionReady()){
-                Util.log("Error: why didn't you attack?");
+//                Util.log("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
                 moveBackIfAvoidsEnemy();
@@ -160,7 +159,7 @@ public class Launcher extends Robot {
     public void runUnsafeStrategy() throws GameActionException{
         if(enemyInActionRadius){
             if(rc.isActionReady()){
-                Util.log("Error: why didn't you attack?");
+//                Util.log("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
                 moveBackFromEnemy();
@@ -168,7 +167,7 @@ public class Launcher extends Robot {
         } else if (enemyInVisionRadius){
             moveBackFromEnemy();
         } else {
-            Util.log("There's no enemies nearby... Why the hell is this an unsafe environment?");
+//            Util.log("There's no enemies nearby... Why the hell is this an unsafe environment?");
         }
     }
 
@@ -201,41 +200,109 @@ public class Launcher extends Robot {
 //    }
 
 
+
+
+
+
     // this method generates a sorted list of enemy HQ locations, sorted by distance from our HQ
     // returns null if there are no enemyHQs to visit that are not in locationsToIgnore
-    public MapLocation getNextEnemyHQToVisit(){
-//        MapLocation nextEnemyHQToVisit = null;
-//        int bestDistanceSquared = Integer.MAX_VALUE;
-        for(int i=0; i<numHQs; i++){
-            if(locationsToIgnore.contains(enemyHQLocs[i])) continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
+    public MapLocation getNextEnemyHQToVisit() throws GameActionException {
+        MapLocation nextEnemyHQToVisit = null;
+        int bestDistanceSquared = Integer.MAX_VALUE;
+        MapLocation[] potentialLocs = getPotentialEnemyHQLocs();
+        if(potentialLocs.length == 0){
+            return null;
+        }
+        for(MapLocation loc : potentialLocs){
+            if(locationsToIgnore.contains(loc)){
+                continue;
+            }
+            int currDistanceSquared = spawningHQ.distanceSquaredTo(loc);
+            if(nextEnemyHQToVisit == null || currDistanceSquared < bestDistanceSquared){
+                nextEnemyHQToVisit = loc;
+                bestDistanceSquared = currDistanceSquared;
+            }
+        }
+        if(nextEnemyHQToVisit == null){
+            locationsToIgnore.clear();
+            return getNextEnemyHQToVisit();
+        }
+
+
+//        for (int i = 0; i < numHQs; i++) {
+//            if (locationsToIgnore.contains(enemyHQLocs[i]))
+//                continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
 //            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);   // distance between spawningHQ and enemyHQ
 //            int currDistanceSquared = myLoc.distanceSquaredTo(enemyHQLocs[i]);          // distance between current location and enemyHQ
-//            if(nextEnemyHQToVisit == null ||currDistanceSquared < bestDistanceSquared){
+//            if (nextEnemyHQToVisit == null || currDistanceSquared < bestDistanceSquared) {
 //                bestDistanceSquared = currDistanceSquared;
 //                nextEnemyHQToVisit = enemyHQLocs[i];
-            return enemyHQLocs[i];
-            }
-        return null;
-        }
-//        return nextEnemyHQToVisit;
+//            return enemyHQLocs[i];
+
+//            }
+//            return null;
+//        }
+//        return null;
 //    }
+        return nextEnemyHQToVisit;
+    }
 
 
     // checks to see if any of our HQs need help and return that location
     // if multiple HQs need our help, go to the closest one
+//    public MapLocation getNearestFriendlyHQToHelp() throws GameActionException {
+//        MapLocation friendlyHQToHelp = null;
+//        int bestDistanceSquared = Integer.MAX_VALUE;
+//        for(int i=0; i<numHQs; i++){
+//            if(comms.readCallForHelpFlag(constants.HQ_LOC_IDX_MAP[i])){
+//                int currDistanceSquared = myLoc.distanceSquaredTo(HQlocs[i]);
+//                if(currDistanceSquared < bestDistanceSquared){
+//                    friendlyHQToHelp = HQlocs[i];
+//                    bestDistanceSquared = currDistanceSquared;
+//                }
+//            }
+//        }
+//        return friendlyHQToHelp;
+//    }
+
+
+
     public MapLocation getNearestFriendlyHQToHelp() throws GameActionException {
-        MapLocation friendlyHQToHelp = null;
-        int bestDistanceSquared = Integer.MAX_VALUE;
+        double HEURISTIC_THRESHOLD = 3.0;
         for(int i=0; i<numHQs; i++){
-            if(comms.readCallForHelpFlag(constants.HQ_LOC_IDX_MAP[i])){
-                int currDistanceSquared = myLoc.distanceSquaredTo(HQlocs[i]);
-                if(currDistanceSquared < bestDistanceSquared){
-                    friendlyHQToHelp = HQlocs[i];
-                    bestDistanceSquared = currDistanceSquared;
-                }
+            int diff = comms.readCallForHelpFlag(constants.HQ_LOC_IDX_MAP[i]);
+
+            if(diff <= 0) continue;     // we don't need to help this island
+            if(diff > 0 && targetLoc == null){      // if we currently don't have a target and this HQ is in trouble, go to that
+                return HQlocs[i];
+            }
+            int distanceToHQ = (int)Math.sqrt(myLoc.distanceSquaredTo(HQlocs[i]));
+            int distanceToTarget = (int)Math.sqrt(myLoc.distanceSquaredTo(HQlocs[i]));
+            double heuristic = (double)(distanceToHQ - distanceToTarget) / (double) diff;
+
+            Util.log("pot friendlyHQ: " + HQlocs[i]);
+            Util.log("heuristic: " + heuristic);
+
+            if(heuristic < HEURISTIC_THRESHOLD){
+                Util.addToIndicatorString("H: " + heuristic);
+                return HQlocs[i];
             }
         }
-        return friendlyHQToHelp;
+
+        return null;
+
+//        MapLocation friendlyHQToHelp = null;
+//        int bestDistanceSquared = Integer.MAX_VALUE;
+//        for(int i=0; i<numHQs; i++){
+//            if(comms.readCallForHelpFlag(constants.HQ_LOC_IDX_MAP[i])){
+//                int currDistanceSquared = myLoc.distanceSquaredTo(HQlocs[i]);
+//                if(currDistanceSquared < bestDistanceSquared){
+//                    friendlyHQToHelp = HQlocs[i];
+//                    bestDistanceSquared = currDistanceSquared;
+//                }
+//            }
+//        }
+//        return friendlyHQToHelp;
     }
 
 
@@ -245,36 +312,34 @@ public class Launcher extends Robot {
         enemyHQLocs = getPotentialEnemyHQLocs();
 
         // determine symmetry
-        if(enemyHQLocs == null || enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
-            enemyHQLocs = getPotentialEnemyHQLocs();
-            enemyHQIdx = 0;
-            targetLoc = enemyHQLocs[enemyHQIdx];
-            destinationType = DestinationType.SYMMETRY;
-            // TODO: make launchers go to closestPotentialEnemyHQLocation
-            //  targetLoc = getClosestPotentialEnemyHQLocation();
-        }
+//        if(enemyHQLocs.length != numHQs * Util.checkNumSymmetriesPossible()){
+//            enemyHQLocs = getPotentialEnemyHQLocs();
+//            enemyHQIdx = 0;
+//            targetLoc = enemyHQLocs[enemyHQIdx];
+//            destinationType = DestinationType.SYMMETRY;
+//            // TODO: make launchers go to closestPotentialEnemyHQLocation
+//            //  targetLoc = getClosestPotentialEnemyHQLocation();
+//        }
 
         // go to friendlyHQ to comm info
-        if (haveUncommedIsland() || haveUncommedSymmetry()) {
+        if (haveUncommedIsland() || haveUncommedSymmetry()){
             targetLoc = getNearestFriendlyHQ();
             destinationType = DestinationType.COMM_INFO;
         }
 
 
-
-        if(targetLoc == null){
-            // go to the nearest opposing island and destroy the enemy (hopefully)
-            targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
-            destinationType = DestinationType.ENEMY_ISLAND;
-        }
-
-
-//      need to come up with something better
-        if(targetLoc == null) {
-            targetLoc = getNearestFriendlyHQToHelp();   // find a boi that needs some backup
-            destinationType = DestinationType.FRIENDLY_HQ;
-        }
-
+//        if(targetLoc == null){
+//            // go to the nearest opposing island and destroy the enemy (hopefully)
+//            targetLoc = getNearestOpposingIsland();        // if there's an enemy controlled island, go to that and kill the enemy
+//            destinationType = DestinationType.ENEMY_ISLAND;
+//        }
+//
+//
+////      need to come up with something better
+//        if(targetLoc == null) {
+//            targetLoc = getNearestFriendlyHQToHelp();   // find a boi that needs some backup
+//            destinationType = DestinationType.FRIENDLY_HQ;
+//        }
 
 
         // go to the next enemyHQ to visit (and destroy ;))
@@ -291,7 +356,7 @@ public class Launcher extends Robot {
 
 
     // this method takes care of going to different destination types
-    //          - the code to go to a enemyHQ may be different than going to a well... (i think)
+    //    - the code to go to a enemyHQ may be different than going to a well... (i think)
     // rn, we only use goTo differently if we're tryna move to an enmyHQ (so we don't get hurt by enemyHQ)
     // but we could expand this if we wanna have different behaviour around islands, hqs, or something else?
     //TODO: need to change what we do to navigate to different destinationTypes
@@ -299,9 +364,11 @@ public class Launcher extends Robot {
         if(destinationType == null) return false;
         switch (destinationType){
             case ENEMY_HQ:
-                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+//                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+                return nav.goToFuzzy(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
             default:
-                return nav.goToBug(targetLoc, 0);
+//                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+                return nav.goToFuzzy(targetLoc, 0);
         }
     }
 
@@ -334,10 +401,6 @@ public class Launcher extends Robot {
     // this method checks to see if we should update our targetLoc
     // if we should update, it sets targetLoc to null
     public void rerouteHandler() throws GameActionException {
-
-        if(destinationType == DestinationType.COMM_INFO)  return;
-
-
         // if we are going to an enemy island but it is no longer the closest enemy island --> reroute
         if(destinationType == DestinationType.ENEMY_ISLAND && targetLoc != getNearestOpposingIsland()){
             targetLoc = null;
@@ -347,6 +410,7 @@ public class Launcher extends Robot {
         // if we are going to a friendly HQ but it no longer needs help --> reroute
         MapLocation nearestHQToHelp = getNearestFriendlyHQToHelp();
         if(destinationType == DestinationType.FRIENDLY_HQ && nearestHQToHelp != targetLoc){
+
             targetLoc = null;
             destinationType = null;
         }
@@ -354,6 +418,9 @@ public class Launcher extends Robot {
 
         // if we are going to anywhere, but a friendlyHQ needs help, switch
         if(nearestHQToHelp != null && destinationType != DestinationType.FRIENDLY_HQ){
+            if(destinationType == DestinationType.ENEMY_HQ){
+                locationsToIgnore.add(targetLoc);
+            }
             targetLoc = nearestHQToHelp;
             destinationType = DestinationType.FRIENDLY_HQ;
         }
@@ -364,12 +431,17 @@ public class Launcher extends Robot {
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
-        rerouteHandler();   // check to see if we should change our targetLoc
+//        rerouteHandler();   // check to see if we should change our targetLoc
 
-        if(checkIfArrived()){
-            arrivedHandler();
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared){
+            locationsToIgnore.add(targetLoc);
             targetLoc = null;
         }
+
+//        if(checkIfArrived()){
+//            arrivedHandler();
+//            targetLoc = null;
+//        }
 
         if(targetLoc == null) {
             targetLoc = getNextTargetLoc();
@@ -543,10 +615,9 @@ public class Launcher extends Robot {
         // your attack isn't ready, then don't engage
 
         if(nearestEnemyInfo == null){ // No enemies nearby, we safe
-            Util.addToIndicatorString("NE1");
             return new LauncherHeuristic(100, 100, 0, 0.01);
         }
-        Util.log("Nearest enemy Info: " + nearestEnemyInfo.location.toString());
+
 
         double friendlyDamage = 0.0;
         double enemyDamage = 0.0;

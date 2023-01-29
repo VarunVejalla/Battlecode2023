@@ -1,4 +1,4 @@
-package musashi;
+package musashi2;
 
 import battlecode.common.*;
 
@@ -155,28 +155,33 @@ public class Headquarters extends Robot {
     }
 
 
-    public boolean doINeedHelp() throws GameActionException{
-        int numFriendlies = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
-        nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
-        int numEnemies = nearbyVisionEnemies.length;
-//        int numEnemyLaunchers  = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+//    public boolean doINeedHelp() throws GameActionException{
+//        int numFriendlies = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
+//        nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+//        int numEnemies = nearbyVisionEnemies.length;
+////        int numEnemyLaunchers  = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+//
+//        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
+//        if(numEnemies > numFriendlies) return true;
+//        return false;
+//    }
 
-        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
-        if(numEnemies > numFriendlies) return true;
-        return false;
+
+    public int getTroopDifference() throws GameActionException{
+        int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
+//        nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+//        int numEnemies = nearbyVisionEnemies.length;
+        int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+        int difference = numEnemyLaunchers - numFriendlyLaunchers;
+        Util.addToIndicatorString("Diff: " + difference);
+        return numEnemyLaunchers - numFriendlyLaunchers;
+//        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
+//        if(numEnemies > numFriendlies) return true;
+//        return false;
     }
 
 
-//    public int getTroopDifference() throws GameActionException{
-//        int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
-////        nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
-////        int numEnemies = nearbyVisionEnemies.length;
-//        int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
-//        return numEnemyLaunchers - numFriendlyLaunchers;
-////        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
-////        if(numEnemies > numFriendlies) return true;
-////        return false;
-//    }
+
 
 
 
@@ -269,22 +274,27 @@ public class Headquarters extends Robot {
 
         // code to check if I should call for help
         // ------------------------------------------------------------------------------------
-        if(doINeedHelp()) {
-            numUnsafeRounds += 1;
-            numSafeRounds = 0;
-        }
-        else {
-            numUnsafeRounds = 0;   // reset the number of consecutive unsafe rounds if we are no longer in danger
-            numSafeRounds += 1;
-        }
-        if(numUnsafeRounds > CALL_FOR_HELP_THRESHOLD){
-            comms.setCallForHelpFlag(myIndex, true);    // tell friendly launchers to come save me
-            Util.addToIndicatorString("NH: 1"); // NH --> Need Help
-        }
-        else if (numSafeRounds > AM_SAFE_THRESHOLD && nearbyVisionEnemies.length == 0){
-            comms.setCallForHelpFlag(myIndex, false);   // i think i got this bois
-            Util.addToIndicatorString("NH: 0");
-        }
+//        if(doINeedHelp()) {
+//            numUnsafeRounds += 1;
+//            numSafeRounds = 0;
+//        }
+//        else {
+//            numUnsafeRounds = 0;   // reset the number of consecutive unsafe rounds if we are no longer in danger
+//            numSafeRounds += 1;
+//        }
+//        if(numUnsafeRounds > CALL_FOR_HELP_THRESHOLD){
+//            comms.setCallForHelpFlag(myIndex, true);    // tell friendly launchers to come save me
+//            Util.addToIndicatorString("NH: 1"); // NH --> Need Help
+//        }
+//        else if (numSafeRounds > AM_SAFE_THRESHOLD && nearbyVisionEnemies.length == 0){
+//            comms.setCallForHelpFlag(myIndex, false);   // i think i got this bois
+//            Util.addToIndicatorString("NH: 0");
+//        }
+        // ----------------------------------------------------------------------------------
+
+        System.out.println("IS THIS RUNNING?");
+
+        comms.setCallForHelpFlag(myIndex, getTroopDifference());
 
 //        // if we have been unsafe, only setCallForHelp for false once we've completely neutralized the threat
 //        else if (numUnsafeRounds > 0 && nearbyVisionEnemies.length == 0){

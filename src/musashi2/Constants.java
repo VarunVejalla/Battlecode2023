@@ -1,4 +1,4 @@
-package ali3;
+package musashi2;
 
 public class Constants {
 
@@ -80,15 +80,12 @@ public class Constants {
     public static final int NEW_WELL_X_SHIFT = 6;
     public static final int NEW_WELL_Y_MASK = 63;
     public static final int NEW_WELL_Y_SHIFT = 0;
-    public static final int NUM_WELLS_TO_CYCLE_WHEN_SATURATED = 10;
 
     // Region consts
     public static final int NUM_REGIONS_HORIZONTAL = 7;
     public static final int NUM_REGIONS_VERTICAL = 7;
     public static final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
 
-    // Hyperparameters T_T
-    public static final int THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL = 40;
 
 
 

@@ -1,4 +1,4 @@
-package ali3;
+package ali4;
 
 import battlecode.common.*;
 
@@ -25,6 +25,7 @@ class LauncherHeuristic {
         Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
         // 1.5 simply because im ballsy and wanna go for it
         return myTurnsNeeded <= enemyTurnsNeeded * GET_SAFE_FACTOR; // If you can kill them faster than they can kill you, return true
+//        return friendlyDamage >= enemyDamage;
     }
 
 }
@@ -46,6 +47,8 @@ public class Launcher extends Robot {
 
     RobotInfo bestAttackVictim = null;
     boolean trynaHeal = false;
+    MapLocation retreatLoc = null;
+    int turnsSinceRetreat = 0;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -100,6 +103,7 @@ public class Launcher extends Robot {
             runUnsafeStrategy();
         }
         runAttackLoop();
+        turnsSinceRetreat++;
     }
 
     public void runAttackLoop() throws GameActionException {
@@ -112,6 +116,8 @@ public class Launcher extends Robot {
     }
 
     public void runSafeStrategy() throws GameActionException {
+        retreatLoc = enemyCOM;
+        turnsSinceRetreat = 0;
         if(enemyInActionRadius) {
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
@@ -131,10 +137,39 @@ public class Launcher extends Robot {
             //TODO: factor in when you saw enemies and started retreating.
             if (haveUncommedIsland() || haveUncommedSymmetry()) {
                 returnToClosestHQ();
-            } else {
+//            } else if(retreatLoc != null && turnsSinceRetreat < 4){
+//                goToNearestFriendly(retreatLoc);
+//                if(rc.isMovementReady()){
+//                    int xDisplacement = retreatLoc.x - myLoc.x;
+//                    int yDisplacement = retreatLoc.y - myLoc.y;
+//                    MapLocation target = new MapLocation(myLoc.x - xDisplacement*3, myLoc.y-yDisplacement*3);
+//                    nav.goToFuzzy(target, 0);
+//                }
+            } else{
                 runNormalOffensiveStrategy();
             }
         }
+    }
+
+    public void goToNearestFriendly(MapLocation retreatLoc) throws GameActionException {
+        Direction retreatDir = myLoc.directionTo(retreatLoc).opposite();
+        MapLocation closestFriendly = null;
+        for(RobotInfo info : nearbyFriendlies){
+            if(myLoc.isAdjacentTo(info.location)){
+                continue;
+            }
+            if(info.getHealth() <= Constants.THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL){
+                continue;
+            }
+            Direction dirToFriendly = myLoc.directionTo(info.location);
+            if(dirToFriendly != retreatDir && dirToFriendly != retreatDir.rotateRight() && dirToFriendly != retreatDir.rotateLeft()){
+                continue;
+            }
+            if(closestFriendly == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestFriendly)){
+                closestFriendly = info.location;
+            }
+        }
+        nav.goToFuzzy(closestFriendly, 0);
     }
 
     public void runUnsafeStrategy() throws GameActionException{
@@ -500,7 +535,6 @@ public class Launcher extends Robot {
         double enemyDamage = 0.0;
         double friendlyHP = 0.0;
         double enemyHP = 0.0;
-        double totalEnemyDamage = 0.0;
 
         boolean added;
         for(int i = 0; i < nearbyEnemies.length; i++){
@@ -516,13 +550,13 @@ public class Launcher extends Robot {
                     if(friendlyInfo.type != RobotType.LAUNCHER){
                         continue;
                     }
-                    if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)){
-                        enemyDamage += (double)enemyInfo.type.damage / 10;
+                    if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)){
+                        enemyDamage += (double)enemyInfo.type.damage / 10.0;
                     }
                 }
                 // accounts for yourself
-                if (myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
-                    enemyDamage += (double) enemyInfo.type.damage / 10;
+                if (myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)) {
+                    enemyDamage += (double) enemyInfo.type.damage / 10.0;
                 }
                 // Only consider the enemy launcher / carrier if it's in range of a friendly launcher.
             } else if(enemyInfo.type == RobotType.LAUNCHER || enemyInfo.type == RobotType.CARRIER) {
@@ -533,7 +567,7 @@ public class Launcher extends Robot {
                     if (friendlyInfo.type != RobotType.LAUNCHER) {
                         continue;
                     }
-                    if (friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
+                    if (friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)) {
                         if(enemyInfo.type == RobotType.LAUNCHER) {
                             double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
                             enemyDamage += (double) enemyInfo.type.damage / cooldown;
@@ -604,7 +638,7 @@ public class Launcher extends Robot {
                 continue;
             }
             Util.log("distance: " + String.valueOf(enemyInfo.location.distanceSquaredTo(myLoc)));
-            if(enemyInfo.location.isWithinDistanceSquared(myLoc, myType.actionRadiusSquared)){
+            if(rc.isActionReady() && enemyInfo.location.isWithinDistanceSquared(myLoc, myType.actionRadiusSquared)){
                 double cooldown = (double)myType.actionCooldown * rc.senseMapInfo(myLoc).getCooldownMultiplier(myTeam);
                 if(rc.isActionReady()) {
                     friendlyDamage += (double) myType.damage / cooldown;

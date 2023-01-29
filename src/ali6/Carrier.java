@@ -1,4 +1,4 @@
-package ali3;
+package ali6;
 
 import battlecode.common.*;
 

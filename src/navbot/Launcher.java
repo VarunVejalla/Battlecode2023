@@ -16,11 +16,10 @@ public class Launcher extends Robot {
     public void run() throws GameActionException{
         super.run();
 
-        destination = new MapLocation(29,29);   // top right
-        System.out.println("movement cooldown turns A: " + rc.getMovementCooldownTurns());
+        destination = new MapLocation(0,0);   // top right
 
         while(rc.isMovementReady()) {
-            nav.goToFuzzy(destination, 0);
+            nav.goToBug(destination, 0);
         }
     }
 
