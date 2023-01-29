@@ -2,6 +2,9 @@ package navbot;
 
 import battlecode.common.*;
 
+import javax.swing.*;
+import java.util.HashSet;
+
 enum NavigationMode{
     FUZZYNAV, BUGNAV;
 }
@@ -11,16 +14,31 @@ public class Navigation {
     RobotController rc;
     Robot robot;
 
-    NavigationMode mode = NavigationMode.FUZZYNAV;
+    NavigationMode mode = NavigationMode.BUGNAV;
 
     // Bugnav variables
     int closestDistToTarget = Integer.MAX_VALUE;
     MapLocation lastWallFollowed = null;
     Direction lastDirectionMoved = null;
     int roundsSinceClosestDistReset = 0;
-    MapLocation prevTarget = null;
 
-    final int ROUNDS_TO_RESET_BUG_CLOSEST = 15;
+    // BUGNAV VARIABLES
+    int counter = 0;
+    boolean basic = false;
+    MapLocation prevTarget = null;
+    MapLocation wallStart = null;
+    MapLocation hopPoint = null;
+    Direction heading = null;
+    Direction beeOverwrite = null;
+    boolean followingWall = false;
+    boolean hopping = false;
+    MapLocation oldLocation = null;
+
+    int ROUNDS_TO_RESET_BUG_CLOSEST = 15;
+    MapLocation[] seen = new MapLocation[ROUNDS_TO_RESET_BUG_CLOSEST*4];
+
+
+
 
     public Navigation(RobotController rc, Robot robot){
         this.rc = rc;
@@ -68,7 +86,6 @@ public class Navigation {
                     break;
             }
             if(toGo == null) return false;
-
             Util.tryMove(toGo); // Should always return true since fuzzyNav checks if rc.canMove(dir)
 
             if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
@@ -109,7 +126,7 @@ public class Navigation {
         int leastNumMoves = Integer.MAX_VALUE;
         int leastDistanceSquared = Integer.MAX_VALUE;
 
-        MapLocation bestNewLoc = rc.getLocation();
+        MapLocation bestNewLoc = robot.myLoc;
 //        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
 //        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
 //        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
@@ -172,15 +189,144 @@ public class Navigation {
         lastWallFollowed = null;
         lastDirectionMoved = null;
         roundsSinceClosestDistReset = 0;
+        basic = false;
+        counter = 0;
+        seen = new MapLocation[ROUNDS_TO_RESET_BUG_CLOSEST*4];
     }
+    public boolean sensePassabilityReal(MapLocation loc) throws GameActionException{
+        boolean noWall = rc.sensePassability(loc);
+        RobotInfo bot = rc.senseRobotAtLocation(loc);
+        if (noWall && bot != null)
+            return bot.type != RobotType.HEADQUARTERS;
+        Direction myDir = robot.myLoc.directionTo(loc);
+        Direction current = rc.senseMapInfo(loc).getCurrentDirection();
+        if (current != Direction.CENTER && current != myDir &&
+                current != myDir.rotateLeft() && current != myDir.rotateRight()){
+            return false;
+        }
+        return noWall;
+    }
+    public Direction bugBasic(MapLocation target) throws GameActionException {
+        counter ++;
+        if (counter > 400) return Direction.CENTER;
 
+        System.out.println("Old heading " + heading );
+        Direction bee = robot.myLoc.directionTo(target);
+        if (beeOverwrite != null) {
+            System.out.println("Direction overwritten to " + beeOverwrite);
+            bee = beeOverwrite;
+        }
+        beeOverwrite = null;
+
+        Direction diag = null; //Used for optimizing
+        if (!followingWall) {
+            if (sensePassabilityReal(rc.adjacentLocation(bee))) {
+                heading = bee;
+                System.out.println("No walls, going " + heading);
+                return bee;
+            }
+            else {
+                System.out.println("Can't go " + bee);
+                heading = bee.rotateRight().rotateRight();
+                wallStart = robot.myLoc;
+                followingWall = true;
+
+                System.out.println("Bumped into wall, turning "+heading+"and starting wall tracking at " + robot.myLoc);
+                closestDistToTarget = Integer.MAX_VALUE;
+
+                if (heading == Direction.NORTHEAST || heading == Direction.NORTHWEST ||
+                        heading == Direction.SOUTHEAST || heading == Direction.SOUTHWEST){
+                    heading = heading.rotateLeft();
+                    System.out.println("Rare edge case, sending it " + heading);
+                    beeOverwrite = heading;
+                    followingWall = false;
+                    return bugBasic(target);
+                }
+            }
+        }
+        if (hopping && robot.myLoc.equals(hopPoint)) {
+            if (rc.canMove(bee)) {
+                followingWall = false;
+                heading = bee;
+            } else {
+                do {
+                    bee = bee.rotateLeft();
+                } while (!rc.canMove(bee));
+                followingWall = true;
+                heading = bee;
+            }
+            System.out.println("Hopped off, heading " + heading);
+            return heading;
+        }
+        if (closestDistToTarget != Integer.MAX_VALUE && robot.myLoc.equals(wallStart)) {
+            System.out.println("Reached wall start, going to hop at " + hopPoint);
+            if (hopping) {
+                System.out.println("SOMETHING IS WRONG!!!");
+                // ABORT!!!!
+            }
+            hopping = true;
+        }
+        MapLocation toLeft = rc.adjacentLocation(heading.rotateLeft().rotateLeft());
+        if (sensePassabilityReal(toLeft)) {
+            // if wall to the left ends, turn left to keep wall on left-hand side
+            heading = heading.rotateLeft().rotateLeft();
+
+            System.out.println("Can't find wall at " + rc.adjacentLocation(heading) + ", im facing " + heading.rotateRight().rotateRight() + " at " + robot.myLoc);
+            System.out.println("Wall disappeared, turning left to " + heading);
+
+        } else {
+            // wall directly in front
+            if (!sensePassabilityReal(rc.adjacentLocation(heading))) {
+                if (sensePassabilityReal(rc.adjacentLocation(heading.rotateRight()))) {
+                    // Shortcut: go diagonal right and pretend you got there in two steps
+                    diag = heading.rotateRight();
+                } else {
+                    heading = heading.rotateRight().rotateRight();
+                }
+            } else if (sensePassabilityReal(rc.adjacentLocation(heading.rotateLeft()))) {
+                diag = heading.rotateLeft();
+                heading = heading.rotateLeft().rotateLeft();
+            } else System.out.println("Wall following, going " + heading);
+        }
+        int dist = robot.myLoc.distanceSquaredTo(target);
+        if (dist < closestDistToTarget) {
+            closestDistToTarget = dist;
+            hopPoint = robot.myLoc;
+        }
+        if (diag != null) {
+            System.out.println("Taking diagonal shortcut " + diag);
+            return rc.canMove(diag) ? diag : Direction.CENTER;
+        }
+        if (!rc.canMove(heading)) {
+            // Another bot in the way. Just wait for now
+            System.out.println("Staying put, wanted to go " + heading);
+            return Direction.CENTER;
+        }
+
+        System.out.println("Going " + heading);
+        return heading;
+    }
     public Direction bugNav(MapLocation target) throws GameActionException {
         Util.log("Running bugnav");
-        // Every 20 turns reset the closest distance to target
-        if(roundsSinceClosestDistReset >= ROUNDS_TO_RESET_BUG_CLOSEST){
+        basic = true;
+        if (basic) return bugBasic(target);
+
+
+            // Every 20 turns reset the closest distance to target
+        ROUNDS_TO_RESET_BUG_CLOSEST = Integer.MAX_VALUE;
+        if(roundsSinceClosestDistReset >= ROUNDS_TO_RESET_BUG_CLOSEST) {
             closestDistToTarget = Integer.MAX_VALUE;
             roundsSinceClosestDistReset = 0;
         }
+
+        counter %= seen.length;
+        for (MapLocation oldLoc : seen){
+            if (robot.myLoc.equals(oldLoc)){
+                basic = true;
+                return bugBasic(target);
+            }
+        }
+        seen[counter++] = robot.myLoc;
 
         roundsSinceClosestDistReset++;
 
