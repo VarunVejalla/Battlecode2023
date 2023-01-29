@@ -1,4 +1,4 @@
-package ali5;
+package ali7;
 
 import battlecode.common.*;
 
@@ -113,7 +113,7 @@ public class Util {
 
     public static ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
         int[] ratio = robot.comms.readRatio(HQImHelpingIdx);
-        int num = robot.rng.nextInt(15);  // note that 16 is an exclusive bond
+        int num = robot.rng.nextInt(16);  // note that 16 is an excluusive bond
 
         // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
         // cumuulative sums become [10, 12, 15]
@@ -124,14 +124,14 @@ public class Util {
 
         //Ratio data indices
 
-        if(num < ratio[robot.constants.ADAMANTIUM_RATIO_INDEX]) {
+        if(num <= ratio[robot.constants.ADAMANTIUM_RATIO_INDEX]) {
             Util.log("Gonna go find Adamantium");
             return ResourceType.ADAMANTIUM;
         }
 
         // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
         ratio[robot.constants.MANA_RATIO_INDEX] += ratio[robot.constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
-        if(num < ratio[1]) {
+        if(num <= ratio[1]) {
             Util.log("Gonna go find Mana");
             return ResourceType.MANA;
         }

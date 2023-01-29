@@ -1,4 +1,4 @@
-package ali5;
+package ali7;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;

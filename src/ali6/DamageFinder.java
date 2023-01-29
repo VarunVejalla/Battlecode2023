@@ -1,4 +1,4 @@
-package ali5;
+package ali6;
 
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

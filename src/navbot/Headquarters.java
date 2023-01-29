@@ -20,7 +20,7 @@ public class Headquarters extends Robot {
         MapLocation spawnLocation = myLoc.add(spawnDir);
 
 //        // spawn a carrier
-        if(rc.getID() < 99  &&  count < desiredCount) {
+        if(rc.getID() < 10  &&  count < desiredCount) {
             if (rc.canBuildRobot(RobotType.CARRIER, spawnLocation)) {
                 rc.buildRobot(RobotType.CARRIER, spawnLocation);
                 count += 1;

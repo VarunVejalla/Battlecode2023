@@ -1,9 +1,6 @@
-package ali5;
+package ali7;
 
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 
 public class DamageFinder {
     static RobotController rc;

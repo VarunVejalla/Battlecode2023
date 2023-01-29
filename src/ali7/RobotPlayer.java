@@ -1,4 +1,4 @@
-package ali5;
+package ali7;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -63,9 +63,9 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-            if(turnCount > 1000){
-                rc.resign();
-            }
+//            if(turnCount > 1000){
+//                rc.resign();
+//            }
             try {
                 robot.indicatorString = "";
                 int roundNum = rc.getRoundNum();
