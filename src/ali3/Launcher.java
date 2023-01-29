@@ -47,6 +47,7 @@ public class Launcher extends Robot {
     boolean enemyInVisionRadius;
 
     RobotInfo bestAttackVictim = null;
+    boolean trynaHeal = false;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -69,7 +70,6 @@ public class Launcher extends Robot {
         bestAttackVictim = getBestAttackVictim();
     }
 
-    //TODO: factor in island healing
     public void run() throws GameActionException{
         super.run();
 
@@ -78,16 +78,27 @@ public class Launcher extends Robot {
         runAttackLoop();
         updateAllNearbyInfo();
 
+        MapLocation nearestFriendlyIsland = getNearestFriendlyIsland();
+        int returnToHealThreshold = Math.max(enemyDamageOneTurn(), constants.THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL);
+        returnToHealThreshold = Math.min(returnToHealThreshold, myType.getMaxHealth() / 2);
+        if(rc.getHealth() < returnToHealThreshold && nearestFriendlyIsland != null){
+            trynaHeal = true;
+        }
+        else if(rc.getHealth() == myType.getMaxHealth() || nearestFriendlyIsland == null){
+            trynaHeal = false;
+        }
+
         boolean isSafe = heuristic.getSafe();
-        if(isSafe){
+        if(trynaHeal){
+            Util.addToIndicatorString("TH");
+            targetLoc = null;
+            runHealingStrategy(nearestFriendlyIsland);
+        }
+        else if(isSafe){
             Util.addToIndicatorString("SF");
-        }
-        else{
-            Util.addToIndicatorString("USF");
-        }
-        if(isSafe){
             runSafeStrategy();
-        }else{
+        } else{
+            Util.addToIndicatorString("USF");
             runUnsafeStrategy();
         }
         runAttackLoop();
@@ -102,7 +113,7 @@ public class Launcher extends Robot {
         }
     }
 
-    public void runSafeStrategy() throws GameActionException{
+    public void runSafeStrategy() throws GameActionException {
         if(enemyInActionRadius) {
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
@@ -113,13 +124,9 @@ public class Launcher extends Robot {
             }
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
-                //TODO: move somewhere where you can hit the enemy but also hit by the least number of enemies
-//                moveTowardsEnemyCOM();
                 moveToBestPushLocation();
             }
             else if (rc.isMovementReady()) {
-                // TODO: what should you do in this case (i.e. you're safe and the enemy is in vision radius)
-//                moveTowardsEnemyCOM();
                 moveToSafestSpot();
             }
         } else { // no enemy in sight
@@ -206,8 +213,7 @@ public class Launcher extends Robot {
         int xDisplacement = enemyCOM.x - myLoc.x;
         int yDisplacement = enemyCOM.y - myLoc.y;
         MapLocation target = new MapLocation(myLoc.x - xDisplacement*3, myLoc.y-yDisplacement*3);
-        boolean moved = nav.goToFuzzy(target, 0);
-        //TODO: if you can't move, what should you do?
+        nav.goToFuzzy(target, 0);
     }
 
     public void moveBackIfAvoidsEnemy() throws GameActionException{
@@ -229,7 +235,6 @@ public class Launcher extends Robot {
     }
 
     //TODO: make sure this method doesn't use too much bytecode
-    //TODO: use DamageFinder for this
     public void moveToBestPushLocation() throws GameActionException{
         MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
         boolean[] newSpotIsValid = new boolean[9];  // whether or not we can move to each new spot

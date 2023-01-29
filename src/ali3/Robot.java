@@ -389,8 +389,36 @@ public class Robot {
             comms.eliminateSymmetry(type);
         }
         impossibleSymmetries.clear();
-
     }
+
+    public void runHealingStrategy(MapLocation nearestFriendlyIsland) throws GameActionException {
+        System.out.println("BRO IM TRYNA HEAL");
+        if(myLoc.distanceSquaredTo(nearestFriendlyIsland) > myType.visionRadiusSquared){
+            Util.addToIndicatorString("BG." + nearestFriendlyIsland);
+            nav.goToBug(nearestFriendlyIsland, Anchor.STANDARD.unitsAffected);
+        }
+        else if(myLoc.distanceSquaredTo(nearestFriendlyIsland) > Anchor.STANDARD.unitsAffected){
+            Util.addToIndicatorString("FZ." + nearestFriendlyIsland);
+            nav.goToFuzzy(nearestFriendlyIsland, Anchor.STANDARD.unitsAffected);
+        }
+        else{
+            Util.addToIndicatorString("CRC." + nearestFriendlyIsland);
+            nav.circle(nearestFriendlyIsland, 0, Anchor.STANDARD.unitsAffected);
+        }
+    }
+
+    public int enemyDamageOneTurn() throws GameActionException {
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+        int damage = 0;
+        for(RobotInfo nearby : nearbyEnemies){
+            if(nearby.type == RobotType.CARRIER){
+                continue;
+            }
+            damage += Util.getEnemyDamage(nearby);
+        }
+        return damage;
+    }
+
 
     public MapLocation getFurthestIsland(Team controllingTeam){
         int furthestDist = Integer.MIN_VALUE;

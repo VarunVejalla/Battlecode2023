@@ -152,21 +152,76 @@ public class Headquarters extends Robot {
     }
 
     // criteria on whether hq should start saving up for an anchor
-    //TODO: improve this criteria?
-    public void shouldISaveUp() {
+    public boolean shouldISaveUp() throws GameActionException {
         // Super simple saving up criteria to win the games where we're destroying opponent.
-        if(carrierToRoundMap.size() > 20 && getNearestUncontrolledIsland() != null && turnCount - lastAnchorBuiltTurn > 50){
-            savingUp = true;
+        MapLocation nearestUncontrolled = getNearestUncontrolledIsland();
+        if(nearestUncontrolled == null){
+            return false;
+        }
+        if(rc.getNumAnchors(Anchor.STANDARD) != 0){
+            return false;
+        }
+
+        int numEnemyLaunchersNearby = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+        boolean islandUnderControl = getNearestFriendlyIsland() != null;
+        int roundsSinceLastAnchor = turnCount - lastAnchorBuiltTurn;
+
+        int numCarriers = carrierToRoundMap.size();
+        int distToIsland = myLoc.distanceSquaredTo(nearestUncontrolled);
+        int roundNum = rc.getRoundNum();
+        int numFriendlyIslands = getNumIslandsControlledByTeam(myTeam);
+        int numEnemyIslands = getNumIslandsControlledByTeam(opponent);
+        int numIslandsToWin = 4 * numIslands / 4 - numFriendlyIslands;
+
+        if(numEnemyLaunchersNearby > 0){
+            return false;
+        }
+
+        if(roundNum < 1200 && roundsSinceLastAnchor < 50){
+            return false;
+        }
+
+        int heuristic = numCarriers;
+        numIslandsToWin = Math.min(numIslandsToWin, 10);
+        heuristic -= numIslandsToWin;
+
+        Util.addToIndicatorString("H:" + heuristic);
+
+        if(islandUnderControl){
+            if(roundNum < 500){
+                if(heuristic >= 12){
+                    return true;
+                }
+            }
+            else if(roundNum < 1400){
+                if(heuristic >= 10){
+                    return true;
+                }
+            }
+            else{
+                if(heuristic >= 8){
+                    return true;
+                }
+            }
         }
         else{
-            savingUp = false;
+            if(roundNum < 500){
+                if(heuristic >= 11){
+                    return true;
+                }
+            }
+            else if(roundNum < 1400){
+                if(heuristic >= 8){
+                    return true;
+                }
+            }
+            else{
+                if(heuristic >= 5){
+                    return true;
+                }
+            }
         }
-//        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
-//        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
-//        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
-//        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > howOftenToSpawnAnchors;
-//        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
-//        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+        return false;
     }
 
 
@@ -243,7 +298,7 @@ public class Headquarters extends Robot {
         updateSeenCarriers();
 //        Util.log("Seen carriers: " + carrierToRoundMap.size());
 
-        shouldISaveUp();
+        savingUp = shouldISaveUp();
         setResourceRatios();
         int[] ratio = comms.readRatio(myIndex);
 

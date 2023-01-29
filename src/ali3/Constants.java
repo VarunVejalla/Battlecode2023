@@ -87,6 +87,8 @@ public class Constants {
     public static final int NUM_REGIONS_VERTICAL = 7;
     public static final int NUM_REGIONS_TOTAL = NUM_REGIONS_HORIZONTAL * NUM_REGIONS_VERTICAL;
 
+    // Hyperparameters T_T
+    public static final int THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL = 40;
 
 
 
