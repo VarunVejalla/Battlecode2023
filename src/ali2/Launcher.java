@@ -314,7 +314,6 @@ public class Launcher extends Robot {
     // calculates the safest direction to move in that will
     //TODO: need to make sure this doesn't each up too much bytecode if we have a vision radius filled up with enemies
     public void moveToSafestSpot() throws GameActionException{
-        System.out.println(Clock.getBytecodesLeft());
         MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
         boolean[] newSpotIsValid = new boolean[9];  // whether we can move to each new spot
 
