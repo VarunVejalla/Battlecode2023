@@ -7,8 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
-// TODO: Deterministic resource ratios.
-
 class CarrierInfo {
     int roundNum;
     HashSet<Integer> carriers;
@@ -152,6 +150,20 @@ public class Headquarters extends Robot {
         addNewCarriers();
         Util.addToIndicatorString("C:" + carrierToRoundMap.size());
     }
+
+    public int getTroopDifference() throws GameActionException{
+        int numFriendlyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, myTeam, RobotType.LAUNCHER);
+//        nearbyVisionEnemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
+//        int numEnemies = nearbyVisionEnemies.length;
+        int numEnemyLaunchers = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+        int difference = numEnemyLaunchers - numFriendlyLaunchers;
+        Util.addToIndicatorString("Diff: " + difference);
+        return numEnemyLaunchers - numFriendlyLaunchers;
+//        // checks to see if i need help (if there are more enemies than friendlies in my vision radius)
+//        if(numEnemies > numFriendlies) return true;
+//        return false;
+    }
+
 
     // criteria on whether hq should start saving up for an anchor
     public boolean shouldISaveUp() throws GameActionException {
@@ -298,6 +310,7 @@ public class Headquarters extends Robot {
             }
         }
 
+        comms.setCallForHelpFlag(myIndex, getTroopDifference());
 //        rc.setIndicatorString(adamantiumDeltaEMA + " " + manaDeltaEMA);
         comms.writeAdamantium(myIndex, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         comms.writeMana(myIndex, rc.getResourceAmount(ResourceType.MANA));
