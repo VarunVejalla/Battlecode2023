@@ -206,26 +206,46 @@ public class Launcher extends Robot {
 
     // this method generates a sorted list of enemy HQ locations, sorted by distance from our HQ
     // returns null if there are no enemyHQs to visit that are not in locationsToIgnore
-    public MapLocation getNextEnemyHQToVisit() {
+    public MapLocation getNextEnemyHQToVisit() throws GameActionException {
         MapLocation nextEnemyHQToVisit = null;
         int bestDistanceSquared = Integer.MAX_VALUE;
-        for (int i = 0; i < numHQs; i++) {
-            if (locationsToIgnore.contains(enemyHQLocs[i]))
-                continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
-            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);   // distance between spawningHQ and enemyHQ
-//            int currDistanceSquared = myLoc.distanceSquaredTo(enemyHQLocs[i]);          // distance between current location and enemyHQ
-            if (nextEnemyHQToVisit == null || currDistanceSquared < bestDistanceSquared) {
+        MapLocation[] potentialLocs = getPotentialEnemyHQLocs();
+        if(potentialLocs.length == 0){
+            return null;
+        }
+        for(MapLocation loc : potentialLocs){
+            if(locationsToIgnore.contains(loc)){
+                continue;
+            }
+            int currDistanceSquared = spawningHQ.distanceSquaredTo(loc);
+            if(nextEnemyHQToVisit == null || currDistanceSquared < bestDistanceSquared){
+                nextEnemyHQToVisit = loc;
                 bestDistanceSquared = currDistanceSquared;
+            }
+        }
+        if(nextEnemyHQToVisit == null){
+            locationsToIgnore.clear();
+            return getNextEnemyHQToVisit();
+        }
+
+
+//        for (int i = 0; i < numHQs; i++) {
+//            if (locationsToIgnore.contains(enemyHQLocs[i]))
+//                continue; // locationsToIgnore will contain enemyHQLocs if we've already visited
+//            int currDistanceSquared = spawningHQ.distanceSquaredTo(enemyHQLocs[i]);   // distance between spawningHQ and enemyHQ
+//            int currDistanceSquared = myLoc.distanceSquaredTo(enemyHQLocs[i]);          // distance between current location and enemyHQ
+//            if (nextEnemyHQToVisit == null || currDistanceSquared < bestDistanceSquared) {
+//                bestDistanceSquared = currDistanceSquared;
 //                nextEnemyHQToVisit = enemyHQLocs[i];
 //            return enemyHQLocs[i];
 
-            }
-            return null;
-        }
-        return null;
-    }
-//        return nextEnemyHQToVisit;
+//            }
+//            return null;
+//        }
+//        return null;
 //    }
+        return nextEnemyHQToVisit;
+    }
 
 
     // checks to see if any of our HQs need help and return that location
@@ -344,9 +364,11 @@ public class Launcher extends Robot {
         if(destinationType == null) return false;
         switch (destinationType){
             case ENEMY_HQ:
-                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+//                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+                return nav.goToFuzzy(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
             default:
-                return nav.goToBug(targetLoc, 0);
+//                return nav.goToBug(targetLoc, myType.visionRadiusSquared+4);   // don't go too close to the enemyHQ
+                return nav.goToFuzzy(targetLoc, 0);
         }
     }
 
@@ -409,12 +431,17 @@ public class Launcher extends Robot {
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
-        rerouteHandler();   // check to see if we should change our targetLoc
+//        rerouteHandler();   // check to see if we should change our targetLoc
 
-        if(checkIfArrived()){
-            arrivedHandler();
+        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared){
+            locationsToIgnore.add(targetLoc);
             targetLoc = null;
         }
+
+//        if(checkIfArrived()){
+//            arrivedHandler();
+//            targetLoc = null;
+//        }
 
         if(targetLoc == null) {
             targetLoc = getNextTargetLoc();

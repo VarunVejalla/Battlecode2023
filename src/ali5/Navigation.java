@@ -1,10 +1,12 @@
-package musashi2;
+package ali4;
 
 import battlecode.common.*;
 
 enum NavigationMode{
     FUZZYNAV, BUGNAV;
 }
+
+//TODO: Fix bugnav
 
 public class Navigation {
 
@@ -47,8 +49,8 @@ public class Navigation {
     public boolean goTo(MapLocation target, int minDistToSatisfy) throws GameActionException{
 //        rc.setIndicatorString(String.format("travelling to (%d, %d)", target.x, target.y));
 //        rc.setIndicatorLine(robot.myLoc, target, 0, 0, 255);
-        // thy journey hath been completed
 
+        // thy journey hath been completed
         if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
             return true;
         }
@@ -68,9 +70,7 @@ public class Navigation {
                     break;
             }
             if(toGo == null) return false;
-
             Util.tryMove(toGo); // Should always return true since fuzzyNav checks if rc.canMove(dir)
-
             if (robot.myLoc.distanceSquaredTo(target) <= minDistToSatisfy){
                 return true;
             }
@@ -78,23 +78,6 @@ public class Navigation {
         return true;
     }
 
-    //TODO: should also factor in whether cooldown increases / decreases from clouds / destabilizers / boosters ???
-    public boolean isThisMyLastMovementTurn(){
-        int movementCooldownPerTurn = rc.getType().movementCooldown;
-        if(rc.getType() == RobotType.CARRIER){  // for some reason, rc.getType().movementCooldown returns 0 for Carriers
-            int massImCarrying = rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.ELIXIR);
-            movementCooldownPerTurn = (int) Math.floor(5 + 3*massImCarrying);
-        }
-        int currCooldown = rc.getMovementCooldownTurns();   // how much cooldown do we already have
-
-        if(movementCooldownPerTurn * 2 + currCooldown <= 10){
-            return false;   // this is not your last movementTurn
-        }
-        return true;        // this is your last movementTurn
-    }
-
-
-    // TODO: should we also incorporate cooldown information
     public Direction fuzzyNav(MapLocation target) throws GameActionException{
         Direction toTarget = robot.myLoc.directionTo(target);
         Direction[] moveOptions = {
@@ -106,16 +89,9 @@ public class Navigation {
         };
 
         Direction bestDir = null;
-        int leastNumMoves = Integer.MAX_VALUE;
-        int leastDistanceSquared = Integer.MAX_VALUE;
+        double bestCost = Double.MAX_VALUE;
 
-        MapLocation bestNewLoc = rc.getLocation();
-//        System.out.println("rc.getType().movementCooldown: " + rc.getType().movementCooldown);
-//        System.out.println("rc.getMovementCooldownTurns(): " + rc.getMovementCooldownTurns());
-//        System.out.println("rc.isMovementReady(): " + rc.isMovementReady());
-//        System.out.println("isMyLastTurn(): " + isThisMyLastMovementTurn());
-
-        for(int i = moveOptions.length; i--> 0;){
+        for(int i = moveOptions.length; i-- > 0;){
             Direction dir = moveOptions[i];
             MapLocation newLoc = robot.myLoc.add(dir);
 
@@ -124,45 +100,28 @@ public class Navigation {
             }
 
             if(!rc.sensePassability(newLoc)) continue;  // don't consider if the new location is not passable
+
             MapInfo newLocInfo = rc.senseMapInfo(newLoc); // (10 bytecode) get MapInfo for the location of interest, which gives us a lot of juicy details about the spot
 
-            if(isThisMyLastMovementTurn()){            // only factor in currents if this is your last movement on this round
-                if (newLocInfo.getCurrentDirection() != Direction.CENTER) {
-                    newLoc = newLoc.add(newLocInfo.getCurrentDirection());
-                    if (!rc.canSenseLocation(newLoc) || !rc.canMove(dir)) {
-                        continue;
-                    }
+            // TODO: Lowkey idk if this code works
+            // If there's a current, add that to the end of the new location
+            if(newLocInfo.getCurrentDirection() != Direction.CENTER){
+                newLoc = newLoc.add(newLocInfo.getCurrentDirection());
+                if(!rc.canSenseLocation(newLoc) || !rc.canMove(dir)){
+                    continue;
                 }
+                newLocInfo = rc.senseMapInfo(newLoc);
             }
 
-            int numMoves = Util.minMovesToReach(newLoc, target);
-            int distanceSquared = newLoc.distanceSquaredTo(target);
+            double cost = newLocInfo.getCooldownMultiplier(robot.myTeam) * 10;
+            cost += Util.minMovesToReach(newLoc, target) * 10;
 
-            // first check if this new spot decreases the number of moves we need to take to get to our target
-            // if so, make this new spot the bestNewLoc
-            if(numMoves < leastNumMoves){
-                leastNumMoves = numMoves;
-                leastDistanceSquared = distanceSquared;
+            if(cost < bestCost){
+                bestCost = cost;
                 bestDir = dir;
-                bestNewLoc = newLoc;
-            }
 
-            // if numMoves == leastNumMoves but the newLoc is closer to the target than the current loc, make this newLoc the bestLoc
-            else if(numMoves == leastNumMoves && distanceSquared < leastDistanceSquared){
-                leastNumMoves = numMoves;
-                leastDistanceSquared = distanceSquared;
-                bestDir = dir;
-                bestNewLoc = newLoc;
             }
         }
-
-        System.out.println("movement cooldown turns B: " + rc.getMovementCooldownTurns());
-        System.out.println("best direction to move in: " + " from " + robot.myLoc + ": " + bestDir);
-        System.out.println("newLoc from " + robot.myLoc + ": " + bestNewLoc);
-        System.out.println("leastNumMoves from " + robot.myLoc + ": " + leastNumMoves);
-        System.out.println("leastDistSq from " + robot.myLoc + ": " + leastDistanceSquared);
-        System.out.println("-------------------------");
-
 
         return bestDir;
     }
@@ -181,7 +140,6 @@ public class Navigation {
             closestDistToTarget = Integer.MAX_VALUE;
             roundsSinceClosestDistReset = 0;
         }
-
         roundsSinceClosestDistReset++;
 
         Direction closestDir = null;
@@ -198,7 +156,6 @@ public class Navigation {
                 dir = robot.myLoc.directionTo(lastWallFollowed);
             }
         }
-
         if(dir == null){
             dir = robot.myLoc.directionTo(target);
         }

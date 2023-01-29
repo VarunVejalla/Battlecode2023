@@ -1,4 +1,4 @@
-package ali3;
+package ali4;
 
 import battlecode.common.*;
 
@@ -226,6 +226,7 @@ public class Headquarters extends Robot {
         return false;
     }
 
+    // TODO: Consider map size and numIslands in this
 
     public void setResourceRatios() throws GameActionException{
         if(savingUp){   // if we're trying to make an anchor but don't have enough of a specific resource, get that resource
@@ -234,39 +235,43 @@ public class Headquarters extends Robot {
 
             if(needAdamantium && needMana) {
                 comms.writeRatio(myIndex, 1, 1, 0);
-                return;
             }
             else if(needAdamantium){
                 comms.writeRatio(myIndex, 12, 3, 0);
-                return;
             }
             else if(needMana) {
                 comms.writeRatio(myIndex, 3, 12, 0);
-                return;
             }
+            return;
         }
-
-//        if(seenCarriers.size() > initialCarrierThreshold){          // if we've made enough carriers, prioritize mana so we can make launchers
-//            comms.writeRatio(myIndex, 4, 8, 0);
-//            return;
-//        }
-//        else {
-//            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
-//            return;
-//        }
 
         int numCarriers = carrierToRoundMap.size();
-        if(numCarriers > 7) {
-            comms.writeRatio(myIndex, 0, 15, 0);
+        if(rc.getRoundNum() < 500){
+            if(numCarriers > 3) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 3){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
-        else if(numCarriers < 3){
-            comms.writeRatio(myIndex, 15, 0, 0);
+        else if(rc.getRoundNum() < 1200){
+            if(numCarriers > 6) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 6){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
         else{
-            comms.writeRatio(myIndex, 15 - numCarriers - 1, numCarriers + 1, 0);
+            if(numCarriers > 9) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 9){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
-
     }
+
 
 
     public void run() throws GameActionException {
