@@ -372,7 +372,6 @@ public class Navigation {
     }
     public Direction bugNav(MapLocation target) throws GameActionException {
      //   Util.log("Running bugnav");
-        basic = true;
         if (basic) return bugBasic(target);
 
 
