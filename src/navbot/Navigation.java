@@ -194,6 +194,9 @@ public class Navigation {
         seen = new MapLocation[ROUNDS_TO_RESET_BUG_CLOSEST*4];
     }
     public boolean sensePassabilityReal(MapLocation loc) throws GameActionException{
+        if (! (0 <= loc.x && loc.x < rc.getMapWidth() && 0 <= loc.y & loc.y < rc.getMapHeight()))
+            return false;
+
         boolean noWall = rc.sensePassability(loc);
         RobotInfo bot = rc.senseRobotAtLocation(loc);
         if (noWall && bot != null)
@@ -267,6 +270,7 @@ public class Navigation {
             hopping = true;
         }
         MapLocation toLeft = rc.adjacentLocation(heading.rotateLeft().rotateLeft());
+        Direction headingTemp = heading;
         if (sensePassabilityReal(toLeft)) {
             // if wall to the left ends, turn left to keep wall on left-hand side
             heading = heading.rotateLeft().rotateLeft();
@@ -277,16 +281,28 @@ public class Navigation {
         } else {
             // wall directly in front
             if (!sensePassabilityReal(rc.adjacentLocation(heading))) {
-                if (sensePassabilityReal(rc.adjacentLocation(heading.rotateRight()))) {
+                if (sensePassabilityReal(rc.adjacentLocation(heading.rotateLeft()))) {
+                    // Skip past wall if possible
+                    diag = headingTemp.rotateLeft();
+                    heading = headingTemp.rotateLeft().rotateLeft();
+                } else if (sensePassabilityReal(rc.adjacentLocation(heading.rotateRight()))) {
                     // Shortcut: go diagonal right and pretend you got there in two steps
-                    diag = heading.rotateRight();
-                } else {
-                    heading = heading.rotateRight().rotateRight();
+                    diag = headingTemp.rotateRight();
+                } else if (!sensePassabilityReal(rc.adjacentLocation(heading.rotateRight().rotateRight()))){
+                    // Turn around if boxed in
+                    heading = headingTemp.opposite();
+                    System.out.println("Boxed in, flipping to " + heading);
+                }
+                else {
+                    heading = headingTemp.rotateRight().rotateRight();
                 }
             } else if (sensePassabilityReal(rc.adjacentLocation(heading.rotateLeft()))) {
-                diag = heading.rotateLeft();
-                heading = heading.rotateLeft().rotateLeft();
-            } else System.out.println("Wall following, going " + heading);
+                diag = headingTemp.rotateLeft();
+                heading = headingTemp.rotateLeft().rotateLeft();
+            }
+            else System.out.println("Wall following, going " + heading);
+
+
         }
         int dist = robot.myLoc.distanceSquaredTo(target);
         if (dist < closestDistToTarget) {
