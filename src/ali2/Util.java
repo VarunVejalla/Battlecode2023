@@ -215,6 +215,20 @@ public class Util {
         return getRegionY(loc) * Constants.NUM_REGIONS_HORIZONTAL + getRegionX(loc);
     }
 
+    public static int getEnemyDamage(RobotInfo info){
+        switch(info.type){
+            case LAUNCHER:
+            case DESTABILIZER:
+            case HEADQUARTERS:
+                return info.type.damage;
+            case CARRIER:
+                int mass = info.getResourceAmount(ResourceType.ADAMANTIUM) +info.getResourceAmount(ResourceType.MANA) + info.getResourceAmount(ResourceType.ELIXIR);
+                return (int)(mass * GameConstants.CARRIER_DAMAGE_FACTOR);
+            default:
+                return 0;
+        }
+    }
+
     public static int attackValue(RobotInfo enemy) {
         if(enemy.type == RobotType.LAUNCHER) {
             return 0;
@@ -238,6 +252,12 @@ public class Util {
             // same type, attack whichever one is closer to dying
             return enemy1.health - enemy2.health;
         }
+    }
+
+    public static int addDiffToSquaredNum(int x, int diff) {
+        int sqrt = (int) Math.sqrt(x);
+        int newSqrt = sqrt + diff;
+        return newSqrt * newSqrt;
     }
 
     public static void addToIndicatorString(String str){

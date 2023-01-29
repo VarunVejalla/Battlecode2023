@@ -133,7 +133,6 @@ public class Launcher extends Robot {
         }
     }
 
-    //TODO: add moving back strategically?
     public void runUnsafeStrategy() throws GameActionException{
         if(enemyInActionRadius){
             if(rc.isActionReady()){
