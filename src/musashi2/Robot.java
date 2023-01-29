@@ -439,6 +439,35 @@ public class Robot {
         return closestIsland;
     }
 
+
+
+    // Find the nearest island with specified controlling team
+    private int getNearestIslandIdx(Team controllingTeam){
+        int closestDist = Integer.MAX_VALUE;
+        MapLocation closestIsland = null;
+        int closestIndex = -1;
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null){
+                continue;
+            }
+            Util.log("Island: " + info.loc);
+            if(info.controllingTeam != controllingTeam){
+                continue;
+            }
+            int dist = myLoc.distanceSquaredTo(info.loc);
+            if(dist < closestDist){
+                closestDist = dist;
+                closestIsland = info.loc;
+                closestIndex = info.idx;
+            }
+        }
+        return closestIndex;
+    }
+
+
+
+
     // Find the nearest island with specified controlling team
     public int getNumIslandsControlledByTeam(Team controllingTeam){
         int count = 0;
@@ -460,6 +489,11 @@ public class Robot {
     public MapLocation getNearestUncontrolledIsland(){ return getNearestIsland(Team.NEUTRAL); }
     public MapLocation getNearestFriendlyIsland(){ return getNearestIsland(myTeam); }
     public MapLocation getNearestOpposingIsland(){ return getNearestIsland(opponent); }
+
+
+    public int getNearestUncontrolledIslandIdx(){ return getNearestIslandIdx(Team.NEUTRAL); }
+    public int getNearestFriendlyIslandIdx(){ return getNearestIslandIdx(myTeam); }
+    public int getNearestOpposingIslandIdx(){ return getNearestIslandIdx(opponent); }
 
 
     public MapLocation getFurthestFriendlyIsland(){
