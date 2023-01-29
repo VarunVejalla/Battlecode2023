@@ -147,7 +147,7 @@ public class Carrier extends Robot {
     public void moveTowardsNearbyWell() throws GameActionException {
         // If you're scouting and reach a dead end, reset.
         if(targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseWell(targetLoc) == null){
-            System.out.println("Resetting because there wasn't acc a well there");
+            Util.log("Resetting because there wasn't acc a well there");
             targetResource = null;
         }
 
@@ -157,7 +157,7 @@ public class Carrier extends Robot {
             if(checkWellCrowded(targetLoc)){
                 // If there's crowding, go to the next nearest location
                 regionsToIgnore.add(targetRegion);
-                System.out.println("Resetting because well is crowded");
+                Util.log("Resetting because well is crowded");
                 targetResource = null;
             }
 
@@ -167,7 +167,7 @@ public class Carrier extends Robot {
                 Direction fuzzyNavDir = nav.fuzzyNav(targetLoc);
                 if(fuzzyNavDir == null){
                     regionsToIgnore.add(targetRegion);
-                    System.out.println("Resetting because I can't fuzzy nav towards it");
+                    Util.log("Resetting because I can't fuzzy nav towards it");
                     targetResource = null;
                 }
             }
