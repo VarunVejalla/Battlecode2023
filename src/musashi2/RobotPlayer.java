@@ -63,9 +63,9 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-//            if(turnCount > 1000){
-//                rc.resign();
-//            }
+            if(turnCount > 1000){
+                rc.resign();
+            }
             try {
                 robot.indicatorString = "";
                 int roundNum = rc.getRoundNum();

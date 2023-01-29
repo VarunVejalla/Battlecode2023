@@ -361,7 +361,7 @@ public class Launcher extends Robot {
         }
 
         // if one of the HQs needs help, go help it
-        else if(nearestHQToHelp != targetLoc){
+        else if(nearestHQToHelp != null && nearestHQToHelp != targetLoc){
             targetLoc = nearestHQToHelp;
             destinationType = DestinationType.FRIENDLY_HQ;
         }
