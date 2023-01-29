@@ -196,7 +196,7 @@ public class Carrier extends Robot {
 
     public boolean checkWellCrowded(MapLocation wellLoc) throws GameActionException {
         if(wellLoc != null && rc.canSenseLocation(wellLoc)){
-            int radius = myType.actionRadiusSquared;
+            int radius = 2;
             int troopsWithinRadius = rc.senseNearbyRobots(wellLoc, radius, myTeam).length;
             MapInfo[] nearbyMapInfos = rc.senseNearbyMapInfos(wellLoc, radius);
             int validMapSquares = 0;
