@@ -1,4 +1,4 @@
-package ali4;
+package ali5;
 import battlecode.common.*;
 
 public class Spawner{

@@ -1,4 +1,4 @@
-package ali4;
+package ali5;
 
 import battlecode.common.*;
 
@@ -24,8 +24,8 @@ class LauncherHeuristic {
         Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
         Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
         // 1.5 simply because im ballsy and wanna go for it
-        return myTurnsNeeded <= enemyTurnsNeeded * GET_SAFE_FACTOR; // If you can kill them faster than they can kill you, return true
-//        return friendlyDamage >= enemyDamage;
+//        return myTurnsNeeded <= enemyTurnsNeeded * GET_SAFE_FACTOR; // If you can kill them faster than they can kill you, return true
+        return friendlyDamage >= enemyDamage;
     }
 
 }
