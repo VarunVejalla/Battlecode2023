@@ -240,7 +240,6 @@ public class Navigation {
         return noWall;
     }
     public Direction bugBasic(MapLocation target) throws GameActionException {
-        if (rc.getRoundNum() > 400) { return Direction.CENTER ;}
         int initial = Clock.getBytecodesLeft();
         if (followingWall) {
             for (int i = 0; i < tempObstacles.length; i++) {
