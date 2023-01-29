@@ -289,10 +289,11 @@ public class Launcher extends Robot {
         // go to friendlyHQ to comm info (first priority)
         if (haveUncommedIsland() || haveUncommedSymmetry()){
             targetLoc = getNearestFriendlyHQToHelp();
+            destinationType = DestinationType.FRIENDLY_HQ;
             if(targetLoc == null){
                 targetLoc = getNearestFriendlyHQ();
+                destinationType = DestinationType.COMM_INFO;
             }
-            destinationType = DestinationType.COMM_INFO;
         }
 
         // if enemy has more than half the islands, neutralizing islands is the highest priority
