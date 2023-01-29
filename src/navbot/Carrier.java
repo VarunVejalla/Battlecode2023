@@ -18,8 +18,9 @@ public class Carrier extends Robot {
 
     public void run() throws GameActionException {
 //        myLoc = rc.getLocation();
-        destination = new MapLocation(29,29);   // top right
-        nav.goToFuzzy(destination,0);
+
+        destination = new MapLocation(0,0);   // top right
+        nav.goToBug(destination,0);
         super.run();
 
 
