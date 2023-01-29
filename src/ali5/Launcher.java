@@ -500,7 +500,6 @@ public class Launcher extends Robot {
         }
     }
 
-    // TODO: Maybe only check # of attackers on the robot closest to you?
     public LauncherHeuristic getHeuristic(RobotInfo[] nearbyFriendlies, RobotInfo[] nearbyEnemies) throws GameActionException {
         // your attack isn't ready, then don't engage
 
@@ -520,37 +519,33 @@ public class Launcher extends Robot {
         double friendlyDamage = 0.0;
         double enemyDamage = 0.0;
 
-        boolean added;
         for(int i = 0; i < nearbyEnemies.length; i++){
             RobotInfo enemyInfo = nearbyEnemies[i];
 
-            if(enemyInfo.type != RobotType.HEADQUARTERS && enemyInfo.type != RobotType.LAUNCHER && enemyInfo.type != RobotType.CARRIER){
+//            if(enemyInfo.type != RobotType.HEADQUARTERS && enemyInfo.type != RobotType.LAUNCHER){
+//                continue;
+//            }
+            if(enemyInfo.type != RobotType.LAUNCHER){
                 continue;
             }
 
-            if(enemyInfo.type == RobotType.HEADQUARTERS){
-                for(int j = 0; j < nearbyFriendlies.length; j++){
-                    RobotInfo friendlyInfo = nearbyFriendlies[j];
-                    if(friendlyInfo.type != RobotType.LAUNCHER){
-                        continue;
-                    }
-                    if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)){
-                        enemyDamage += (double)enemyInfo.type.damage / 10.0;
-                    }
-                }
-                // accounts for yourself
-                enemyDamage += (double) enemyInfo.type.damage / 10.0;
-                // Only consider the enemy launcher / carrier if it's in range of a friendly launcher.
-            } else if(enemyInfo.type == RobotType.LAUNCHER || enemyInfo.type == RobotType.CARRIER) {
-                if(enemyInfo.type == RobotType.LAUNCHER) {
-                    double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
-                    enemyDamage += (double) enemyInfo.type.damage / cooldown;
-                }
-                else if(enemyInfo.type == RobotType.CARRIER) {
-                    int carrierWeight = enemyInfo.getResourceAmount(ResourceType.ADAMANTIUM) + enemyInfo.getResourceAmount(ResourceType.MANA) + enemyInfo.getResourceAmount(ResourceType.ELIXIR);
-                    int carrierDamage = (int)(carrierWeight * GameConstants.CARRIER_DAMAGE_FACTOR);
-                    enemyDamage += carrierDamage;
-                }
+//            if(enemyInfo.type == RobotType.HEADQUARTERS){
+//                for(int j = 0; j < nearbyFriendlies.length; j++){
+//                    RobotInfo friendlyInfo = nearbyFriendlies[j];
+//                    if(friendlyInfo.type != RobotType.LAUNCHER){
+//                        continue;
+//                    }
+//                    if(friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)){
+//                        enemyDamage += (double)enemyInfo.type.damage / 10.0;
+//                    }
+//                }
+//                // accounts for yourself
+//                enemyDamage += (double) enemyInfo.type.damage / 10.0;
+//                // Only consider the enemy launcher / carrier if it's in range of a friendly launcher.
+//            } else
+            if(enemyInfo.type == RobotType.LAUNCHER) {
+                double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
+                enemyDamage += (double) enemyInfo.type.damage / cooldown;
             }
         }
 
@@ -559,7 +554,6 @@ public class Launcher extends Robot {
             if(friendlyInfo.type != RobotType.LAUNCHER && friendlyInfo.type != RobotType.HEADQUARTERS){
                 continue;
             }
-
             if(friendlyInfo.type == RobotType.HEADQUARTERS) {
                 for (int i = 0; i < nearbyEnemies.length; i++) {
                     RobotInfo enemyInfo = nearbyEnemies[i];

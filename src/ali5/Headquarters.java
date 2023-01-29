@@ -438,7 +438,7 @@ public class Headquarters extends Robot {
         }
         Direction spawnDir = myLoc.directionTo(spawnLoc);
 
-        if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
+        while(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
         }
     }
