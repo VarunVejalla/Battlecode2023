@@ -156,8 +156,6 @@ public class Launcher extends Robot {
 
                 // used in getNextTargetLoc and rerouteHandler
                 numIslands = getNumIslandsControlledByTeam(opponent);
-
-
                 runNormalOffensiveStrategy();
         }
     }
@@ -286,10 +284,14 @@ public class Launcher extends Robot {
 
 
     public MapLocation getNextTargetLoc() throws GameActionException{
-        numIslandsControlledByOpponent = getNumIslandsControlledByTeam(opponent);
+        // we don't need to run this because we run if before
+//        numIslandsControlledByOpponent = getNumIslandsControlledByTeam(opponent);
         // go to friendlyHQ to comm info (first priority)
         if (haveUncommedIsland() || haveUncommedSymmetry()){
-            targetLoc = getNearestFriendlyHQ();
+            targetLoc = getNearestFriendlyHQToHelp();
+            if(targetLoc == null){
+                targetLoc = getNearestFriendlyHQ();
+            }
             destinationType = DestinationType.COMM_INFO;
         }
 
@@ -366,6 +368,7 @@ public class Launcher extends Robot {
             destinationType = DestinationType.FRIENDLY_HQ;
         }
     }
+
 
     // returns an empty spot on an island that we can go to
     // TODO: sort these spots according to distance from myLoc?
