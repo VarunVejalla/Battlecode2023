@@ -2,7 +2,12 @@ package ali7;
 
 import battlecode.common.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+
+// TODO: Deterministic resource ratios.
 
 class CarrierInfo {
     int roundNum;
@@ -149,23 +154,79 @@ public class Headquarters extends Robot {
     }
 
     // criteria on whether hq should start saving up for an anchor
-    //TODO: improve this criteria?
-    public void shouldISaveUp() {
+    public boolean shouldISaveUp() throws GameActionException {
         // Super simple saving up criteria to win the games where we're destroying opponent.
-        if(carrierToRoundMap.size() > 20 && getNearestUncontrolledIsland() != null && turnCount - lastAnchorBuiltTurn > 50){
-            savingUp = true;
+        MapLocation nearestUncontrolled = getNearestUncontrolledIsland();
+        if(nearestUncontrolled == null){
+            return false;
+        }
+        if(rc.getNumAnchors(Anchor.STANDARD) != 0){
+            return false;
+        }
+
+        int numEnemyLaunchersNearby = Util.getNumTroopsInRange(myType.visionRadiusSquared, opponent, RobotType.LAUNCHER);
+        boolean islandUnderControl = getNearestFriendlyIsland() != null;
+        int roundsSinceLastAnchor = turnCount - lastAnchorBuiltTurn;
+
+        int numCarriers = carrierToRoundMap.size();
+        int distToIsland = myLoc.distanceSquaredTo(nearestUncontrolled);
+        int roundNum = rc.getRoundNum();
+        int numFriendlyIslands = getNumIslandsControlledByTeam(myTeam);
+        int numEnemyIslands = getNumIslandsControlledByTeam(opponent);
+        int numIslandsToWin = 4 * numIslands / 4 - numFriendlyIslands;
+
+        if(numEnemyLaunchersNearby > 0){
+            return false;
+        }
+
+        if(roundNum < 1200 && roundsSinceLastAnchor < 50){
+            return false;
+        }
+
+        int heuristic = numCarriers;
+        numIslandsToWin = Math.min(numIslandsToWin, 10);
+        heuristic -= numIslandsToWin;
+
+        Util.addToIndicatorString("H:" + heuristic);
+
+        if(islandUnderControl){
+            if(roundNum < 500){
+                if(heuristic >= 12){
+                    return true;
+                }
+            }
+            else if(roundNum < 1400){
+                if(heuristic >= 10){
+                    return true;
+                }
+            }
+            else{
+                if(heuristic >= 8){
+                    return true;
+                }
+            }
         }
         else{
-            savingUp = false;
+            if(roundNum < 500){
+                if(heuristic >= 11){
+                    return true;
+                }
+            }
+            else if(roundNum < 1400){
+                if(heuristic >= 8){
+                    return true;
+                }
+            }
+            else{
+                if(heuristic >= 5){
+                    return true;
+                }
+            }
         }
-//        double ratioOfUncontrolled = (double) getNumIslandsControlledByTeam(Team.NEUTRAL) / (double) rc.getIslandCount();
-//        double howOftenToSpawnAnchors = 30.0 / ratioOfUncontrolled;
-//        savingUp = adamantiumDeltaEMA > 6 && manaDeltaEMA > 6;
-//        savingUp |= numCarriersSpawned > 2 && numLaunchersSpawned > 2 && adamantiumDeltaEMA > 2 && manaDeltaEMA > 2 && turnCount - lastAnchorBuiltTurn > howOftenToSpawnAnchors;
-//        savingUp &= rc.getNumAnchors(Anchor.STANDARD) == 0; // Only save up for an anchor if you don't currently have one built
-//        savingUp &= getNearestUncontrolledIsland() != null; // Only save up for an anchor if there's an unoccupied island somewhere
+        return false;
     }
 
+    // TODO: Consider map size and numIslands in this
 
     public void setResourceRatios() throws GameActionException{
         if(savingUp){   // if we're trying to make an anchor but don't have enough of a specific resource, get that resource
@@ -174,39 +235,43 @@ public class Headquarters extends Robot {
 
             if(needAdamantium && needMana) {
                 comms.writeRatio(myIndex, 1, 1, 0);
-                return;
             }
             else if(needAdamantium){
                 comms.writeRatio(myIndex, 12, 3, 0);
-                return;
             }
             else if(needMana) {
                 comms.writeRatio(myIndex, 3, 12, 0);
-                return;
             }
+            return;
         }
-
-//        if(seenCarriers.size() > initialCarrierThreshold){          // if we've made enough carriers, prioritize mana so we can make launchers
-//            comms.writeRatio(myIndex, 4, 8, 0);
-//            return;
-//        }
-//        else {
-//            comms.writeRatio(myIndex, 8, 4, 0);        // we need to make more carriers, so prioritize adamantium
-//            return;
-//        }
 
         int numCarriers = carrierToRoundMap.size();
-        if(numCarriers > 7) {
-            comms.writeRatio(myIndex, 0, 15, 0);
+        if(rc.getRoundNum() < 500){
+            if(numCarriers > 3) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 3){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
-        else if(numCarriers < 3){
-            comms.writeRatio(myIndex, 15, 0, 0);
+        else if(rc.getRoundNum() < 1200){
+            if(numCarriers > 6) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 6){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
         else{
-            comms.writeRatio(myIndex, 15 - numCarriers - 1, numCarriers + 1, 0);
+            if(numCarriers > 9) {
+                comms.writeRatio(myIndex, 0, 15, 0);
+            }
+            else if(numCarriers < 9){
+                comms.writeRatio(myIndex, 8, 7, 0);
+            }
         }
-
     }
+
 
 
     public void run() throws GameActionException {
@@ -240,7 +305,7 @@ public class Headquarters extends Robot {
         updateSeenCarriers();
 //        Util.log("Seen carriers: " + carrierToRoundMap.size());
 
-        shouldISaveUp();
+        savingUp = shouldISaveUp();
         setResourceRatios();
         int[] ratio = comms.readRatio(myIndex);
 
@@ -351,7 +416,6 @@ public class Headquarters extends Robot {
         throw new RuntimeException("Trying to get closest well list of unknown resource: " + type);
     }
 
-
     public void buildCarriers() throws GameActionException {
         MapLocation closestWell = getWellToSpawnTowards();
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
@@ -365,6 +429,7 @@ public class Headquarters extends Robot {
     }
 
     // Spawn in direction of potentialHQLoc
+    // TODO: If you're surrounded, then wait until you can spawn a few at a time and spawn all at once.
     public void buildLaunchers() throws GameActionException {
         MapLocation spawnLoc = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
         MapLocation[] enemyHQLocs = getPotentialEnemyHQLocs();
@@ -373,7 +438,7 @@ public class Headquarters extends Robot {
         }
         Direction spawnDir = myLoc.directionTo(spawnLoc);
 
-        if(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
+        while(spawner.trySpawnGeneralDirection(RobotType.LAUNCHER, spawnDir)) {
             numLaunchersSpawned++;
         }
     }

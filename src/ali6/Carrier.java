@@ -4,8 +4,6 @@ import battlecode.common.*;
 
 import java.util.HashSet;
 
-// TODO: Don't just run away from launchers, but also don't walk into squares where you could be attacked
-
 public class Carrier extends Robot {
 
     private MapLocation targetLoc;
@@ -262,7 +260,6 @@ public class Carrier extends Robot {
         RobotInfo[] enemies = rc.senseNearbyRobots(myType.visionRadiusSquared, opponent);
         RobotInfo closestDanger = null;
         for (RobotInfo info : enemies) {
-//            if (info.type == RobotType.LAUNCHER || info.type == RobotType.CARRIER) {
             if (info.type == RobotType.LAUNCHER) {
                 if (closestDanger == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestDanger.location)) {
                     closestDanger = info;
