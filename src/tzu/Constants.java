@@ -90,6 +90,10 @@ public class Constants {
     // Hyperparameters T_T
     public static final int THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL = 40;
 
+    // SAAHITH
+    public static final int CALL_FOR_HELP_MASK = 61440;
+    public static final int CALL_FOR_HELP_SHIFT = 12;
+
 
 
 }

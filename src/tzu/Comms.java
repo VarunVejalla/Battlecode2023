@@ -33,6 +33,24 @@ public class Comms {
         rc.writeSharedArray(commsIdx, newCommsVal);
     }
 
+    // sets call for help flag for HQ with index idx
+    public void setCallForHelpFlag(int idx, int diff) throws GameActionException {
+        if(diff < 0) diff = 0;
+        diff = Math.min(47, diff);
+        diff /= 3;
+        insertVal(constants.HQ_LOC_IDX_MAP[idx], constants.CALL_FOR_HELP_MASK, constants.CALL_FOR_HELP_SHIFT, diff);
+//        if(needHelp) insertVal(constants.HQ_LOC_IDX_MAP[idx], CALL_FOR_HELP_MASK, CALL_FOR_HELP_SHIFT, 1);
+//        else insertVal(constants.HQ_LOC_IDX_MAP[idx], CALL_FOR_HELP_MASK, CALL_FOR_HELP_SHIFT, 0);
+    }
+
+    // reads "callForHelp" flag for HQ with index idx
+    public int readCallForHelpFlag(int idx) throws GameActionException{
+        int CALL_FOR_HELP_MASK = 61440;
+        int CALL_FOR_HELP_SHIFT = 12;
+        return extractVal(constants.HQ_LOC_IDX_MAP[idx], CALL_FOR_HELP_MASK, CALL_FOR_HELP_SHIFT) * 3;
+    }
+
+
     /// HQ Stuff
 
     public void writeOurHQLocation(int idx, MapLocation loc) throws GameActionException{
