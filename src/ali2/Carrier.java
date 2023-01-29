@@ -81,11 +81,19 @@ public class Carrier extends Robot {
     }
 
     public void moveTowardsNearestUncontrolledIsland() throws GameActionException {
-        // If you're scouting and reach a dead end, reset.
-        if(targetLoc != null && myLoc.distanceSquaredTo(targetLoc) <= myType.actionRadiusSquared && rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
-            targetLoc = null;
+        if(targetLoc != null){
+            // If you're scouting and reach a dead end, reset.
+            if(rc.canSenseLocation(targetLoc) && rc.senseIsland(targetLoc) == -1){
+                targetLoc = null;
+            }
+
+            // If the target island is no longer an uncontrolled island, reset.
+            Team controllingTeam = getControllingTeam(targetLoc);
+            if(controllingTeam != null && controllingTeam != myTeam){
+                targetLoc = null;
+            }
         }
-        // TODO: Check that the island you're going to is still an uncontrolled island, and if it's not then set targetLoc = null.
+
         if(targetLoc == null){
             MapLocation closestUncontrolledIsland = getNearestUncontrolledIsland();
             if(closestUncontrolledIsland != null){

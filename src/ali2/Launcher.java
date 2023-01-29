@@ -3,6 +3,8 @@ package ali2;
 import battlecode.common.*;
 
 class LauncherHeuristic {
+    final double GET_SAFE_FACTOR = 1.0;
+
     double friendlyHP;
     double friendlyDamage;
     double enemyHP;
@@ -24,7 +26,7 @@ class LauncherHeuristic {
         Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
         Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
         // 1.5 simply because im ballsy and wanna go for it
-        return myTurnsNeeded <= enemyTurnsNeeded * 1.0; // If you can kill them faster than they can kill you, return true
+        return myTurnsNeeded <= enemyTurnsNeeded * GET_SAFE_FACTOR; // If you can kill them faster than they can kill you, return true
     }
 
 }
@@ -68,10 +70,8 @@ public class Launcher extends Robot {
     }
 
     //TODO: factor in island healing
-    //TODO: maybe have leaders?
     public void run() throws GameActionException{
         super.run();
-
 
         rc.setIndicatorDot(myLoc, 0, 255, 0);
 
@@ -464,7 +464,7 @@ public class Launcher extends Robot {
             }
         }
 
-        friendlyHP = Math.max(friendlyHP, 1.0); // Just don't let it go to 0.
+//        friendlyHP = Math.max(friendlyHP, 1.0); // Just don't let it go to 0.
 
         return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage);
     }

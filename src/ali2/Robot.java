@@ -54,11 +54,6 @@ public class Robot {
     MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
     LinkedList<WellSquareInfo> wellsToComm = new LinkedList<>();
 
-//    ArrayList<MapLocation> adamantiumWells = new ArrayList<>();
-//    ArrayList<MapLocation> manaWells = new ArrayList<>();
-//    ArrayList<MapLocation> elixirWells = new ArrayList<>();
-//    HashMap<MapLocation, WellSquareInfo> wells;
-
     int numIslands;
     IslandInfo[] islands;
     Comms comms;
@@ -67,8 +62,6 @@ public class Robot {
     int turnCount = 0;
     int[] prevCommsArray = new int[64];
     ArrayList<SymmetryType> impossibleSymmetries = new ArrayList<>();
-
-    MapLocation[] regionCenters = new MapLocation[Constants.NUM_REGIONS_TOTAL];
 
     String indicatorString = "";
     Constants constants;
@@ -109,10 +102,6 @@ public class Robot {
         nav = new Navigation(rc, this);
         Util.rc = rc;
         Util.robot = this;
-//        wells = new HashMap();
-        MapLocation[] adamantiumWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
-        MapLocation[] manaWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
-        MapLocation[] elixirWells = new MapLocation[Constants.NUM_REGIONS_TOTAL];
         numIslands = rc.getIslandCount();
         islands = new IslandInfo[numIslands + 1];
         comms = new Comms(rc, this);
@@ -224,7 +213,7 @@ public class Robot {
             }
             Team controllingTeam = comms.getIslandControl(idx);
             IslandInfo info = new IslandInfo(islandLoc, idx, controllingTeam, true);
-            updateIslands(info); // 150 bytecode
+            updateIslands(info, true); // 150 bytecode
         }
     }
 
@@ -302,15 +291,23 @@ public class Robot {
         return -1;
     }
 
-    public void updateIslands(IslandInfo info) {
-        if(islands[info.idx] != null){
+    public void updateIslands(IslandInfo info, boolean updateLocation) {
+        if(islands[info.idx] == null){
+            islands[info.idx] = info;
+        }
+        else{
             IslandInfo existingInfo = islands[info.idx];
+            if(updateLocation){
+                existingInfo.loc = info.loc;
+            }
             if(existingInfo.controllingTeam == info.controllingTeam){
                 existingInfo.commed |= info.commed;
-                return;
+            }
+            else{
+                existingInfo.controllingTeam = info.controllingTeam;
+                existingInfo.commed = info.commed;
             }
         }
-        islands[info.idx] = info;
     }
 
     public MapLocation[] getWellList(ResourceType type){
@@ -342,10 +339,12 @@ public class Robot {
         int[] islandIdxs = rc.senseNearbyIslands();
         for(int islandIdx : islandIdxs){
             MapLocation[] islandLocs = rc.senseNearbyIslandLocations(islandIdx);
+//            if(islandLocs.length > 0){
             for(MapLocation islandLoc : islandLocs){
+//                MapLocation islandLoc = islandLocs[0];
                 Team occupyingTeam = rc.senseTeamOccupyingIsland(islandIdx);
                 IslandInfo info = new IslandInfo(islandLoc, islandIdx, occupyingTeam, false);
-                updateIslands(info);
+                updateIslands(info, false);
             }
         }
     }
@@ -453,6 +452,23 @@ public class Robot {
         }
 
         return count;
+    }
+
+    public Team getControllingTeam(MapLocation islandLoc) throws GameActionException {
+        if(rc.canSenseLocation(islandLoc)){
+            int islandIdx = rc.senseIsland(islandLoc);
+            return rc.senseTeamOccupyingIsland(islandIdx);
+        }
+        for(int idx = 1; idx <= numIslands; idx++){
+            IslandInfo info = islands[idx];
+            if(info == null){
+                continue;
+            }
+            if(info.loc == islandLoc){
+                return info.controllingTeam;
+            }
+        }
+        return null;
     }
 
     public MapLocation getNearestUncontrolledIsland(){ return getNearestIsland(Team.NEUTRAL); }

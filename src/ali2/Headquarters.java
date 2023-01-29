@@ -354,7 +354,6 @@ public class Headquarters extends Robot {
         throw new RuntimeException("Trying to get closest well list of unknown resource: " + type);
     }
 
-
     public void buildCarriers() throws GameActionException {
         MapLocation closestWell = getWellToSpawnTowards();
         Direction spawnDir = movementDirections[rng.nextInt(movementDirections.length)];
@@ -368,6 +367,7 @@ public class Headquarters extends Robot {
     }
 
     // Spawn in direction of potentialHQLoc
+    // TODO: If you're surrounded, then wait until you can spawn a few at a time and spawn all at once.
     public void buildLaunchers() throws GameActionException {
         MapLocation spawnLoc = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
         MapLocation[] enemyHQLocs = getPotentialEnemyHQLocs();
