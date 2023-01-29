@@ -390,7 +390,7 @@ public class Launcher extends Robot {
         // check to see if we have arrived at our location
         // ------------------------------------------------------------------------------------------------------------
         // if we have arrived at an enemyHQ destination
-        if(targetLoc != null && destinationType == DestinationType.ENEMY_HQ && myLoc.distanceSquaredTo(targetLoc) < myType.visionRadiusSquared){
+        if(targetLoc != null && destinationType == DestinationType.ENEMY_HQ && myLoc.distanceSquaredTo(targetLoc) <= myType.visionRadiusSquared){
             locationsToIgnore.add(targetLoc);
             targetLoc = null;
         }
