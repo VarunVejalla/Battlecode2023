@@ -1,4 +1,4 @@
-package ali8;
+package karel;
 
 import battlecode.common.*;
 
@@ -34,8 +34,10 @@ public class Launcher extends Robot {
 
     RobotInfo bestAttackVictim = null;
     boolean trynaHeal = false;
-    MapLocation retreatLoc = null;
-    int turnsSinceRetreat = 0;
+//    MapLocation retreatLoc = null;
+//    int turnsSinceRetreat = 0;
+    MapLocation enemyChaseLoc = null;
+    int turnsSinceChaseLocSet = 0;
 
     public Launcher(RobotController rc) throws GameActionException {
         super(rc);
@@ -100,7 +102,8 @@ public class Launcher extends Robot {
             runUnsafeStrategy();
         }
         runAttackLoop();
-        turnsSinceRetreat++;
+//        turnsSinceRetreat++;
+        turnsSinceChaseLocSet++;
     }
 
     public void runAttackLoop() throws GameActionException {
@@ -113,10 +116,7 @@ public class Launcher extends Robot {
     }
 
     public void runSafeStrategy() throws GameActionException {
-        retreatLoc = enemyCOM;
-        turnsSinceRetreat = 0;
         if(enemyInActionRadius) {
-            Util.addToIndicatorString("ACT");
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
             }
@@ -124,16 +124,24 @@ public class Launcher extends Robot {
                 moveToSafestSpot();
                 Util.addToIndicatorString("Avd");
             }
+            enemyChaseLoc = enemyCOM.add(myLoc.directionTo(enemyCOM));
+            if(!rc.onTheMap(enemyChaseLoc)){
+                enemyChaseLoc = enemyCOM;
+            }
+            turnsSinceChaseLocSet = 0;
         } else if (enemyInVisionRadius) {
-            Util.addToIndicatorString("VIS");
             if(rc.isActionReady() && rc.isMovementReady()){
                 moveToBestPushLocation();
             }
             else if (rc.isMovementReady()) {
                 moveToSafestSpot();
             }
+            enemyChaseLoc = enemyCOM.add(myLoc.directionTo(enemyCOM));
+            if(!rc.onTheMap(enemyChaseLoc)){
+                enemyChaseLoc = enemyCOM;
+            }
+            turnsSinceChaseLocSet = 0;
         } else { // no enemy in sight
-            Util.addToIndicatorString("OFF");
             //TODO: factor in when you saw enemies and started retreating.
             if (haveUncommedIsland() || haveUncommedSymmetry()) {
                 returnToClosestHQ();
@@ -145,7 +153,11 @@ public class Launcher extends Robot {
 //                    MapLocation target = new MapLocation(myLoc.x - xDisplacement*3, myLoc.y-yDisplacement*3);
 //                    nav.goToFuzzy(target, 0);
 //                }
+            } else if(enemyChaseLoc != null && !rc.canSenseLocation(enemyChaseLoc)){
+                Util.addToIndicatorString("ECL:" + enemyChaseLoc);
+                nav.goToFuzzy(enemyChaseLoc, 0);
             } else{
+                enemyChaseLoc = null;
                 runNormalOffensiveStrategy();
             }
         }
@@ -173,6 +185,9 @@ public class Launcher extends Robot {
     }
 
     public void runUnsafeStrategy() throws GameActionException{
+//        retreatLoc = enemyCOM;
+//        turnsSinceRetreat = 0;
+        enemyChaseLoc = null;
         if(enemyInActionRadius){
             if(rc.isActionReady()){
                 Util.log("Error: why didn't you attack?");
@@ -409,7 +424,7 @@ public class Launcher extends Robot {
         if(!bestSpot.equals(myLoc)){
             rc.move(myLoc.directionTo(bestSpot));
         }
-     //   System.out.println(Clock.getBytecodesLeft());
+//        System.out.println(Clock.getBytecodesLeft());
 //        nav.goToFuzzy(bestSpot, 0);
     }
 
@@ -594,20 +609,8 @@ public class Launcher extends Robot {
 
         //accounts for yourself
         Util.log("num enemies nearby: " + String.valueOf(nearbyEnemies.length));
-        for(int i = 0; i < nearbyEnemies.length; i++){
-            RobotInfo enemyInfo = nearbyEnemies[i];
-            if(enemyInfo.type != RobotType.LAUNCHER){
-                continue;
-            }
-            Util.log("distance: " + String.valueOf(enemyInfo.location.distanceSquaredTo(myLoc)));
-            if(rc.isActionReady() && enemyInfo.location.isWithinDistanceSquared(myLoc, myType.actionRadiusSquared)){
-                double cooldown = (double)myType.actionCooldown * rc.senseMapInfo(myLoc).getCooldownMultiplier(myTeam);
-                if(rc.isActionReady()) {
-                    friendlyDamage += (double) myType.damage / cooldown;
-                }
-                break;
-            }
-        }
+        double cooldown = (double)myType.actionCooldown * rc.senseMapInfo(myLoc).getCooldownMultiplier(myTeam);
+        friendlyDamage += (double)myType.damage / cooldown;
 
         return new LauncherHeuristic(friendlyDamage, enemyDamage);
     }

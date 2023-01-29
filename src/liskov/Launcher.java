@@ -65,7 +65,6 @@ public class Launcher extends Robot {
 
     public void run() throws GameActionException{
         super.run();
-
         if(isAttacking){
             rc.setIndicatorDot(myLoc, 255, 0, 0);
             Util.log("Yam attacking");

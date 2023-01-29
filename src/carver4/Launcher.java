@@ -1,6 +1,7 @@
 package carver4;
 
 import battlecode.common.*;
+import gnu.trove.impl.sync.TSynchronizedShortObjectMap;
 
 class LauncherHeuristic {
     double friendlyHP;
@@ -71,35 +72,17 @@ public class Launcher extends Robot {
 
     //TODO: factor in island healing and headquarters damage
     //TODO: maybe have leaders?
-    public void run() throws GameActionException{
+    public void run() throws GameActionException {
+        System.out.println("HEYYYY!!!");
+//        myLoc = rc.getLocation();
+
+        MapLocation destination = new MapLocation(0,0);   // top right
+        nav.goToBug(destination,0);
         super.run();
-
-        rc.setIndicatorDot(myLoc, 0, 255, 0);
-        Util.addToIndicatorString("run1;");
-
-        runAttackLoop();
-        Util.addToIndicatorString("run2;");
-        updateAllNearbyInfo();
-        Util.addToIndicatorString("run3;");
-        Util.addToIndicatorString(String.valueOf(heuristic.friendlyDamage)+";");
-
-        boolean isSafe = heuristic.getSafe();
-        if(isSafe){
-            Util.addToIndicatorString("SF");
-        }
-        else{
-            Util.addToIndicatorString("USF");
-        }
-        // TODO: Consider HP and go back for healing
-        if(isSafe){
-            runSafeStrategy();
-        }else{
-            runUnsafeStrategy();
-        }
-        runAttackLoop();
     }
 
     public void runAttackLoop() throws GameActionException {
+        System.out.println("deez");
         updateNearbyActionInfo();
         boolean successfullyAttacked = runAttack();
         while(rc.isActionReady() && successfullyAttacked){

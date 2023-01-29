@@ -1,4 +1,4 @@
-package ali5;
+package karel;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -63,7 +63,7 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-            if(turnCount > 2000){
+            if(turnCount > 1000){
                 rc.resign();
             }
             try {

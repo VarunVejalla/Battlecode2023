@@ -1,4 +1,4 @@
-package ali8;
+package joe;
 
 import battlecode.common.*;
 
@@ -98,7 +98,7 @@ public class Util {
         return null;
     }
 
-    public static MapLocation getClosestMapLocation(MapLocation[] locs){
+    public MapLocation getClosestMapLocation(MapLocation[] locs){
         MapLocation closest = null;
         int closestDist = Integer.MAX_VALUE;
         for(MapLocation loc : locs){
@@ -111,43 +111,8 @@ public class Util {
         return closest;
     }
 
-    public static ResourceType determineWhichResourceToGet(int HQImHelpingIdx) throws GameActionException {
-        int[] ratio = robot.comms.readRatio(HQImHelpingIdx);
-        int num = robot.rng.nextInt(15);  // note that 16 is an exclusive bond
-
-        // e.g let's say the resources are [10, 2, 3] (Adamantium, mana, elxir)
-        // cumuulative sums become [10, 12, 15]
-
-        // we first check if the random number is less than 10, if so we return adamantium
-        // otherwise, we get the cumulative sum for the next index (2+10) = 12, and we see if the random variable is less than 12. if so, we return mana
-        // otherwise, return elixir
-
-        //Ratio data indices
-
-        if(num < ratio[robot.constants.ADAMANTIUM_RATIO_INDEX]) {
-            Util.log("Gonna go find Adamantium");
-            return ResourceType.ADAMANTIUM;
-        }
-
-        // get cumulative sum so far by adding up adamantium ratio w/ mana ratio
-        ratio[robot.constants.MANA_RATIO_INDEX] += ratio[robot.constants.ADAMANTIUM_RATIO_INDEX];   //get cumulative sum up till now
-        if(num < ratio[1]) {
-            Util.log("Gonna go find Mana");
-            return ResourceType.MANA;
-        }
-
-        else{
-            Util.log("Gonna go find Elixir");
-            return ResourceType.ELIXIR;
-        }
-    }
-
     public static int getNumTroopsInRange(int radius, Team team, RobotType type) throws GameActionException {
         RobotInfo[] infos = team == null ? rc.senseNearbyRobots(radius) : rc.senseNearbyRobots(radius, team);
-        return getNumTroopsInRange(infos, type);
-    }
-
-    public static int getNumTroopsInRange(RobotInfo[] infos, RobotType type){
         if(type == null){
             return infos.length;
         }
@@ -229,43 +194,8 @@ public class Util {
         }
     }
 
-    public static int attackValue(RobotInfo enemy) {
-        if(enemy.type == RobotType.LAUNCHER) {
-            return 0;
-        } else if (enemy.type == RobotType.CARRIER) {
-            return 1;
-        } else if (enemy.type == RobotType.AMPLIFIER) {
-            return 2;
-        } else {
-            return 3;
-        }
-    }
-
-    public static int attackCompare(RobotInfo enemy1, RobotInfo enemy2) {
-        // attack launchers, then carriers, then amplifiers, then other things
-        int value1 = attackValue(enemy1);
-        int value2 = attackValue(enemy2);
-        if(value1 != value2) {
-            return value1-value2;
-        }
-        else {
-            // same type, attack whichever one is closer to dying
-            return enemy1.health - enemy2.health;
-        }
-    }
-
-    public static int addDiffToSquaredNum(int x, int diff) {
-        int sqrt = (int) Math.sqrt(x);
-        int newSqrt = sqrt + diff;
-        return newSqrt * newSqrt;
-    }
-
-    public static void addToIndicatorString(String str){
-        robot.indicatorString += str + ";";
-    }
-
     public static void log(String str){
-        if(true || rc.getID() != 11407){
+        if(true){
             return;
         }
 

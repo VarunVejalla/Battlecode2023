@@ -1,4 +1,4 @@
-package ali8;
+package karel;
 
 import battlecode.common.*;
 
@@ -265,7 +265,7 @@ public class Util {
     }
 
     public static void log(String str){
-        if(true || rc.getID() != 11407){
+        if(true){
             return;
         }
 

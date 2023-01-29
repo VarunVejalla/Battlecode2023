@@ -1,8 +1,7 @@
-package ali8;
+package karel;
 
 import battlecode.common.*;
 
-import javax.swing.*;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -262,22 +261,22 @@ public class Navigation {
         if (!followingWall) {
             if (sensePassabilityReal(rc.adjacentLocation(bee))) {
                 heading = bee;
-              //  Util.log("No walls, going " + heading);
+                //  Util.log("No walls, going " + heading);
                 return bee;
             }
             else {
-            //    Util.log("Can't go " + bee);
+                //    Util.log("Can't go " + bee);
                 heading = bee.rotateRight().rotateRight();
                 wallStart = robot.myLoc;
                 followingWall = true;
 
-              //  Util.log("Bumped into wall, turning "+heading+"and starting wall tracking at " + robot.myLoc);
+                //  Util.log("Bumped into wall, turning "+heading+"and starting wall tracking at " + robot.myLoc);
                 closestDistToTarget = Integer.MAX_VALUE;
 
                 if (heading == Direction.NORTHEAST || heading == Direction.NORTHWEST ||
                         heading == Direction.SOUTHEAST || heading == Direction.SOUTHWEST){
                     heading = heading.rotateLeft();
-                  //  Util.log("Rare edge case, sending it " + heading);
+                    //  Util.log("Rare edge case, sending it " + heading);
                     beeOverwrite = heading;
                     followingWall = false;
                     return bugBasic(target);
@@ -298,13 +297,13 @@ public class Navigation {
                 followingWall = true;
                 heading = bee;
             }
-          //  Util.log("Hopped off, heading " + heading);
+            //  Util.log("Hopped off, heading " + heading);
             tempObstacles = new MapLocation[NUM_TEMP_OBSTACLES];
             timesToLive = new int[NUM_TEMP_OBSTACLES];
             return heading;
         }
         if (closestDistToTarget != Integer.MAX_VALUE && robot.myLoc.equals(wallStart)) {
-         //   Util.log("Reached wall start, going to hop at " + hopPoint);
+            //   Util.log("Reached wall start, going to hop at " + hopPoint);
             if (hopping) {
                 followingWall = false;
                 return bugBasic(target);
@@ -321,8 +320,8 @@ public class Navigation {
             // if wall to the left ends, turn left to keep wall on left-hand side
             heading = heading.rotateLeft().rotateLeft();
 
-          //  Util.log("Can't find wall at " + rc.adjacentLocation(heading) + ", im facing " + heading.rotateRight().rotateRight() + " at " + robot.myLoc);
-          //  Util.log("Wall disappeared, turning left to " + heading);
+            //  Util.log("Can't find wall at " + rc.adjacentLocation(heading) + ", im facing " + heading.rotateRight().rotateRight() + " at " + robot.myLoc);
+            //  Util.log("Wall disappeared, turning left to " + heading);
 
         } else {
             // wall directly in front
@@ -337,7 +336,7 @@ public class Navigation {
                 } else if (!sensePassabilityReal(rc.adjacentLocation(heading.rotateRight().rotateRight()))){
                     // Turn around if boxed in
                     heading = headingTemp.opposite();
-                  //  Util.log("Boxed in, flipping to " + heading);
+                    //  Util.log("Boxed in, flipping to " + heading);
                 }
                 else {
                     heading = headingTemp.rotateRight().rotateRight();
@@ -370,7 +369,7 @@ public class Navigation {
         return heading;
     }
     public Direction bugNav(MapLocation target) throws GameActionException {
-     //   Util.log("Running bugnav");
+        //   Util.log("Running bugnav");
         //if (basic) return bugBasic(target);
 
 
