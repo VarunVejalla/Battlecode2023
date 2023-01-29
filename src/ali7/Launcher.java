@@ -34,8 +34,6 @@ public class Launcher extends Robot {
 
     RobotInfo bestAttackVictim = null;
     boolean trynaHeal = false;
-//    MapLocation retreatLoc = null;
-//    int turnsSinceRetreat = 0;
     MapLocation enemyChaseLoc = null;
     int turnsSinceChaseLocSet = 0;
 
@@ -92,7 +90,6 @@ public class Launcher extends Robot {
             runUnsafeStrategy();
         }
         runAttackLoop();
-//        turnsSinceRetreat++;
         turnsSinceChaseLocSet++;
     }
 
@@ -111,7 +108,9 @@ public class Launcher extends Robot {
                 Util.log("Error: why didn't you attack?");
             }
             if(rc.isMovementReady()){
-                moveToSafestSpot();
+                // ALEXANDER CHANGE
+                moveBackIfAvoidsEnemy();
+//                moveToSafestSpot();
                 Util.addToIndicatorString("Avd");
             }
             enemyChaseLoc = enemyCOM.add(myLoc.directionTo(enemyCOM));
@@ -121,10 +120,14 @@ public class Launcher extends Robot {
             turnsSinceChaseLocSet = 0;
         } else if (enemyInVisionRadius) {
             if(rc.isActionReady() && rc.isMovementReady()){
-                moveToBestPushLocation();
+                // ALEXANDER CHANGE
+//                moveToBestPushLocation();
+                moveTowardsEnemyCOM();
             }
             else if (rc.isMovementReady()) {
-                moveToSafestSpot();
+                // ALEXANDER CHANGE
+//                moveToSafestSpot();
+                moveBackIfAvoidsEnemy();
             }
             enemyChaseLoc = enemyCOM.add(myLoc.directionTo(enemyCOM));
             if(!rc.onTheMap(enemyChaseLoc)){
@@ -132,17 +135,8 @@ public class Launcher extends Robot {
             }
             turnsSinceChaseLocSet = 0;
         } else { // no enemy in sight
-            //TODO: factor in when you saw enemies and started retreating.
             if (haveUncommedIsland() || haveUncommedSymmetry()) {
                 returnToClosestHQ();
-//            } else if(retreatLoc != null && turnsSinceRetreat < 4){
-//                goToNearestFriendly(retreatLoc);
-//                if(rc.isMovementReady()){
-//                    int xDisplacement = retreatLoc.x - myLoc.x;
-//                    int yDisplacement = retreatLoc.y - myLoc.y;
-//                    MapLocation target = new MapLocation(myLoc.x - xDisplacement*3, myLoc.y-yDisplacement*3);
-//                    nav.goToFuzzy(target, 0);
-//                }
             } else if(enemyChaseLoc != null && !rc.canSenseLocation(enemyChaseLoc)){
                 Util.addToIndicatorString("ECL:" + enemyChaseLoc);
                 nav.goToFuzzy(enemyChaseLoc, 0);
@@ -153,30 +147,7 @@ public class Launcher extends Robot {
         }
     }
 
-    public void goToNearestFriendly(MapLocation retreatLoc) throws GameActionException {
-        Direction retreatDir = myLoc.directionTo(retreatLoc).opposite();
-        MapLocation closestFriendly = null;
-        for(RobotInfo info : nearbyFriendlies){
-            if(myLoc.isAdjacentTo(info.location)){
-                continue;
-            }
-            if(info.getHealth() <= Constants.THRESHOLD_TO_GO_TO_ISLAND_TO_HEAL){
-                continue;
-            }
-            Direction dirToFriendly = myLoc.directionTo(info.location);
-            if(dirToFriendly != retreatDir && dirToFriendly != retreatDir.rotateRight() && dirToFriendly != retreatDir.rotateLeft()){
-                continue;
-            }
-            if(closestFriendly == null || myLoc.distanceSquaredTo(info.location) < myLoc.distanceSquaredTo(closestFriendly)){
-                closestFriendly = info.location;
-            }
-        }
-        nav.goToFuzzy(closestFriendly, 0);
-    }
-
     public void runUnsafeStrategy() throws GameActionException{
-//        retreatLoc = enemyCOM;
-//        turnsSinceRetreat = 0;
         enemyChaseLoc = null;
         if(enemyInActionRadius){
             if(rc.isActionReady()){
@@ -272,151 +243,151 @@ public class Launcher extends Robot {
         }
     }
 
-    //TODO: make sure this method doesn't use too much bytecode
-    public void moveToBestPushLocation() throws GameActionException{
-        MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
-        boolean[] newSpotIsValid = new boolean[9];  // whether or not we can move to each new spot
-        double[] enemyDamage = new double[9];   // contains the enemy damage you will receive at each new spot
-        int[] sumOfDistanceSquaredToEnemies = new int[9]; //contains the sum of distances to enemies from each new spot
-        boolean[] enemyPresentToAttack = new boolean[9];    // contains whether or not there is a
-
-        possibleSpots[0] = myLoc.add(Direction.NORTH);
-        possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
-        possibleSpots[2] = myLoc.add(Direction.EAST);
-        possibleSpots[3] = myLoc.add(Direction.SOUTHEAST);
-        possibleSpots[4] = myLoc.add(Direction.SOUTH);
-        possibleSpots[5] = myLoc.add(Direction.SOUTHWEST);
-        possibleSpots[6] = myLoc.add(Direction.WEST);
-        possibleSpots[7] = myLoc.add(Direction.NORTHWEST);
-        possibleSpots[8] = myLoc;
-        newSpotIsValid[8] = true;   // we know this spot is valid, because we're on it!
-
-        // check if we can sense each new possible location, and that the new location is passable
-        for(int i=0; i<8; i++){
-            newSpotIsValid[i] = false;
-            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
-                newSpotIsValid[i] = true;
-            }
-        }
-
-        for(int i = 0; i < 9; i++) {
-            if(!newSpotIsValid[i]){
-                continue;
-            }
-
-            for (RobotInfo enemy : nearbyVisionEnemies) {         //loop over each enemy in vision radius
-                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= myType.actionRadiusSquared
-                        && enemy.type != RobotType.HEADQUARTERS){
-                    enemyPresentToAttack[i] = true;
-                }
-                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared){
-                    enemyDamage[i] += Util.getEnemyDamage(enemy);
-                }
-                sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
-            }
-        }
-
-        MapLocation bestSpot = null;
-        double leastEnemyDamage = nearbyActionEnemies.length;
-        int greatestSumDistanceSquared = Integer.MIN_VALUE;
-
-
-        for(int i=0; i<9; i++){
-            // don't consider this new position if there is no enemy at the new location
-            // TODO: Hmm but what if you can't move to a square to attack the enemy but you're currently getting attacked, should you really stay there?
-            // also don't consider this new position if this spot is not valid
-            if(!enemyPresentToAttack[i] || !newSpotIsValid[i]){
-                continue;
-            }
-
-            // make this spot the new bestSpot if we currently don't have a best spot
-            if(bestSpot == null){
-                bestSpot = possibleSpots[i];
-                leastEnemyDamage = enemyDamage[i];
-                greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
-            }
-
-            // make this spot the new bestSpot if
-            // 1) we receive less damage at this spot or
-            // 2) we receive the same damage as the current best spot but we are further away from the enemies at the new spot
-            else if(enemyDamage[i] < leastEnemyDamage || (enemyDamage[i] == leastEnemyDamage &&
-                    sumOfDistanceSquaredToEnemies[i] > greatestSumDistanceSquared)){
-                bestSpot = possibleSpots[i];
-                leastEnemyDamage = enemyDamage[i];
-                greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
-            }
-        }
-
-        if(bestSpot != null && !myLoc.equals(bestSpot)){
-            rc.move(myLoc.directionTo(bestSpot));
-        }
-
-        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage with sumDistanceSquared " + greatestSumDistanceSquared);
-    }
+//    //TODO: make sure this method doesn't use too much bytecode
+//    public void moveToBestPushLocation() throws GameActionException{
+//        MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
+//        boolean[] newSpotIsValid = new boolean[9];  // whether or not we can move to each new spot
+//        double[] enemyDamage = new double[9];   // contains the enemy damage you will receive at each new spot
+//        int[] sumOfDistanceSquaredToEnemies = new int[9]; //contains the sum of distances to enemies from each new spot
+//        boolean[] enemyPresentToAttack = new boolean[9];    // contains whether or not there is a
+//
+//        possibleSpots[0] = myLoc.add(Direction.NORTH);
+//        possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
+//        possibleSpots[2] = myLoc.add(Direction.EAST);
+//        possibleSpots[3] = myLoc.add(Direction.SOUTHEAST);
+//        possibleSpots[4] = myLoc.add(Direction.SOUTH);
+//        possibleSpots[5] = myLoc.add(Direction.SOUTHWEST);
+//        possibleSpots[6] = myLoc.add(Direction.WEST);
+//        possibleSpots[7] = myLoc.add(Direction.NORTHWEST);
+//        possibleSpots[8] = myLoc;
+//        newSpotIsValid[8] = true;   // we know this spot is valid, because we're on it!
+//
+//        // check if we can sense each new possible location, and that the new location is passable
+//        for(int i=0; i<8; i++){
+//            newSpotIsValid[i] = false;
+//            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
+//                newSpotIsValid[i] = true;
+//            }
+//        }
+//
+//        for(int i = 0; i < 9; i++) {
+//            if(!newSpotIsValid[i]){
+//                continue;
+//            }
+//
+//            for (RobotInfo enemy : nearbyVisionEnemies) {         //loop over each enemy in vision radius
+//                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= myType.actionRadiusSquared
+//                        && enemy.type != RobotType.HEADQUARTERS){
+//                    enemyPresentToAttack[i] = true;
+//                }
+//                if(possibleSpots[i].distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared){
+//                    enemyDamage[i] += Util.getEnemyDamage(enemy);
+//                }
+//                sumOfDistanceSquaredToEnemies[i] += possibleSpots[i].distanceSquaredTo(enemy.location);
+//            }
+//        }
+//
+//        MapLocation bestSpot = null;
+//        double leastEnemyDamage = nearbyActionEnemies.length;
+//        int greatestSumDistanceSquared = Integer.MIN_VALUE;
+//
+//
+//        for(int i=0; i<9; i++){
+//            // don't consider this new position if there is no enemy at the new location
+//            // TODO: Hmm but what if you can't move to a square to attack the enemy but you're currently getting attacked, should you really stay there?
+//            // also don't consider this new position if this spot is not valid
+//            if(!enemyPresentToAttack[i] || !newSpotIsValid[i]){
+//                continue;
+//            }
+//
+//            // make this spot the new bestSpot if we currently don't have a best spot
+//            if(bestSpot == null){
+//                bestSpot = possibleSpots[i];
+//                leastEnemyDamage = enemyDamage[i];
+//                greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
+//            }
+//
+//            // make this spot the new bestSpot if
+//            // 1) we receive less damage at this spot or
+//            // 2) we receive the same damage as the current best spot but we are further away from the enemies at the new spot
+//            else if(enemyDamage[i] < leastEnemyDamage || (enemyDamage[i] == leastEnemyDamage &&
+//                    sumOfDistanceSquaredToEnemies[i] > greatestSumDistanceSquared)){
+//                bestSpot = possibleSpots[i];
+//                leastEnemyDamage = enemyDamage[i];
+//                greatestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
+//            }
+//        }
+//
+//        if(bestSpot != null && !myLoc.equals(bestSpot)){
+//            rc.move(myLoc.directionTo(bestSpot));
+//        }
+//
+//        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage with sumDistanceSquared " + greatestSumDistanceSquared);
+//    }
 
     // calculates the safest direction to move in that will
     //TODO: need to make sure this doesn't each up too much bytecode if we have a vision radius filled up with enemies
-    public void moveToSafestSpot() throws GameActionException{
-        MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
-        boolean[] newSpotIsValid = new boolean[9];  // whether we can move to each new spot
-
-        int[] sumOfDistanceSquaredToEnemies = new int[9]; //contains the sum of distances to enemies from each new spot
-
-        possibleSpots[0] = myLoc.add(Direction.NORTH);
-        possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
-        possibleSpots[2] = myLoc.add(Direction.EAST);
-        possibleSpots[3] = myLoc.add(Direction.SOUTHEAST);
-        possibleSpots[4] = myLoc.add(Direction.SOUTH);
-        possibleSpots[5] = myLoc.add(Direction.SOUTHWEST);
-        possibleSpots[6] = myLoc.add(Direction.WEST);
-        possibleSpots[7] = myLoc.add(Direction.NORTHWEST);
-        possibleSpots[8] = myLoc;
-        newSpotIsValid[8] = true;   // we know this spot is valid, because we're on it!
-
-        // check if we can sense each new possible location, and that the new location is passable
-        for(int i=0; i<8; i++){
-            newSpotIsValid[i] = false;
-            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
-                newSpotIsValid[i] = true;
-            }
-        }
-
-        double[] enemyDamage = DamageFinder.getDamages(myLoc, possibleSpots, newSpotIsValid, nearbyVisionEnemies);
-
-        MapLocation bestSpot = myLoc;
-        double leastEnemyDamage = Double.MAX_VALUE;
-        int smallestSumDistanceSquared = Integer.MAX_VALUE;
-
-        for(int i=0; i<9; i++){
-            if(!newSpotIsValid[i]){
-                continue;
-            }
-
-            // if the new spot will give us less enemy damage than the current best spot, make the new spot our best spot
-            // if the new spot will give us the same enemy damage, but will move us closer to the enemies, make the new spot our best spot
-            if(enemyDamage[i] < leastEnemyDamage){
-//                    || (enemyDamage[i] == leastEnemyDamage &&
-//                    sumOfDistanceSquaredToEnemies[i] < smallestSumDistanceSquared)){
-                bestSpot = possibleSpots[i];
-                leastEnemyDamage = enemyDamage[i];
-//                smallestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
-            } else if(enemyDamage[i] == leastEnemyDamage && possibleSpots[i].distanceSquaredTo(enemyCOM) < bestSpot.distanceSquaredTo(enemyCOM)){
-                bestSpot = possibleSpots[i];
-                leastEnemyDamage = enemyDamage[i];
-            }
-        }
-        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage ");//with sumDistanceSquared " + smallestSumDistanceSquared);
-
-        if(bestSpot == null){
-            rc.resign();
-        }
-
-        if(!bestSpot.equals(myLoc)){
-            rc.move(myLoc.directionTo(bestSpot));
-        }
-//        System.out.println(Clock.getBytecodesLeft());
-//        nav.goToFuzzy(bestSpot, 0);
-    }
+//    public void moveToSafestSpot() throws GameActionException{
+//        MapLocation[] possibleSpots = new MapLocation[9];   // list of the possible spots we can go to on our next move
+//        boolean[] newSpotIsValid = new boolean[9];  // whether we can move to each new spot
+//
+//        int[] sumOfDistanceSquaredToEnemies = new int[9]; //contains the sum of distances to enemies from each new spot
+//
+//        possibleSpots[0] = myLoc.add(Direction.NORTH);
+//        possibleSpots[1] = myLoc.add(Direction.NORTHEAST);
+//        possibleSpots[2] = myLoc.add(Direction.EAST);
+//        possibleSpots[3] = myLoc.add(Direction.SOUTHEAST);
+//        possibleSpots[4] = myLoc.add(Direction.SOUTH);
+//        possibleSpots[5] = myLoc.add(Direction.SOUTHWEST);
+//        possibleSpots[6] = myLoc.add(Direction.WEST);
+//        possibleSpots[7] = myLoc.add(Direction.NORTHWEST);
+//        possibleSpots[8] = myLoc;
+//        newSpotIsValid[8] = true;   // we know this spot is valid, because we're on it!
+//
+//        // check if we can sense each new possible location, and that the new location is passable
+//        for(int i=0; i<8; i++){
+//            newSpotIsValid[i] = false;
+//            if(rc.canMove(myLoc.directionTo(possibleSpots[i]))){
+//                newSpotIsValid[i] = true;
+//            }
+//        }
+//
+//        double[] enemyDamage = DamageFinder.getDamages(myLoc, possibleSpots, newSpotIsValid, nearbyVisionEnemies);
+//
+//        MapLocation bestSpot = myLoc;
+//        double leastEnemyDamage = Double.MAX_VALUE;
+//        int smallestSumDistanceSquared = Integer.MAX_VALUE;
+//
+//        for(int i=0; i<9; i++){
+//            if(!newSpotIsValid[i]){
+//                continue;
+//            }
+//
+//            // if the new spot will give us less enemy damage than the current best spot, make the new spot our best spot
+//            // if the new spot will give us the same enemy damage, but will move us closer to the enemies, make the new spot our best spot
+//            if(enemyDamage[i] < leastEnemyDamage){
+////                    || (enemyDamage[i] == leastEnemyDamage &&
+////                    sumOfDistanceSquaredToEnemies[i] < smallestSumDistanceSquared)){
+//                bestSpot = possibleSpots[i];
+//                leastEnemyDamage = enemyDamage[i];
+////                smallestSumDistanceSquared = sumOfDistanceSquaredToEnemies[i];
+//            } else if(enemyDamage[i] == leastEnemyDamage && possibleSpots[i].distanceSquaredTo(enemyCOM) < bestSpot.distanceSquaredTo(enemyCOM)){
+//                bestSpot = possibleSpots[i];
+//                leastEnemyDamage = enemyDamage[i];
+//            }
+//        }
+//        Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage ");//with sumDistanceSquared " + smallestSumDistanceSquared);
+//
+//        if(bestSpot == null){
+//            rc.resign();
+//        }
+//
+//        if(!bestSpot.equals(myLoc)){
+//            rc.move(myLoc.directionTo(bestSpot));
+//        }
+////        System.out.println(Clock.getBytecodesLeft());
+////        nav.goToFuzzy(bestSpot, 0);
+//    }
 
     public void moveTowardsEnemyCOM() throws GameActionException{
         nav.goToFuzzy(enemyCOM, 0);
