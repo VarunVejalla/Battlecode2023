@@ -382,7 +382,7 @@ public class Launcher extends Robot {
     // Go attack an enemy HQ
     //TODO: use previously calculated info from updateAllNearbyInfo to reduce the bytecode of this
     public void runNormalOffensiveStrategy() throws GameActionException {
-        // rerouteHandler();   // check to see if we should change our targetLoc
+         rerouteHandler();   // check to see if we should change our targetLoc
         // check to see if we have arrived at our location
         // ------------------------------------------------------------------------------------------------------------
         // if we have arrived at an enemyHQ destination
