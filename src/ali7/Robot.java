@@ -392,7 +392,7 @@ public class Robot {
     }
 
     public void runHealingStrategy(MapLocation nearestFriendlyIsland) throws GameActionException {
-        System.out.println("BRO IM TRYNA HEAL");
+//        System.out.println("BRO IM TRYNA HEAL");
         if(myLoc.distanceSquaredTo(nearestFriendlyIsland) > myType.visionRadiusSquared){
             Util.addToIndicatorString("BG." + nearestFriendlyIsland);
             nav.goToBug(nearestFriendlyIsland, Anchor.STANDARD.unitsAffected);
