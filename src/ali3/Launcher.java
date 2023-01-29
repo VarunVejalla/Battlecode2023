@@ -9,8 +9,6 @@ class LauncherHeuristic {
     double friendlyDamage;
     double enemyHP;
     double enemyDamage;
-    // TODO: Factor this in. Retreat if you're about to get one shotted.
-    double totalEnemyDamage;
 
     public LauncherHeuristic(double FH, double FD, double EH, double ED){
         friendlyHP = FH;
@@ -621,3 +619,4 @@ public class Launcher extends Robot {
         return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage);
     }
 }
+// TODO: Merge ali changes
