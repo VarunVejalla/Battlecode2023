@@ -375,7 +375,6 @@ public class Navigation {
 
 
         // Every 20 turns reset the closest distance to target
-        ROUNDS_TO_RESET_BUG_CLOSEST = Integer.MAX_VALUE;
         if(roundsSinceClosestDistReset >= ROUNDS_TO_RESET_BUG_CLOSEST) {
             closestDistToTarget = Integer.MAX_VALUE;
             roundsSinceClosestDistReset = 0;
