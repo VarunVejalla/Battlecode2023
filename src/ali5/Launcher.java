@@ -396,7 +396,7 @@ public class Launcher extends Robot {
         if(!bestSpot.equals(myLoc)){
             rc.move(myLoc.directionTo(bestSpot));
         }
-        System.out.println(Clock.getBytecodesLeft());
+//        System.out.println(Clock.getBytecodesLeft());
 //        nav.goToFuzzy(bestSpot, 0);
     }
 
