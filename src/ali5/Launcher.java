@@ -3,31 +3,18 @@ package ali5;
 import battlecode.common.*;
 
 class LauncherHeuristic {
-    final double GET_SAFE_FACTOR = 1.0;
-
-    double friendlyHP;
     double friendlyDamage;
-    double enemyHP;
     double enemyDamage;
 
-    public LauncherHeuristic(double FH, double FD, double EH, double ED){
-        friendlyHP = FH;
+    public LauncherHeuristic(double FD, double ED){
         friendlyDamage = FD;
-        enemyHP = EH;
         enemyDamage = ED;
     }
 
     public boolean getSafe(){
-        double myTurnsNeeded = enemyHP / friendlyDamage;
-        double enemyTurnsNeeded = friendlyHP / enemyDamage;
-        Util.addToIndicatorString("FH:" + (int)friendlyHP + ",FD:" + (int)friendlyDamage);
-        Util.addToIndicatorString("EH:" + (int)enemyHP + ",ED:" + (int)enemyDamage);
-        Util.addToIndicatorString("MT:" + (int)myTurnsNeeded + ",ET:" + (int)enemyTurnsNeeded);
-        // 1.5 simply because im ballsy and wanna go for it
-//        return myTurnsNeeded <= enemyTurnsNeeded * GET_SAFE_FACTOR; // If you can kill them faster than they can kill you, return true
+        Util.addToIndicatorString("FD:" + (int)friendlyDamage + ",ED:" + (int)enemyDamage);
         return friendlyDamage >= enemyDamage;
     }
-
 }
 
 public class Launcher extends Robot {
@@ -518,8 +505,7 @@ public class Launcher extends Robot {
         // your attack isn't ready, then don't engage
 
         if(nearbyEnemies.length == 0){ // No enemies nearby, we safe
-            Util.addToIndicatorString("NE1");
-            return new LauncherHeuristic(100, 100, 0, 0.01);
+            return new LauncherHeuristic(100, 0);
         }
 
         MapInfo[] nearbyFriendlyMapInfo = new MapInfo[nearbyFriendlies.length];
@@ -533,8 +519,6 @@ public class Launcher extends Robot {
 
         double friendlyDamage = 0.0;
         double enemyDamage = 0.0;
-        double friendlyHP = 0.0;
-        double enemyHP = 0.0;
 
         boolean added;
         for(int i = 0; i < nearbyEnemies.length; i++){
@@ -555,45 +539,17 @@ public class Launcher extends Robot {
                     }
                 }
                 // accounts for yourself
-                if (myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)) {
-                    enemyDamage += (double) enemyInfo.type.damage / 10.0;
-                }
+                enemyDamage += (double) enemyInfo.type.damage / 10.0;
                 // Only consider the enemy launcher / carrier if it's in range of a friendly launcher.
             } else if(enemyInfo.type == RobotType.LAUNCHER || enemyInfo.type == RobotType.CARRIER) {
-                added = false;
-
-                for (int j = 0; j < nearbyFriendlies.length; j++) {
-                    RobotInfo friendlyInfo = nearbyFriendlies[j];
-                    if (friendlyInfo.type != RobotType.LAUNCHER) {
-                        continue;
-                    }
-                    if (friendlyInfo.location.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.visionRadiusSquared)) {
-                        if(enemyInfo.type == RobotType.LAUNCHER) {
-                            double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
-                            enemyDamage += (double) enemyInfo.type.damage / cooldown;
-                            enemyHP += enemyInfo.getHealth();
-                        }
-                        else if(enemyInfo.type == RobotType.CARRIER) {
-                            int carrierWeight = enemyInfo.getResourceAmount(ResourceType.ADAMANTIUM) + enemyInfo.getResourceAmount(ResourceType.MANA) + enemyInfo.getResourceAmount(ResourceType.ELIXIR);
-                            int carrierDamage = (int)(carrierWeight * GameConstants.CARRIER_DAMAGE_FACTOR);
-                            friendlyHP -= carrierDamage;
-                        }
-                        added = true;
-                        break;
-                    }
+                if(enemyInfo.type == RobotType.LAUNCHER) {
+                    double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
+                    enemyDamage += (double) enemyInfo.type.damage / cooldown;
                 }
-                // accounts for yourself
-                if (!added && myLoc.isWithinDistanceSquared(enemyInfo.location, enemyInfo.type.actionRadiusSquared)) {
-                    if(enemyInfo.type == RobotType.LAUNCHER) {
-                        double cooldown = enemyInfo.type.actionCooldown * nearbyEnemyMapInfo[i].getCooldownMultiplier(opponent);
-                        enemyDamage += (double) enemyInfo.type.damage / cooldown;
-                        enemyHP += enemyInfo.getHealth();
-                    }
-                    else if(enemyInfo.type == RobotType.CARRIER) {
-                        int carrierWeight = enemyInfo.getResourceAmount(ResourceType.ADAMANTIUM) + enemyInfo.getResourceAmount(ResourceType.MANA) + enemyInfo.getResourceAmount(ResourceType.ELIXIR);
-                        int carrierDamage = (int)(carrierWeight * GameConstants.CARRIER_DAMAGE_FACTOR);
-                        friendlyHP -= carrierDamage;
-                    }
+                else if(enemyInfo.type == RobotType.CARRIER) {
+                    int carrierWeight = enemyInfo.getResourceAmount(ResourceType.ADAMANTIUM) + enemyInfo.getResourceAmount(ResourceType.MANA) + enemyInfo.getResourceAmount(ResourceType.ELIXIR);
+                    int carrierDamage = (int)(carrierWeight * GameConstants.CARRIER_DAMAGE_FACTOR);
+                    enemyDamage += carrierDamage;
                 }
             }
         }
@@ -623,7 +579,6 @@ public class Launcher extends Robot {
                     if (enemyInfo.location.isWithinDistanceSquared(friendlyInfo.location, friendlyInfo.type.actionRadiusSquared)) {
                         double cooldown = (double) friendlyInfo.type.actionCooldown * nearbyFriendlyMapInfo[j].getCooldownMultiplier(myTeam);
                         friendlyDamage += (double) friendlyInfo.type.damage / cooldown;
-                        friendlyHP += friendlyInfo.getHealth();
                         break;
                     }
                 }
@@ -643,14 +598,11 @@ public class Launcher extends Robot {
                 if(rc.isActionReady()) {
                     friendlyDamage += (double) myType.damage / cooldown;
                 }
-                friendlyHP += rc.getHealth();
                 break;
             }
         }
 
-        friendlyHP = Math.max(friendlyHP, 1.0); // Just don't let it go to 0.
-
-        return new LauncherHeuristic(friendlyHP, friendlyDamage, enemyHP, enemyDamage);
+        return new LauncherHeuristic(friendlyDamage, enemyDamage);
     }
 }
 // TODO: Merge ali changes
