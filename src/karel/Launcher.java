@@ -418,7 +418,7 @@ public class Launcher extends Robot {
         Util.log("safest spot: " + bestSpot + ", with " + leastEnemyDamage + " damage ");//with sumDistanceSquared " + smallestSumDistanceSquared);
 
         if(bestSpot == null){
-            rc.resign();
+//            rc.resign();
         }
 
         if(!bestSpot.equals(myLoc)){
